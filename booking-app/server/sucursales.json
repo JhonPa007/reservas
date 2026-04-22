@@ -1,0 +1,34 @@
+[
+  {
+    "id": 2,
+    "nombre": "JV Salon",
+    "direccion": "Av. Andahuaylas 220",
+    "ciudad": "Abancay",
+    "telefono": "941003600",
+    "email": null,
+    "codigo_establecimiento_sunat": null,
+    "activo": true,
+    "fecha_creacion": "2025-11-27T22:59:52.235Z",
+    "fecha_actualizacion": "2025-11-27T22:59:52.235Z",
+    "facebook_url": null,
+    "instagram_url": null,
+    "tiktok_url": null,
+    "whatsapp_numero": null
+  },
+  {
+    "id": 1,
+    "nombre": "JV Studio",
+    "direccion": "Jr. Andahuaylas 216",
+    "ciudad": "Abancay",
+    "telefono": "965432443",
+    "email": "jvstudio@jvcorp.com.pe",
+    "codigo_establecimiento_sunat": null,
+    "activo": true,
+    "fecha_creacion": "2025-09-19T04:31:23.780Z",
+    "fecha_actualizacion": "2025-12-02T19:33:31.129Z",
+    "facebook_url": "https://www.facebook.com/BarberiaAbancay",
+    "instagram_url": "https://www.instagram.com/stories/jvstudio_formen/",
+    "tiktok_url": "https://www.tiktok.com/@jvbarberschool?is_from_webapp=1&sender_device=pc",
+    "whatsapp_numero": "965432443"
+  }
+]

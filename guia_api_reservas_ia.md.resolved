@@ -1,0 +1,74 @@
+# Guía de Integración para Agente de IA de Reservas
+
+Esta guía detalla los endpoints y la estructura de datos necesaria para que un Agente de IA pueda gestionar reservas en el sistema JV Studio.
+
+## 🚀 Endpoint Principal: Creación de Reservas
+
+Para registrar una nueva reserva, el agente debe enviar una petición `POST` al siguiente endpoint:
+
+**URL:** `/reservas/nueva`  
+**Método:** `POST`  
+**Content-Type:** `application/json`
+
+### Estructura del JSON (Payload)
+
+```json
+{
+  "sucursal_id": 1,
+  "cliente_id": 125,
+  "empleado_id": 10,
+  "servicio_id": 5,
+  "fecha_hora_inicio": "2024-03-20T15:30:00",
+  "notas_cliente": "El cliente prefiere un recorte con tijera",
+  "enviar_whatsapp": true
+}
+```
+
+### Descripción de Campos
+
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :--- | :--- |
+| `sucursal_id` | Integer | Sí | ID de la sucursal donde se realizará la reserva. |
+| `cliente_id` | Integer | Sí | ID del cliente. Debe obtenerse previamente. |
+| `empleado_id` | Integer | Sí | ID del colaborador (barbero/estilista) asignado. |
+| `servicio_id` | Integer | Sí | ID del servicio solicitado. |
+| `fecha_hora_inicio` | String | Sí | Fecha y hora en formato ISO 8601 (`YYYY-MM-DDTHH:MM:SS`). |
+| `notas_cliente` | String | No | Observaciones adicionales del cliente. |
+| `enviar_whatsapp` | Boolean | No | Si es `true`, el sistema generará un link de notificación. |
+
+---
+
+## 👥 Endpoints Auxiliares Necesarios
+
+Para que el agente funcione correctamente, necesitará interactuar con estos endpoints adicionales:
+
+### 1. Buscar o Verificar Cliente
+Antes de reservar, el agente debe verificar si el cliente ya existe.
+- **Endpoint:** `GET /api/clientes/buscar_por_documento?documento={DNI_O_RUC}`
+- **Respuesta:** Devuelve los datos del cliente, incluido su [id](file:///d:/JV_Studio/jv_studio_app/app/routes.py#10019-10028).
+
+### 2. Crear Cliente Rápido
+Si el cliente no existe, el agente puede crearlo rápidamente.
+- **Endpoint:** `POST /api/clientes/crear`
+- **JSON:**
+  ```json
+  {
+    "razon_social_nombres": "Juan Pérez",
+    "telefono": "987654321",
+    "numero_documento": "12345678"
+  }
+  ```
+
+### 3. Verificar Disponibilidad (Agenda)
+El agente debe saber qué horarios están libres antes de proponer una cita.
+- **Endpoint:** `GET /api/agenda_dia_data?fecha=YYYY-MM-DD&sucursal_id=ID`
+- **Uso:** Devuelve una lista de `recursos` (empleados) y `eventos` (reservas actuales y bloqueos). El agente debe buscar espacios vacíos dentro del horario del empleado.
+
+---
+
+## ⚡ Consideraciones de Seguridad
+- Actualmente, estos endpoints requieren una sesión activa (`@login_required`). 
+- Si el Agente de IA es un servicio externo, deberá manejar las cookies de sesión tras un login exitoso en `/login`.
+
+> [!IMPORTANT]
+> El sistema valida automáticamente que el colaborador trabaje en el horario seleccionado y que no haya cruces con otras citas existentes.

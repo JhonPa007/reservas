@@ -1,0 +1,119 @@
+[
+  {
+    "id": 8,
+    "nombres": "Roxana ",
+    "apellidos": "Rivas Pauccar",
+    "nombre_display": "Roxana Rivas",
+    "sucursal_id": null,
+    "realiza_servicios": false,
+    "activo": false
+  },
+  {
+    "id": 6,
+    "nombres": "Cristhofers Yavel",
+    "apellidos": "Vasquez Arbayza",
+    "nombre_display": "Yavel Valquez",
+    "sucursal_id": 1,
+    "realiza_servicios": true,
+    "activo": false
+  },
+  {
+    "id": 5,
+    "nombres": "Renato Antonio",
+    "apellidos": "de la Cruz Correa",
+    "nombre_display": "Renato de la Cruz",
+    "sucursal_id": 1,
+    "realiza_servicios": true,
+    "activo": true
+  },
+  {
+    "id": 2,
+    "nombres": "Jhon Paolo",
+    "apellidos": "Casas Huaman",
+    "nombre_display": "Jhon Casas",
+    "sucursal_id": 1,
+    "realiza_servicios": false,
+    "activo": true
+  },
+  {
+    "id": 3,
+    "nombres": "Manuel",
+    "apellidos": "Rojas Martinez",
+    "nombre_display": "Manuel Rojas",
+    "sucursal_id": 1,
+    "realiza_servicios": true,
+    "activo": false
+  },
+  {
+    "id": 4,
+    "nombres": "Milagros",
+    "apellidos": "Romero",
+    "nombre_display": "Milagros Romero",
+    "sucursal_id": 1,
+    "realiza_servicios": true,
+    "activo": false
+  },
+  {
+    "id": 1,
+    "nombres": "Vilma Edy",
+    "apellidos": "Chávez Gómez",
+    "nombre_display": "Vivi Chávez",
+    "sucursal_id": 1,
+    "realiza_servicios": true,
+    "activo": true
+  },
+  {
+    "id": 12,
+    "nombres": "Carlos Fabrizio",
+    "apellidos": "Nuñez Jara",
+    "nombre_display": "Carlos Nuñez",
+    "sucursal_id": null,
+    "realiza_servicios": true,
+    "activo": true
+  },
+  {
+    "id": 11,
+    "nombres": "Emanol Santiago",
+    "apellidos": "Lara Chavez",
+    "nombre_display": "Emanol",
+    "sucursal_id": null,
+    "realiza_servicios": false,
+    "activo": true
+  },
+  {
+    "id": 9,
+    "nombres": "Andrés Avelino",
+    "apellidos": "Cáceres",
+    "nombre_display": "Andrés Cáceres",
+    "sucursal_id": null,
+    "realiza_servicios": true,
+    "activo": false
+  },
+  {
+    "id": 10,
+    "nombres": "Pricyla",
+    "apellidos": "Cordova Cervantes",
+    "nombre_display": "Pricyla Cordova",
+    "sucursal_id": null,
+    "realiza_servicios": false,
+    "activo": false
+  },
+  {
+    "id": 13,
+    "nombres": "Jose",
+    "apellidos": "Salas Vargas",
+    "nombre_display": "José Salas",
+    "sucursal_id": null,
+    "realiza_servicios": true,
+    "activo": true
+  },
+  {
+    "id": 7,
+    "nombres": "Yoselin Roxana",
+    "apellidos": "Avalos Ovalle",
+    "nombre_display": "Yoselin Avalos",
+    "sucursal_id": null,
+    "realiza_servicios": false,
+    "activo": false
+  }
+]
