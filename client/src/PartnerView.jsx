@@ -3,7 +3,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, S
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 const DISPLAY_START_HOUR = 8;
 const DISPLAY_END_HOUR = 21;
 
@@ -235,7 +235,10 @@ export default function PartnerView() {
             sucursal_id: sucursal.id,
             fecha_hora_inicio: drawerOpen.fecha_hora_inicio,
             fecha_hora_fin: drawerOpen.fecha_hora_fin || format(addMinutes(new Date(drawerOpen.fecha_hora_inicio), 40), 'yyyy-MM-dd HH:mm:ss'),
-            notas_cliente: drawerOpen.notas_cliente || ''
+            notas_cliente: drawerOpen.notas_cliente || '',
+            notas_internas: drawerOpen.notas_internas || '',
+            precio_cobrado: drawerOpen.precio_cobrado || 0,
+            origen: isNew ? 'PARTNER' : drawerOpen.origen
         };
 
         try {

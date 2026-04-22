@@ -7,8 +7,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<BookingView />} />
-        <Route path="/partner" element={<PartnerView />} />
+        <Route path="/" element={<PartnerView />} />
       </Routes>
     </BrowserRouter>
   );

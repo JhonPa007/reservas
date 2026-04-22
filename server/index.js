@@ -83,11 +83,11 @@ app.get('/api/disponibilidad', async (req, res) => {
 
 // Crear una reserva
 app.post('/api/reservas', async (req, res) => {
-  const { cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, notas_cliente } = req.body;
+  const { cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, notas_cliente, notas_internas, precio_cobrado, origen } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO reservas (cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, estado, notas_cliente, origen) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-      [cliente_id || 1, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, 'PENDIENTE', notas_cliente, 'WEB_APP']
+      'INSERT INTO reservas (cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, estado, notas_cliente, notas_internas, precio_cobrado, origen) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+      [cliente_id || 1, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, 'RESERVADA', notas_cliente, notas_internas, precio_cobrado || 0, origen || 'PARTNER']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
