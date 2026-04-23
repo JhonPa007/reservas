@@ -214,14 +214,19 @@ export default function PartnerView() {
     };
 
     const handleCellClick = (e, empId, mins, timeStr) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        setQuickActionMenu({
-            x: rect.left,
-            y: rect.top,
-            empId,
-            mins,
-            timeStr
+        const hour = Math.floor(mins / 60);
+        const m = mins % 60;
+        const newDate = new Date(selectedDate);
+        newDate.setHours(hour, m, 0, 0);
+
+        setDrawerOpen({
+            id: 'new',
+            empleado_id: empId,
+            fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
+            cliente_id: null,
+            servicio_id: null
         });
+        setViewState('appointment');
     };
     const handleSaveAppointment = async () => {
         if (!drawerOpen) return;
