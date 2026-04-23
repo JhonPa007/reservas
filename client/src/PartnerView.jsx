@@ -631,7 +631,66 @@ export default function PartnerView() {
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-                                    {drawerOpen?.cliente_id ? (
+                                    {viewState === 'client_create' ? (
+                                        /* NEW CLIENT FORM */
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                            <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>← Volver</button>
+                                            <h4 style={{ margin: 0, fontWeight: 900 }}>Nuevo cliente</h4>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Nombres *</label>
+                                                    <input
+                                                        value={newClientData.razon_social_nombres}
+                                                        onChange={e => setNewClientData({ ...newClientData, razon_social_nombres: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Apellidos</label>
+                                                    <input
+                                                        value={newClientData.apellidos}
+                                                        onChange={e => setNewClientData({ ...newClientData, apellidos: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono *</label>
+                                                    <input
+                                                        type="tel"
+                                                        value={newClientData.telefono}
+                                                        onChange={e => setNewClientData({ ...newClientData, telefono: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const resp = await fetch(`${API_BASE}/clientes`, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify(newClientData)
+                                                            });
+                                                            const data = await resp.json();
+                                                            if (data.success) {
+                                                                handleSelectClient(data.cliente);
+                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '' });
+                                                                setViewState('appointment');
+                                                                // Recargar lista global de clientes
+                                                                fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
+                                                            } else {
+                                                                alert(data.message);
+                                                            }
+                                                        } catch (err) { alert('Error al crear cliente'); }
+                                                    }}
+                                                    style={{ marginTop: '1rem', padding: '1rem', borderRadius: '30px', backgroundColor: '#2563eb', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                                                >
+                                                    Crear y seleccionar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : drawerOpen?.cliente_id ? (
                                         /* CLIENT SELECTED VIEW */
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                                             <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '2rem', color: '#2563eb', marginBottom: '1rem' }}>
@@ -722,65 +781,6 @@ export default function PartnerView() {
                                                             </div>
                                                         </div>
                                                     ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {viewState === 'client_create' && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                            <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>← Volver</button>
-                                            <h4 style={{ margin: 0, fontWeight: 900 }}>Nuevo cliente</h4>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Nombres *</label>
-                                                    <input
-                                                        value={newClientData.razon_social_nombres}
-                                                        onChange={e => setNewClientData({ ...newClientData, razon_social_nombres: e.target.value })}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Apellidos</label>
-                                                    <input
-                                                        value={newClientData.apellidos}
-                                                        onChange={e => setNewClientData({ ...newClientData, apellidos: e.target.value })}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono *</label>
-                                                    <input
-                                                        type="tel"
-                                                        value={newClientData.telefono}
-                                                        onChange={e => setNewClientData({ ...newClientData, telefono: e.target.value })}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
-                                                    />
-                                                </div>
-
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            const resp = await fetch(`${API_BASE}/clientes`, {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify(newClientData)
-                                                            });
-                                                            const data = await resp.json();
-                                                            if (data.success) {
-                                                                handleSelectClient(data.cliente);
-                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '' });
-                                                                // Recargar lista global de clientes
-                                                                fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
-                                                            } else {
-                                                                alert(data.message);
-                                                            }
-                                                        } catch (err) { alert('Error al crear cliente'); }
-                                                    }}
-                                                    style={{ marginTop: '1rem', padding: '1rem', borderRadius: '30px', backgroundColor: '#2563eb', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}
-                                                >
-                                                    Crear y seleccionar
-                                                </button>
                                             </div>
                                         </div>
                                     )}
