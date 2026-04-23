@@ -618,9 +618,8 @@ export default function PartnerView() {
                         <button onClick={() => { setDrawerOpen(null); setNewResData(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
                     </div>
 
-                    {/* VIEW: APPOINTMENT EDIT (REDISEÑADA) */}
-                    {/* VIEW: APPOINTMENT EDIT / NEW APPOINTMENT */}
-                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search') && (
+                    {/* VIEW: APPOINTMENT EDIT / NEW APPOINTMENT / CLIENT CREATE */}
+                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create') && (
                         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
                             {/* PANEL 1: CLIENT SELECTION */}
