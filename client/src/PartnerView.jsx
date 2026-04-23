@@ -693,7 +693,7 @@ export default function PartnerView() {
                                                                 onBlur={e => { if (!e.target.value) e.target.type = 'text'; }}
                                                                 style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
                                                             />
-                                                            <Calendar size={16} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
+                                                            <CalendarIcon size={16} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
                                                         </div>
                                                     </div>
                                                     <div style={{ flex: 1 }}>
