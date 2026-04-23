@@ -532,7 +532,7 @@ export default function PartnerView() {
                                             const rect = e.currentTarget.getBoundingClientRect();
                                             setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom });
                                         }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}
                                     >
                                         <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{emp.nombre_display || emp.nombres}</div>
                                         <ChevronDown size={14} color="#6b7280" />
