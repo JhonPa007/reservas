@@ -40,7 +40,7 @@ export default function PartnerView() {
     const [searchTerm, setSearchTerm] = useState('');
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [serviceSearchTerm, setServiceSearchTerm] = useState('');
-    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '' });
+    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' });
 
     const [quickActionMenu, setQuickActionMenu] = useState(null); // {x, y, empId, mins, timeStr}
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
@@ -663,6 +663,15 @@ export default function PartnerView() {
                                                         style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
                                                     />
                                                 </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Cumpleaños</label>
+                                                    <input
+                                                        type="date"
+                                                        value={newClientData.fecha_nacimiento}
+                                                        onChange={e => setNewClientData({ ...newClientData, fecha_nacimiento: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
 
                                                 <button
                                                     onClick={async () => {
@@ -675,7 +684,7 @@ export default function PartnerView() {
                                                             const data = await resp.json();
                                                             if (data.success) {
                                                                 handleSelectClient(data.cliente);
-                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '' });
+                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' });
                                                                 setViewState('appointment');
                                                                 // Recargar lista global de clientes
                                                                 fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);

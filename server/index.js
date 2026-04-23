@@ -51,7 +51,7 @@ app.get('/api/clientes', async (req, res) => {
 
 // Creación rápida de cliente (Réplica del sistema central)
 app.post('/api/clientes', async (req, res) => {
-  const { razon_social_nombres, apellidos, telefono } = req.body;
+  const { razon_social_nombres, apellidos, telefono, fecha_nacimiento } = req.body;
   const nombre = (razon_social_nombres || '').trim();
   const tel = (telefono || '').trim();
 
@@ -67,8 +67,8 @@ app.post('/api/clientes', async (req, res) => {
     }
 
     const result = await pool.query(
-      'INSERT INTO clientes (razon_social_nombres, apellidos, telefono, fecha_registro) VALUES ($1, $2, $3, CURRENT_DATE) RETURNING id',
-      [nombre, apellidos || '', tel]
+      'INSERT INTO clientes (razon_social_nombres, apellidos, telefono, fecha_nacimiento, fecha_registro) VALUES ($1, $2, $3, $4, CURRENT_DATE) RETURNING id',
+      [nombre, apellidos || '', tel, fecha_nacimiento || null]
     );
 
     res.status(201).json({
