@@ -47,6 +47,7 @@ export default function PartnerView() {
     const [visibleStaffIds, setVisibleStaffIds] = useState([]); // IDs of staff to show
     const [showStaffFilter, setShowStaffFilter] = useState(false);
     const [staffFilterMode, setStaffFilterMode] = useState('all'); // 'all', 'with_appointments'
+    const [staffSearchTerm, setStaffSearchTerm] = useState('');
 
     const [quickActionMenu, setQuickActionMenu] = useState(null); // {x, y, empId, mins, timeStr}
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
@@ -434,27 +435,58 @@ export default function PartnerView() {
                             </button>
 
                             {showStaffFilter && (
-                                <div style={{ position: 'absolute', top: '110%', right: 0, width: '280px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '0.75rem' }}>
-                                    <div style={{ paddingBottom: '0.75rem', borderBottom: '1px solid #f3f4f6', marginBottom: '0.5rem' }}>
-                                        <button
-                                            onClick={() => { setStaffFilterMode('with_appointments'); setShowStaffFilter(false); }}
-                                            style={{ width: '100%', textAlign: 'left', padding: '0.5rem', border: 'none', background: staffFilterMode === 'with_appointments' ? '#eff6ff' : 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: staffFilterMode === 'with_appointments' ? '#2563eb' : '#374151' }}
-                                        >
-                                            <CalendarIcon size={14} />
-                                            <span style={{ fontWeight: 800 }}>Miembros con citas</span>
-                                        </button>
-                                        <button
-                                            onClick={() => { setStaffFilterMode('all'); setVisibleStaffIds(empleados.map(e => e.id)); setShowStaffFilter(false); }}
-                                            style={{ width: '100%', textAlign: 'left', padding: '0.5rem', border: 'none', background: staffFilterMode === 'all' && visibleStaffIds.length === empleados.length ? '#eff6ff' : 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: staffFilterMode === 'all' && visibleStaffIds.length === empleados.length ? '#2563eb' : '#374151', marginTop: '0.25rem' }}
-                                        >
-                                            <Users size={14} />
-                                            <span style={{ fontWeight: 800 }}>Todo el equipo</span>
-                                        </button>
+                                <div style={{ position: 'absolute', top: '110%', right: 0, width: '320px', backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    {/* SEARCH BAR */}
+                                    <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                                        <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                                        <input
+                                            placeholder="Buscar"
+                                            value={staffSearchTerm}
+                                            onChange={e => setStaffSearchTerm(e.target.value)}
+                                            style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.2rem', borderRadius: '12px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '0.85rem', outline: 'none' }}
+                                        />
                                     </div>
 
-                                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                        <div style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase' }}>Todos los miembros</div>
-                                        {empleados.map(emp => (
+                                    {/* QUICK MODES */}
+                                    <div
+                                        onClick={() => { setStaffFilterMode('with_appointments'); setShowStaffFilter(false); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', backgroundColor: staffFilterMode === 'with_appointments' ? '#eff6ff' : 'transparent', color: staffFilterMode === 'with_appointments' ? '#2563eb' : '#374151' }}
+                                        onMouseEnter={e => !staffFilterMode.includes('with_appointments') && (e.currentTarget.style.backgroundColor = '#f9fafb')} onMouseLeave={e => staffFilterMode !== 'with_appointments' && (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    >
+                                        <CalendarIcon size={18} />
+                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Miembros del equipo con citas</span>
+                                    </div>
+
+                                    <div
+                                        onClick={() => { setStaffFilterMode('all'); setVisibleStaffIds(empleados.map(e => e.id)); setShowStaffFilter(false); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', backgroundColor: staffFilterMode === 'all' && visibleStaffIds.length === empleados.length ? '#eff6ff' : 'transparent', color: staffFilterMode === 'all' && visibleStaffIds.length === empleados.length ? '#2563eb' : '#374151' }}
+                                        onMouseEnter={e => (staffFilterMode !== 'all' || visibleStaffIds.length !== empleados.length) && (e.currentTarget.style.backgroundColor = '#f9fafb')} onMouseLeave={e => (staffFilterMode !== 'all' || visibleStaffIds.length !== empleados.length) && (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    >
+                                        <Users size={18} />
+                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Todo el equipo</span>
+                                    </div>
+
+                                    <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '0.5rem 0' }} />
+
+                                    {/* MASTER CHECKBOX */}
+                                    <div
+                                        onClick={() => {
+                                            if (visibleStaffIds.length === empleados.length) setVisibleStaffIds([]);
+                                            else setVisibleStaffIds(empleados.map(e => e.id));
+                                            setStaffFilterMode('all');
+                                        }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer' }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: visibleStaffIds.length === empleados.length ? '#2563eb' : '#fff', borderColor: visibleStaffIds.length === empleados.length ? '#2563eb' : '#e5e7eb' }}>
+                                            {visibleStaffIds.length === empleados.length && <CheckCircle size={14} color="#fff" />}
+                                        </div>
+                                        <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#6b7280' }}>Todos los miembros del equipo</span>
+                                    </div>
+
+                                    {/* INDIVIDUAL STAFF */}
+                                    <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                                        {empleados.filter(e => `${e.nombres} ${e.apellidos}`.toLowerCase().includes(staffSearchTerm.toLowerCase())).map(emp => (
                                             <div
                                                 key={emp.id}
                                                 onClick={() => {
@@ -462,13 +494,18 @@ export default function PartnerView() {
                                                         ? visibleStaffIds.filter(id => id !== emp.id)
                                                         : [...visibleStaffIds, emp.id];
                                                     setVisibleStaffIds(newIds);
+                                                    setStaffFilterMode('all');
                                                 }}
-                                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.75rem', borderRadius: '12px', cursor: 'pointer' }}
                                                 onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                             >
-                                                <input type="checkbox" checked={visibleStaffIds.includes(emp.id)} readOnly style={{ cursor: 'pointer' }} />
-                                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900 }}>{emp.nombres[0]}</div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{emp.nombres} {emp.apellidos}</span>
+                                                <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#fff', borderColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#e5e7eb' }}>
+                                                    {visibleStaffIds.includes(emp.id) && <CheckCircle size={14} color="#fff" />}
+                                                </div>
+                                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#374151' }}>
+                                                    {emp.nombres[0]}
+                                                </div>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1f2937' }}>{emp.nombres} {emp.apellidos}</span>
                                             </div>
                                         ))}
                                     </div>
