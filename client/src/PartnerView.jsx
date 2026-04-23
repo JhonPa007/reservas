@@ -44,6 +44,10 @@ export default function PartnerView() {
     const [birthDayMonth, setBirthDayMonth] = useState(''); // "MM-DD"
     const [birthYear, setBirthYear] = useState(''); // "YYYY"
 
+    const [visibleStaffIds, setVisibleStaffIds] = useState([]); // IDs of staff to show
+    const [showStaffFilter, setShowStaffFilter] = useState(false);
+    const [staffFilterMode, setStaffFilterMode] = useState('all'); // 'all', 'with_appointments'
+
     const [quickActionMenu, setQuickActionMenu] = useState(null); // {x, y, empId, mins, timeStr}
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
@@ -79,6 +83,7 @@ export default function PartnerView() {
             setReservas(resData);
             setServicios(servData);
             setClientes(cliData);
+            if (visibleStaffIds.length === 0) setVisibleStaffIds(empData.map(e => e.id));
             setLoading(false);
         }).catch(() => setLoading(false));
     };
@@ -376,6 +381,13 @@ export default function PartnerView() {
 
     const timelineTop = ((now.getHours() * 60 + now.getMinutes() - DISPLAY_START_HOUR * 60) / (cellDuration || 10)) * rowHeight;
 
+    const visibleEmployees = empleados.filter(emp => {
+        if (staffFilterMode === 'with_appointments') {
+            return reservas.some(r => r.empleado_id === emp.id);
+        }
+        return visibleStaffIds.includes(emp.id);
+    });
+
     return (
         <div className="partner-view" style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
 
@@ -405,7 +417,64 @@ export default function PartnerView() {
                             <button onClick={() => setSelectedDate(addDays(selectedDate, 1))} className="btn-icon"><ChevronRight size={18} /></button>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        {/* STAFF FILTER BUTTON */}
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                onClick={() => setShowStaffFilter(!showStaffFilter)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                            >
+                                <Users size={16} />
+                                <span>
+                                    {staffFilterMode === 'with_appointments' ? 'Miembros con citas' :
+                                        visibleStaffIds.length === empleados.length ? 'Todo el equipo' :
+                                            `${visibleStaffIds.length} miembros`}
+                                </span>
+                                <ChevronRight size={14} style={{ transform: showStaffFilter ? 'rotate(-90deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }} />
+                            </button>
+
+                            {showStaffFilter && (
+                                <div style={{ position: 'absolute', top: '110%', right: 0, width: '280px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '0.75rem' }}>
+                                    <div style={{ paddingBottom: '0.75rem', borderBottom: '1px solid #f3f4f6', marginBottom: '0.5rem' }}>
+                                        <button
+                                            onClick={() => { setStaffFilterMode('with_appointments'); setShowStaffFilter(false); }}
+                                            style={{ width: '100%', textAlign: 'left', padding: '0.5rem', border: 'none', background: staffFilterMode === 'with_appointments' ? '#eff6ff' : 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: staffFilterMode === 'with_appointments' ? '#2563eb' : '#374151' }}
+                                        >
+                                            <CalendarIcon size={14} />
+                                            <span style={{ fontWeight: 800 }}>Miembros con citas</span>
+                                        </button>
+                                        <button
+                                            onClick={() => { setStaffFilterMode('all'); setVisibleStaffIds(empleados.map(e => e.id)); setShowStaffFilter(false); }}
+                                            style={{ width: '100%', textAlign: 'left', padding: '0.5rem', border: 'none', background: staffFilterMode === 'all' && visibleStaffIds.length === empleados.length ? '#eff6ff' : 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: staffFilterMode === 'all' && visibleStaffIds.length === empleados.length ? '#2563eb' : '#374151', marginTop: '0.25rem' }}
+                                        >
+                                            <Users size={14} />
+                                            <span style={{ fontWeight: 800 }}>Todo el equipo</span>
+                                        </button>
+                                    </div>
+
+                                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                        <div style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase' }}>Todos los miembros</div>
+                                        {empleados.map(emp => (
+                                            <div
+                                                key={emp.id}
+                                                onClick={() => {
+                                                    const newIds = visibleStaffIds.includes(emp.id)
+                                                        ? visibleStaffIds.filter(id => id !== emp.id)
+                                                        : [...visibleStaffIds, emp.id];
+                                                    setVisibleStaffIds(newIds);
+                                                }}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
+                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                            >
+                                                <input type="checkbox" checked={visibleStaffIds.includes(emp.id)} readOnly style={{ cursor: 'pointer' }} />
+                                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900 }}>{emp.nombres[0]}</div>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{emp.nombres} {emp.apellidos}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <button onClick={() => setShowConfig(!showConfig)} className="btn-secondary"><Settings size={18} /></button>
                     </div>
                 </header>
@@ -416,7 +485,7 @@ export default function PartnerView() {
                         {/* Header Employees */}
                         <div style={{ display: 'flex', position: 'sticky', top: 0, zIndex: 60, backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
                             <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid #e5e7eb' }} />
-                            {empleados.map(emp => (
+                            {visibleEmployees.map(emp => (
                                 <div key={emp.id} style={{ flex: 1, minWidth: '200px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem' }}>
                                         {(emp.nombre_display || emp.nombres || 'U')[0]}
@@ -452,7 +521,7 @@ export default function PartnerView() {
                                 })}
                             </div>
 
-                            {empleados.map(emp => (
+                            {visibleEmployees.map(emp => (
                                 <div key={emp.id} style={{ flex: 1, minWidth: '200px', position: 'relative', borderRight: '1px solid #e5e7eb' }}>
                                     {/* Grid lines & Hover Time */}
                                     {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * 60 / cellDuration }).map((_, i) => {
