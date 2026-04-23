@@ -503,7 +503,7 @@ export default function PartnerView() {
                                                     {visibleStaffIds.includes(emp.id) && <CheckCircle size={14} color="#fff" />}
                                                 </div>
                                                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#374151' }}>
-                                                    {emp.nombres[0]}
+                                                    {String(emp.nombres || emp.nombre_display || 'U').trim().charAt(0).toUpperCase()}
                                                 </div>
                                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1f2937' }}>{emp.nombres} {emp.apellidos}</span>
                                             </div>
@@ -524,8 +524,8 @@ export default function PartnerView() {
                             <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid #e5e7eb' }} />
                             {visibleEmployees.map(emp => (
                                 <div key={emp.id} style={{ flex: 1, minWidth: '200px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem' }}>
-                                        {(emp.nombre_display || emp.nombres || 'U')[0]}
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', color: '#1f2937' }}>
+                                        {String(emp.nombres || emp.nombre_display || 'U').trim().charAt(0).toUpperCase()}
                                     </div>
                                     <div
                                         onClick={(e) => {
