@@ -40,7 +40,9 @@ export default function PartnerView() {
     const [searchTerm, setSearchTerm] = useState('');
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [serviceSearchTerm, setServiceSearchTerm] = useState('');
-    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' });
+    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
+    const [birthDayMonth, setBirthDayMonth] = useState(''); // "MM-DD"
+    const [birthYear, setBirthYear] = useState(''); // "YYYY"
 
     const [quickActionMenu, setQuickActionMenu] = useState(null); // {x, y, empId, mins, timeStr}
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
@@ -655,38 +657,84 @@ export default function PartnerView() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono *</label>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Email</label>
                                                     <input
-                                                        type="tel"
-                                                        value={newClientData.telefono}
-                                                        onChange={e => setNewClientData({ ...newClientData, telefono: e.target.value })}
+                                                        type="email"
+                                                        placeholder="example@domain.com"
+                                                        value={newClientData.email}
+                                                        onChange={e => setNewClientData({ ...newClientData, email: e.target.value })}
                                                         style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Cumpleaños</label>
-                                                    <input
-                                                        type="date"
-                                                        value={newClientData.fecha_nacimiento}
-                                                        onChange={e => setNewClientData({ ...newClientData, fecha_nacimiento: e.target.value })}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
-                                                    />
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono *</label>
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        <div style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '0.9rem', color: '#6b7280' }}>+51</div>
+                                                        <input
+                                                            type="tel"
+                                                            placeholder="900 000 000"
+                                                            value={newClientData.telefono}
+                                                            onChange={e => setNewClientData({ ...newClientData, telefono: e.target.value })}
+                                                            style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                    <div style={{ flex: 2 }}>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Fecha de nacimiento</label>
+                                                        <div style={{ position: 'relative' }}>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Día y mes"
+                                                                value={birthDayMonth}
+                                                                onChange={e => setBirthDayMonth(e.target.value)}
+                                                                onFocus={e => e.target.type = 'date'}
+                                                                onBlur={e => { if (!e.target.value) e.target.type = 'text'; }}
+                                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                            />
+                                                            <Calendar size={16} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Año</label>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="Año"
+                                                            value={birthYear}
+                                                            onChange={e => setBirthYear(e.target.value)}
+                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 <button
                                                     onClick={async () => {
                                                         try {
+                                                            let finalDate = null;
+                                                            if (birthDayMonth) {
+                                                                // birthDayMonth usually gives YYYY-MM-DD from type=date
+                                                                // We ignore its year and use birthYear if provided
+                                                                const [y, m, d] = birthDayMonth.split('-');
+                                                                const yearToUse = birthYear || '1900';
+                                                                finalDate = `${yearToUse}-${m}-${d}`;
+                                                            }
+
                                                             const resp = await fetch(`${API_BASE}/clientes`, {
                                                                 method: 'POST',
                                                                 headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify(newClientData)
+                                                                body: JSON.stringify({
+                                                                    ...newClientData,
+                                                                    fecha_nacimiento: finalDate
+                                                                })
                                                             });
                                                             const data = await resp.json();
                                                             if (data.success) {
                                                                 handleSelectClient(data.cliente);
-                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' });
+                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
+                                                                setBirthDayMonth('');
+                                                                setBirthYear('');
                                                                 setViewState('appointment');
-                                                                // Recargar lista global de clientes
                                                                 fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
                                                             } else {
                                                                 alert(data.message);
