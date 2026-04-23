@@ -40,6 +40,7 @@ export default function PartnerView() {
     const [searchTerm, setSearchTerm] = useState('');
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [serviceSearchTerm, setServiceSearchTerm] = useState('');
+    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '' });
 
     const [quickActionMenu, setQuickActionMenu] = useState(null); // {x, y, empId, mins, timeStr}
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
@@ -668,7 +669,12 @@ export default function PartnerView() {
 
                                             {/* NEW CLIENT & WALK-IN OPTIONS */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                                <button style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', borderRadius: '12px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                                <button
+                                                    onClick={() => setViewState('client_create')}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', borderRadius: '12px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                >
                                                     <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}><UserPlus size={20} /></div>
                                                     <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Añadir un nuevo cliente</span>
                                                 </button>
@@ -712,6 +718,65 @@ export default function PartnerView() {
                                                             </div>
                                                         </div>
                                                     ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {viewState === 'client_create' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                            <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>← Volver</button>
+                                            <h4 style={{ margin: 0, fontWeight: 900 }}>Nuevo cliente</h4>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Nombres *</label>
+                                                    <input
+                                                        value={newClientData.razon_social_nombres}
+                                                        onChange={e => setNewClientData({ ...newClientData, razon_social_nombres: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Apellidos</label>
+                                                    <input
+                                                        value={newClientData.apellidos}
+                                                        onChange={e => setNewClientData({ ...newClientData, apellidos: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono *</label>
+                                                    <input
+                                                        type="tel"
+                                                        value={newClientData.telefono}
+                                                        onChange={e => setNewClientData({ ...newClientData, telefono: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const resp = await fetch(`${API_BASE}/clientes`, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify(newClientData)
+                                                            });
+                                                            const data = await resp.json();
+                                                            if (data.success) {
+                                                                handleSelectClient(data.cliente);
+                                                                setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '' });
+                                                                // Recargar lista global de clientes
+                                                                fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
+                                                            } else {
+                                                                alert(data.message);
+                                                            }
+                                                        } catch (err) { alert('Error al crear cliente'); }
+                                                    }}
+                                                    style={{ marginTop: '1rem', padding: '1rem', borderRadius: '30px', backgroundColor: '#2563eb', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                                                >
+                                                    Crear y seleccionar
+                                                </button>
                                             </div>
                                         </div>
                                     )}

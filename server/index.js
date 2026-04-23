@@ -49,6 +49,43 @@ app.get('/api/clientes', async (req, res) => {
   }
 });
 
+// Creación rápida de cliente (Réplica del sistema central)
+app.post('/api/clientes', async (req, res) => {
+  const { razon_social_nombres, apellidos, telefono } = req.body;
+  const nombre = (razon_social_nombres || '').trim();
+  const tel = (telefono || '').trim();
+
+  if (!nombre || !tel) {
+    return res.status(400).json({ success: false, message: 'Nombre y Teléfono son obligatorios.' });
+  }
+
+  try {
+    // Verificar duplicados
+    const check = await pool.query('SELECT id FROM clientes WHERE telefono = $1', [tel]);
+    if (check.rows.length > 0) {
+      return res.status(400).json({ success: false, message: 'Ya existe un cliente con ese teléfono.' });
+    }
+
+    const result = await pool.query(
+      'INSERT INTO clientes (razon_social_nombres, apellidos, telefono, fecha_registro) VALUES ($1, $2, $3, CURRENT_DATE) RETURNING id',
+      [nombre, apellidos || '', tel]
+    );
+
+    res.status(201).json({
+      success: true,
+      cliente: {
+        id: result.rows[0].id,
+        razon_social_nombres: nombre,
+        apellidos: apellidos || '',
+        telefono: tel
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Error al crear el cliente.' });
+  }
+});
+
 // Obtener empleados que realizan servicios en una sucursal específica
 app.get('/api/empleados/:sucursalId', async (req, res) => {
   const { sucursalId } = req.params;
