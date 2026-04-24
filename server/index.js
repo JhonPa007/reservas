@@ -17,6 +17,22 @@ const pool = new Pool({
 });
 
 // Obtener todas las sucursales activas
+app.get('/api/health', async (req, res) => {
+  try {
+    const resSucs = await pool.query('SELECT COUNT(*) FROM sucursales');
+    const resRes = await pool.query('SELECT COUNT(*) FROM reservas');
+    const resEmps = await pool.query('SELECT COUNT(*) FROM empleados');
+    res.json({
+      sucursales: resSucs.rows[0].count,
+      reservas: resRes.rows[0].count,
+      empleados: resEmps.rows[0].count,
+      db_url_prefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.slice(0, 20) : 'not defined'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/sucursales', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM sucursales WHERE activo = true ORDER BY nombre');
@@ -192,11 +208,12 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
        LEFT JOIN servicios s ON r.servicio_id = s.id
        LEFT JOIN clientes c ON r.cliente_id = c.id
        WHERE r.sucursal_id = $1 
-         AND r.fecha_hora_inicio >= ($2::date) 
-         AND r.fecha_hora_inicio < ($2::date + interval '1 day')
+         AND r.fecha_hora_inicio::date = $2
        ORDER BY r.fecha_hora_inicio`,
       [sucursalId, fecha]
     );
+
+    console.log(`[GET /api/reservas] Sucursal: ${sucursalId}, Fecha: ${fecha}, Encontradas: ${resReservas.rows.length}`);
 
     const resHorarios = await pool.query(
       'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_empleados WHERE sucursal_id = $1 AND fecha = $2',
@@ -211,7 +228,12 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
     res.json({
       reservas: resReservas.rows,
       horarios: resHorarios.rows,
-      recurrentes: resRecurrentes.rows
+      recurrentes: resRecurrentes.rows,
+      debug: {
+        sucursalId,
+        fecha,
+        count: resReservas.rows.length
+      }
     });
   } catch (err) {
     console.error(err);

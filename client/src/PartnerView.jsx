@@ -44,6 +44,7 @@ export default function PartnerView() {
     const [showConfig, setShowConfig] = useState(false);
     const [hoverRes, setHoverRes] = useState(null);
     const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
+    const [dbHealth, setDbHealth] = useState(null);
 
     const [showActions, setShowActions] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -127,6 +128,7 @@ export default function PartnerView() {
         fetch(`${API_BASE}/servicios`).then(res => res.json()).then(setServicios);
         fetch(`${API_BASE}/clientes`).then(res => res.json()).then(setClientes);
 
+        fetch(`${API_BASE}/health`).then(res => res.json()).then(setDbHealth).catch(console.error);
         const timer = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
@@ -1671,9 +1673,15 @@ export default function PartnerView() {
             {/* DEBUG PANEL TRANSITORIO */}
             <div style={{ position: 'fixed', bottom: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '10px', borderRadius: '8px', zIndex: 9999, fontSize: '10px', pointerEvents: 'none' }}>
                 <div>Sucursal: {sucursal?.id} - {sucursal?.nombre}</div>
-                <div>Empleados: {empleados.length} - Visibles: {visibleEmployees.length}</div>
+                <div>Empleados: {empleados.length} - IDs: {empleados.map(e => e.id).join(',')}</div>
+                <div>Visibles: {visibleEmployees.length} - IDs: {visibleEmployees.map(e => e.id).join(',')}</div>
                 <div>Reservas hoy: {reservas.length}</div>
                 <div>Fecha seleccionada: {format(selectedDate, 'yyyy-MM-dd')}</div>
+                {dbHealth && (
+                    <div style={{ borderTop: '1px solid #555', marginTop: '5px', paddingTop: '5px', color: '#0f0' }}>
+                        DB Total : Res: {dbHealth.reservas} | Emp: {dbHealth.empleados} | Suc: {dbHealth.sucursales}
+                    </div>
+                )}
             </div>
 
             <style dangerouslySetInnerHTML={{
