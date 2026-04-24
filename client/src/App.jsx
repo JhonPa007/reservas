@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 const Dashboard = React.lazy(() => import('./Dashboard'));
 const PartnerView = React.lazy(() => import('./PartnerView'));
+const TeamManager = React.lazy(() => import('./TeamManager'));
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Routes>
           <Route path="/" element={<PartnerView />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/equipo" element={<TeamManager />} />
         </Routes>
       </React.Suspense>
     </BrowserRouter>

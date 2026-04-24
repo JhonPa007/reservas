@@ -201,9 +201,15 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
       [sucursalId, fecha]
     );
 
+    const resRecurrentes = await pool.query(
+      'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_recurrentes WHERE sucursal_id = $1 AND dia_semana = $2',
+      [sucursalId, new Date(fecha).getUTCDay()]
+    );
+
     res.json({
       reservas: resReservas.rows,
-      horarios: resHorarios.rows
+      horarios: resHorarios.rows,
+      recurrentes: resRecurrentes.rows
     });
   } catch (err) {
     console.error(err);
@@ -249,6 +255,69 @@ app.delete('/api/reservas/:id', async (req, res) => {
 });
 
 // Obtener estadísticas para el Dashboard
+// Gestión de Miembros del Equipo
+app.get('/api/equipo', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM empleados ORDER BY nombres');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener equipo' });
+  }
+});
+
+app.post('/api/equipo/miembros', async (req, res) => {
+  const { nombres, apellidos, nombre_display, email, telefono, dni, sucursal_id, realizar_servicios } = req.body;
+  try {
+    const result = await pool.query(
+      `INSERT INTO empleados (nombres, apellidos, nombre_display, email, telefono, dni, sucursal_id, realiza_servicios, activo) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) RETURNING *`,
+      [nombres, apellidos, nombre_display || `${nombres} ${apellidos}`, email, telefono, dni, sucursal_id || 1, realizar_servicios !== false]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al crear miembro' });
+  }
+});
+
+// Guardar Horarios Recurrentes (Semanal)
+app.post('/api/equipo/horarios-recurrentes', async (req, res) => {
+  const { empleado_id, sucursal_id, horarios } = req.body; // horarios: [{dia_semana, hora_inicio, hora_fin}]
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM horarios_recurrentes WHERE empleado_id = $1 AND sucursal_id = $2', [empleado_id, sucursal_id]);
+
+    for (const h of horarios) {
+      await client.query(
+        'INSERT INTO horarios_recurrentes (empleado_id, sucursal_id, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4, $5)',
+        [empleado_id, sucursal_id, h.dia_semana, h.hora_inicio, h.hora_fin]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Error al guardar horarios recurrentes' });
+  } finally {
+    client.release();
+  }
+});
+
+app.get('/api/equipo/horarios-recurrentes/:empleadoId', async (req, res) => {
+  const { empleadoId } = req.params;
+  try {
+    const result = await pool.query('SELECT * FROM horarios_recurrentes WHERE empleado_id = $1 ORDER BY dia_semana, hora_inicio', [empleadoId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener horarios' });
+  }
+});
+
 app.get('/api/dashboard-stats', async (req, res) => {
   const { sucursalId } = req.query;
   try {

@@ -17,6 +17,7 @@ export default function PartnerView() {
     const [clientes, setClientes] = useState([]);
     const [reservas, setReservas] = useState([]);
     const [horarios, setHorarios] = useState([]);
+    const [recurrentes, setRecurrentes] = useState([]);
 
     const [loading, setLoading] = useState(true);
 
@@ -140,18 +141,28 @@ export default function PartnerView() {
     }, [empleados]);
 
     const isTimeAvailable = (empId, mins) => {
+        // 1. Prioridad: Turnos específicos para esta fecha
         const empHorarios = horarios.filter(h => h.empleado_id === empId);
-        if (empHorarios.length === 0) {
-            // Horario por defecto si no hay turnos guardados (9am - 8pm)
-            return mins >= (9 * 60) && mins <= (20 * 60);
+        if (empHorarios.length > 0) {
+            return empHorarios.some(h => {
+                const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
+                const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
+                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
+            });
         }
-        return empHorarios.some(h => {
-            const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
-            const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
-            const startMins = hStart * 60 + mStart;
-            const endMins = hEnd * 60 + mEnd;
-            return mins >= startMins && mins < endMins;
-        });
+
+        // 2. Fallback: Turnos recurrentes (semanales)
+        const empRec = recurrentes.filter(h => h.empleado_id === empId);
+        if (empRec.length > 0) {
+            return empRec.some(h => {
+                const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
+                const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
+                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
+            });
+        }
+
+        // 3. Si no hay nada definido, no está disponible
+        return false;
     };
 
     const handleAddAppointment = (empId) => {
@@ -168,22 +179,33 @@ export default function PartnerView() {
         setEmpMenu(null);
     };
 
-    const refreshData = () => {
-        setLoading(true);
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        Promise.all([
-            fetch(`${API_BASE}/empleados/${sucursal.id}`).then(res => res.json()),
-            fetch(`${API_BASE}/reservas/sucursal/${sucursal.id}/${dateStr}`).then(res => res.json()),
-            fetch(`${API_BASE}/servicios`).then(res => res.json()),
-            fetch(`${API_BASE}/clientes`).then(res => res.json())
-        ]).then(([empData, data, servData, cliData]) => {
+    const refreshData = async () => {
+        if (!sucursal) return;
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const [empRes, resRes, servRes, cliRes] = await Promise.all([
+                fetch(`${API_BASE}/empleados/${sucursal.id}`),
+                fetch(`${API_BASE}/reservas/sucursal/${sucursal.id}/${dateStr}`),
+                fetch(`${API_BASE}/servicios`),
+                fetch(`${API_BASE}/clientes`)
+            ]);
+
+            const empData = await empRes.json();
+            const data = await resRes.json();
+            const servData = await servRes.json();
+            const cliData = await cliRes.json();
+
             setEmpleados(empData);
             setReservas(data.reservas || []);
             setHorarios(data.horarios || []);
+            setRecurrentes(data.recurrentes || []);
             setServicios(servData);
             setClientes(cliData);
             setLoading(false);
-        }).catch(() => setLoading(false));
+        } catch (err) {
+            console.error(err);
+            setLoading(false);
+        }
     };
 
     const handleDragStart = (e, res) => {

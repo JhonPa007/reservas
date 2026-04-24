@@ -9,7 +9,7 @@ export default function Sidebar() {
     const menuItems = [
         { icon: <Home size={22} />, path: '/dashboard', label: 'Dashboard' },
         { icon: <CalendarIcon size={22} />, path: '/', label: 'Calendario' },
-        { icon: <Users size={22} />, path: '/clientes', label: 'Clientes' },
+        { icon: <Users size={22} />, path: '/equipo', label: 'Equipo' },
         { icon: <BarChart3 size={22} />, path: '/analytics', label: 'Análisis' },
         { icon: <Settings size={22} />, path: '/ajustes', label: 'Ajustes' },
     ];

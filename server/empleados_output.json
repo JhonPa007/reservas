@@ -1,119 +1,134 @@
 [
   {
-    "id": 8,
-    "nombres": "Roxana ",
-    "apellidos": "Rivas Pauccar",
-    "nombre_display": "Roxana Rivas",
-    "sucursal_id": null,
-    "realiza_servicios": false,
-    "activo": false
+    "column_name": "id",
+    "data_type": "integer"
   },
   {
-    "id": 6,
-    "nombres": "Cristhofers Yavel",
-    "apellidos": "Vasquez Arbayza",
-    "nombre_display": "Yavel Valquez",
-    "sucursal_id": 1,
-    "realiza_servicios": true,
-    "activo": false
+    "column_name": "nombres",
+    "data_type": "character varying"
   },
   {
-    "id": 5,
-    "nombres": "Renato Antonio",
-    "apellidos": "de la Cruz Correa",
-    "nombre_display": "Renato de la Cruz",
-    "sucursal_id": 1,
-    "realiza_servicios": true,
-    "activo": true
+    "column_name": "apellidos",
+    "data_type": "character varying"
   },
   {
-    "id": 2,
-    "nombres": "Jhon Paolo",
-    "apellidos": "Casas Huaman",
-    "nombre_display": "Jhon Casas",
-    "sucursal_id": 1,
-    "realiza_servicios": false,
-    "activo": true
+    "column_name": "nombre_display",
+    "data_type": "character varying"
   },
   {
-    "id": 3,
-    "nombres": "Manuel",
-    "apellidos": "Rojas Martinez",
-    "nombre_display": "Manuel Rojas",
-    "sucursal_id": 1,
-    "realiza_servicios": true,
-    "activo": false
+    "column_name": "email",
+    "data_type": "character varying"
   },
   {
-    "id": 4,
-    "nombres": "Milagros",
-    "apellidos": "Romero",
-    "nombre_display": "Milagros Romero",
-    "sucursal_id": 1,
-    "realiza_servicios": true,
-    "activo": false
+    "column_name": "rol_id",
+    "data_type": "integer"
   },
   {
-    "id": 1,
-    "nombres": "Vilma Edy",
-    "apellidos": "Chávez Gómez",
-    "nombre_display": "Vivi Chávez",
-    "sucursal_id": 1,
-    "realiza_servicios": true,
-    "activo": true
+    "column_name": "password",
+    "data_type": "character varying"
   },
   {
-    "id": 12,
-    "nombres": "Carlos Fabrizio",
-    "apellidos": "Nuñez Jara",
-    "nombre_display": "Carlos Nuñez",
-    "sucursal_id": null,
-    "realiza_servicios": true,
-    "activo": true
+    "column_name": "telefono",
+    "data_type": "character varying"
   },
   {
-    "id": 11,
-    "nombres": "Emanol Santiago",
-    "apellidos": "Lara Chavez",
-    "nombre_display": "Emanol",
-    "sucursal_id": null,
-    "realiza_servicios": false,
-    "activo": true
+    "column_name": "sueldo_base",
+    "data_type": "numeric"
   },
   {
-    "id": 9,
-    "nombres": "Andrés Avelino",
-    "apellidos": "Cáceres",
-    "nombre_display": "Andrés Cáceres",
-    "sucursal_id": null,
-    "realiza_servicios": true,
-    "activo": false
+    "column_name": "contrato_id",
+    "data_type": "integer"
   },
   {
-    "id": 10,
-    "nombres": "Pricyla",
-    "apellidos": "Cordova Cervantes",
-    "nombre_display": "Pricyla Cordova",
-    "sucursal_id": null,
-    "realiza_servicios": false,
-    "activo": false
+    "column_name": "sucursal_id",
+    "data_type": "integer"
   },
   {
-    "id": 13,
-    "nombres": "Jose",
-    "apellidos": "Salas Vargas",
-    "nombre_display": "José Salas",
-    "sucursal_id": null,
-    "realiza_servicios": true,
-    "activo": true
+    "column_name": "fecha_contratacion",
+    "data_type": "date"
   },
   {
-    "id": 7,
-    "nombres": "Yoselin Roxana",
-    "apellidos": "Avalos Ovalle",
-    "nombre_display": "Yoselin Avalos",
-    "sucursal_id": null,
-    "realiza_servicios": false,
-    "activo": false
+    "column_name": "activo",
+    "data_type": "boolean"
+  },
+  {
+    "column_name": "notas",
+    "data_type": "text"
+  },
+  {
+    "column_name": "fecha_creacion",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "fecha_actualizacion",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "dni",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "fecha_nacimiento",
+    "data_type": "date"
+  },
+  {
+    "column_name": "realiza_servicios",
+    "data_type": "boolean"
+  },
+  {
+    "column_name": "tipo_salario",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "meta_activacion_mensual",
+    "data_type": "numeric"
+  },
+  {
+    "column_name": "porcentaje_fondo",
+    "data_type": "numeric"
+  },
+  {
+    "column_name": "saldo_fondo_acumulado",
+    "data_type": "numeric"
+  },
+  {
+    "column_name": "estado_fondo",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "modalidad_pago",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "sueldo_fijo_mensual",
+    "data_type": "numeric"
+  },
+  {
+    "column_name": "porcentaje_productos",
+    "data_type": "numeric"
+  },
+  {
+    "column_name": "frecuencia_pago",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "profesion",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "tipo_contrato",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "realiza_ventas",
+    "data_type": "boolean"
+  },
+  {
+    "column_name": "porcentaje_comision_productos",
+    "data_type": "numeric"
+  },
+  {
+    "column_name": "configuracion_comision",
+    "data_type": "jsonb"
   }
 ]
