@@ -48,8 +48,39 @@ export default function PartnerView() {
     const [showStaffFilter, setShowStaffFilter] = useState(false);
     const [staffFilterMode, setStaffFilterMode] = useState('all'); // 'all', 'with_appointments'
     const [staffSearchTerm, setStaffSearchTerm] = useState('');
+    const staffFilterRef = useRef(null);
+    const empMenuRef = useRef(null);
+    const quickActionMenuRef = useRef(null);
 
-    const [quickActionMenu, setQuickActionMenu] = useState(null); // {x, y, empId, mins, timeStr}
+    useEffect(() => {
+        function handleGlobalEvents(e) {
+            // Close logic on ESC
+            if (e.key === 'Escape') {
+                setShowStaffFilter(false);
+                setEmpMenu(null);
+                setQuickActionMenu(null);
+                setShowConfig(false);
+                setViewState('search'); // Reset drawer if needed? Maybe not.
+            }
+
+            // Close staff filter on click outside
+            if (showStaffFilter && staffFilterRef.current && !staffFilterRef.current.contains(e.target)) {
+                setShowStaffFilter(false);
+            }
+
+            // Close emp menu on click outside
+            if (empMenu && empMenuRef.current && !empMenuRef.current.contains(e.target)) {
+                setEmpMenu(null);
+            }
+        }
+
+        window.addEventListener('keydown', handleGlobalEvents);
+        window.addEventListener('mousedown', handleGlobalEvents);
+        return () => {
+            window.removeEventListener('keydown', handleGlobalEvents);
+            window.removeEventListener('mousedown', handleGlobalEvents);
+        };
+    }, [showStaffFilter, empMenu]);
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
 
@@ -448,7 +479,7 @@ export default function PartnerView() {
                             </button>
 
                             {showStaffFilter && (
-                                <div style={{ position: 'absolute', top: '110%', right: 0, width: '320px', backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                <div ref={staffFilterRef} style={{ position: 'absolute', top: '110%', right: 0, width: '320px', backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                     {/* SEARCH BAR */}
                                     <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
                                         <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
@@ -1206,7 +1237,7 @@ export default function PartnerView() {
                         style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
                         onClick={() => setEmpMenu(null)}
                     />
-                    <div style={{
+                    <div ref={empMenuRef} style={{
                         position: 'fixed',
                         left: empMenu.x,
                         top: empMenu.y + 10,
