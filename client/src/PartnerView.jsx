@@ -8,6 +8,16 @@ const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.include
 const DISPLAY_START_HOUR = 8;
 const DISPLAY_END_HOUR = 21;
 
+/** Utilidad para parsear fechas de DB de forma segura */
+function safeDate(dateStr) {
+    if (!dateStr) return new Date();
+    if (dateStr instanceof Date) return dateStr;
+    // Soporte para formato de Postgres "YYYY-MM-DD HH:MM:SS" -> ISO "YYYY-MM-DDTHH:MM:SS"
+    const dStr = String(dateStr).replace(' ', 'T');
+    const d = new Date(dStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+}
+
 export default function PartnerView() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [sucursal, setSucursal] = useState({ id: 1, nombre: 'JV Studio' });
@@ -443,35 +453,30 @@ export default function PartnerView() {
         setViewState('appointment');
     };
 
-    const getDurationHeight = (mins) => (mins / cellDuration) * rowHeight;
+    function getDurationHeight(mins) {
+        return (mins / (cellDuration || 10)) * rowHeight;
+    }
 
-    const getTimeTop = (dateStr) => {
+    function getTimeTop(dateStr) {
         if (!dateStr) return 0;
         const d = safeDate(dateStr);
-        if (isNaN(d.getTime())) return 0;
         const hour = d.getHours();
         const minsTotal = hour * 60 + d.getMinutes();
         const diff = minsTotal - (DISPLAY_START_HOUR * 60);
         return (diff / (cellDuration || 10)) * rowHeight;
-    };
+    }
 
-    const safeDate = (dateStr) => {
-        if (!dateStr) return new Date();
-        if (dateStr instanceof Date) return dateStr;
-        return new Date(String(dateStr).replace(' ', 'T'));
-    };
-
-    const formatAMPM = (dateStr) => {
+    function formatAMPM(dateStr) {
         if (!dateStr) return '';
         try {
             const d = safeDate(dateStr);
             if (isNaN(d.getTime())) return '';
             return format(d, 'h:mm a');
         } catch (e) { return ''; }
-    };
+    }
 
     // Algoritmo de solapamiento robusto
-    const processOverlaps = (resArray) => {
+    function processOverlaps(resArray) {
         if (!resArray || resArray.length === 0) return {};
 
         const sorted = [...resArray].sort((a, b) => safeDate(a.fecha_hora_inicio) - safeDate(b.fecha_hora_inicio));
@@ -536,7 +541,7 @@ export default function PartnerView() {
         });
 
         return results;
-    };
+    }
 
     const timelineTop = ((now.getHours() * 60 + now.getMinutes() - DISPLAY_START_HOUR * 60) / (cellDuration || 10)) * rowHeight;
 
