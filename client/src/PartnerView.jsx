@@ -720,11 +720,7 @@ export default function PartnerView() {
                                                     )}
                                                 </div>
                                             );
-
-
-
-                            );
-                                    });
+                                        });
                                     })()}
                                 </div>
                             ))}
@@ -789,12 +785,18 @@ export default function PartnerView() {
                     <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <div
-                                onClick={() => setDrawerOpen({ ...drawerOpen, tipo: 'CITA' })}
+                                onClick={() => {
+                                    if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'CITA' });
+                                    else if (newResData) setNewResData({ ...newResData, tipo: 'CITA' });
+                                }}
                                 style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
                                 Cita
                             </div>
                             <div
-                                onClick={() => setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' })}
+                                onClick={() => {
+                                    if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                    else if (newResData) setNewResData({ ...newResData, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                }}
                                 style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
                                 Tiempo no disponible
                             </div>
