@@ -163,6 +163,48 @@ export default function PartnerView() {
         }
     }, [empleados]);
 
+    // Lógica global para redimensionamiento (Resizing)
+    useEffect(() => {
+        const handleGlobalMouseMove = (e) => {
+            if (resizingRes) {
+                const deltaY = e.clientY - resizingRes.startY;
+                const newDuration = Math.max(15, resizingRes.originalDuration + Math.round(deltaY / 2.333));
+                setResizingRes(curr => ({ ...curr, currentDuration: newDuration }));
+            }
+        };
+
+        const handleGlobalMouseUp = async () => {
+            if (resizingRes) {
+                const resId = resizingRes.id;
+                const newMins = resizingRes.currentDuration;
+
+                // Actualización optimista local
+                setReservas(prev => prev.map(r => r.id === resId ? { ...r, duracion_minutos: newMins } : r));
+
+                try {
+                    await fetch(`${API_BASE}/reservas/${resId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ duracion_minutos: newMins })
+                    });
+                    refreshData();
+                } catch (err) { console.error("Error al guardar duración"); }
+
+                setResizingRes(null);
+                setIsResizingInProgress(false);
+            }
+        };
+
+        if (resizingRes) {
+            window.addEventListener('mousemove', handleGlobalMouseMove);
+            window.addEventListener('mouseup', handleGlobalMouseUp);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleGlobalMouseMove);
+            window.removeEventListener('mouseup', handleGlobalMouseUp);
+        };
+    }, [resizingRes]);
+
     const isTimeAvailable = (empId, mins) => {
         // 1. Prioridad: Turnos específicos para esta fecha
         const empHorarios = horarios.filter(h => h.empleado_id === empId);
@@ -274,24 +316,38 @@ export default function PartnerView() {
         const newDate = new Date(selectedDate);
         newDate.setHours(hour, m, 0, 0);
 
-        try {
-            const oldRes = reservas.find(r => String(r.id) === String(resId));
-            let duration = oldRes?.duracion_minutos || 40;
-            if (oldRes?.fecha_hora_inicio && oldRes?.fecha_hora_fin) {
-                duration = (new Date(oldRes.fecha_hora_fin) - new Date(oldRes.fecha_hora_inicio)) / (1000 * 60);
-            }
+        const oldRes = reservas.find(r => String(r.id) === String(resId));
+        let duration = oldRes?.duracion_minutos || 40;
+        if (oldRes?.fecha_hora_inicio && oldRes?.fecha_hora_fin) {
+            duration = (safeDate(oldRes.fecha_hora_fin) - safeDate(oldRes.fecha_hora_inicio)) / (1000 * 60);
+        }
 
+        const nStart = format(newDate, 'yyyy-MM-dd HH:mm:ss');
+        const nEnd = format(addMinutes(newDate, duration), 'yyyy-MM-dd HH:mm:ss');
+
+        // Actualización optimista local
+        setReservas(prev => prev.map(r => String(r.id) === String(resId) ? {
+            ...r,
+            empleado_id: empleadoId,
+            fecha_hora_inicio: nStart,
+            fecha_hora_fin: nEnd
+        } : r));
+
+        try {
             await fetch(`${API_BASE}/reservas/${resId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     empleado_id: empleadoId,
-                    fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
-                    fecha_hora_fin: format(addMinutes(newDate, duration), 'yyyy-MM-dd HH:mm:ss')
+                    fecha_hora_inicio: nStart,
+                    fecha_hora_fin: nEnd
                 })
             });
             refreshData();
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+            refreshData(); // Rollback en caso de error
+        }
     };
 
     const handleResizeStart = (e, res) => {
@@ -806,6 +862,37 @@ export default function PartnerView() {
                                                     {!isBlocked && (
                                                         <div style={{ fontSize: '0.65rem', color: colors.text, marginTop: '2px', opacity: 0.8 }}>
                                                             {res.servicio_nombre}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Manija de redimensionamiento (Resize Handle) */}
+                                                    {!isBlocked && (
+                                                        <div
+                                                            onMouseDown={(e) => {
+                                                                e.stopPropagation();
+                                                                setResizingRes({
+                                                                    id: res.id,
+                                                                    originalDuration: displayDuration,
+                                                                    currentDuration: displayDuration,
+                                                                    startY: e.clientY
+                                                                });
+                                                                setIsResizingInProgress(true);
+                                                            }}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                bottom: 0,
+                                                                left: 0,
+                                                                right: 0,
+                                                                height: '12px',
+                                                                cursor: 'ns-resize',
+                                                                zIndex: 101,
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'flex-end',
+                                                                paddingBottom: '3px'
+                                                            }}
+                                                        >
+                                                            <div style={{ width: '20px', height: '2px', backgroundColor: colors.border, borderRadius: '1px', opacity: 0.4 }} />
                                                         </div>
                                                     )}
                                                 </div>
