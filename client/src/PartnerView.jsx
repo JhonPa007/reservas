@@ -743,10 +743,10 @@ export default function PartnerView() {
                                             const colors = isBlocked ?
                                                 { bg: '#f3f4f6', border: '#9ca3af', text: '#4b5563' } :
                                                 ({
-                                                    'RESERVADA': { bg: '#e0f2fe', border: '#0369a1', text: '#0369a1' },
-                                                    'COMPLETADA': { bg: '#f3f4f6', border: '#9ca3af', text: '#374151' },
-                                                    'INASISTENCIA': { bg: '#fee2e2', border: '#b91c1c', text: '#b91c1c' }
-                                                }[res.estado] || { bg: '#e0f2fe', border: '#0369a1', text: '#0369a1' });
+                                                    'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+                                                    'CONFIRMADA': { bg: '#ecfdf5', border: '#059669', text: '#065f46' },
+                                                    'INASISTENCIA': { bg: '#fffbeb', border: '#d97706', text: '#92400e' }
+                                                }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' });
 
                                             const isResizingThis = resizingRes?.id === res.id;
 
@@ -896,7 +896,54 @@ export default function PartnerView() {
                                 <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#000' }}>Configuración de turno</div>
                             )}
                         </div>
-                        <button onClick={() => { setDrawerOpen(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            {drawerOpen?.id && (drawerOpen?.tipo || 'CITA') === 'CITA' && (
+                                <div style={{ position: 'relative' }}>
+                                    <select
+                                        value={drawerOpen.estado || 'RESERVADA'}
+                                        onChange={async (e) => {
+                                            const novoEstado = e.target.value;
+                                            if (novoEstado === 'CANCELADA') {
+                                                if (window.confirm('¿Eliminar esta reserva por completo?')) {
+                                                    try {
+                                                        const r = await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
+                                                        if (r.ok) { setDrawerOpen(null); refreshData(); }
+                                                    } catch (err) { alert('Error al eliminar'); }
+                                                }
+                                                return;
+                                            }
+                                            // Actualizar estado en local y remoto
+                                            setDrawerOpen({ ...drawerOpen, estado: novoEstado });
+                                            try {
+                                                await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ estado: novoEstado })
+                                                });
+                                                refreshData();
+                                            } catch (err) { console.error('Error actualizando estado'); }
+                                        }}
+                                        style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                            outline: 'none',
+                                            border: '1px solid #e5e7eb',
+                                            backgroundColor: (drawerOpen.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen.estado === 'INASISTENCIA' ? '#fffbeb' : '#eff6ff')),
+                                            color: (drawerOpen.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen.estado === 'INASISTENCIA' ? '#d97706' : '#2563eb'))
+                                        }}
+                                    >
+                                        <option value="RESERVADA">Reservada</option>
+                                        <option value="CONFIRMADA">Confirmada</option>
+                                        <option value="INASISTENCIA">Inasistencia</option>
+                                        <option value="CANCELADA">Eliminar / Cancelar</option>
+                                    </select>
+                                </div>
+                            )}
+                            <button onClick={() => { setDrawerOpen(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
+                        </div>
                     </div>
 
                     {/* VIEW: SHIFT EDIT FORM (Fresha Style) */}
