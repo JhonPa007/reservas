@@ -178,14 +178,14 @@ export default function PartnerView() {
                 const resId = resizingRes.id;
                 const newMins = resizingRes.currentDuration;
 
-                const targetRes = reservas.find(r => r.id === resId);
+                const targetRes = reservas.find(r => String(r.id) === String(resId));
                 if (targetRes) {
                     const start = safeDate(targetRes.fecha_hora_inicio);
                     const newEnd = addMinutes(start, newMins);
                     const nEndStr = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
 
                     // Actualización optimista local
-                    setReservas(prev => prev.map(r => r.id === resId ? {
+                    setReservas(prev => prev.map(r => String(r.id) === String(resId) ? {
                         ...r,
                         duracion_minutos: newMins,
                         fecha_hora_fin: nEndStr
@@ -217,7 +217,7 @@ export default function PartnerView() {
             window.removeEventListener('mousemove', handleGlobalMouseMove);
             window.removeEventListener('mouseup', handleGlobalMouseUp);
         };
-    }, [resizingRes]);
+    }, [resizingRes, reservas]);
 
     const isTimeAvailable = (empId, mins) => {
         // 1. Prioridad: Turnos específicos para esta fecha
