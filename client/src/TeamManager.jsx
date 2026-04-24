@@ -96,7 +96,7 @@ export default function TeamManager() {
         const newShifts = recurringShifts.map(day => ({
             ...day,
             activo: true,
-            horarios: [...sourceDay.horarios]
+            horarios: sourceDay.horarios.map(h => ({ ...h }))
         }));
         setRecurringShifts(newShifts);
     };
@@ -270,9 +270,9 @@ export default function TeamManager() {
                                                                 next[idx].horarios[hIdx].inicio = e.target.value;
                                                                 setRecurringShifts(next);
                                                             }}
-                                                            style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                                                            style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.9rem' }}
                                                         />
-                                                        <span>a</span>
+                                                        <span style={{ color: '#6b7280' }}>a</span>
                                                         <input
                                                             type="time"
                                                             value={h.fin}
@@ -281,8 +281,36 @@ export default function TeamManager() {
                                                                 next[idx].horarios[hIdx].fin = e.target.value;
                                                                 setRecurringShifts(next);
                                                             }}
-                                                            style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                                                            style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.9rem' }}
                                                         />
+
+                                                        {hIdx === 0 && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const next = [...recurringShifts];
+                                                                    next[idx].horarios.push({ inicio: '15:00', fin: '19:00' });
+                                                                    setRecurringShifts(next);
+                                                                }}
+                                                                style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #e5e7eb', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                                title="Añadir intervalo"
+                                                            >
+                                                                <Plus size={16} />
+                                                            </button>
+                                                        )}
+
+                                                        {hIdx > 0 && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const next = [...recurringShifts];
+                                                                    next[idx].horarios.splice(hIdx, 1);
+                                                                    setRecurringShifts(next);
+                                                                }}
+                                                                style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
+
                                                         {hIdx === 0 && (
                                                             <button
                                                                 onClick={() => copyToAll(idx)}
@@ -291,14 +319,11 @@ export default function TeamManager() {
                                                                 <Copy size={14} /> Copiar a todos los días
                                                             </button>
                                                         )}
-                                                        {hIdx > 0 && (
-                                                            <Trash2 size={18} color="#ef4444" style={{ cursor: 'pointer' }} />
-                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span style={{ color: '#9ca3af' }}>No está trabajando</span>
+                                            <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>No está trabajando</span>
                                         )}
                                     </div>
                                 </div>
