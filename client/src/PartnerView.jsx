@@ -1010,7 +1010,7 @@ export default function PartnerView() {
                     )}
 
                     {/* VIEW: BLOCK TIME FORM (Fresha Style) */}
-                    {(drawerOpen?.tipo === 'BLOQUEO' || newResData?.tipo === 'BLOQUEO') && (
+                    {(drawerOpen?.tipo === 'BLOQUEO') && (
                         <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem', overflowY: 'auto' }}>
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '1rem' }}>Tipo de horario no disponible</label>
