@@ -53,6 +53,10 @@ export default function PartnerView() {
     const [quickActionMenu, setQuickActionMenu] = useState(null);
     const quickActionMenuRef = useRef(null);
 
+    const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
+    const [isResizingInProgress, setIsResizingInProgress] = useState(false);
+    const [now, setNow] = useState(new Date());
+
     useEffect(() => {
         function handleGlobalEvents(e) {
             // Close logic on ESC
@@ -61,7 +65,7 @@ export default function PartnerView() {
                 setEmpMenu(null);
                 setQuickActionMenu(null);
                 setShowConfig(false);
-                setViewState('search'); // Reset drawer if needed? Maybe not.
+                setViewState('search');
             }
 
             // Close staff filter on click outside
@@ -82,10 +86,6 @@ export default function PartnerView() {
             window.removeEventListener('mousedown', handleGlobalEvents);
         };
     }, [showStaffFilter, empMenu]);
-    const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
-    const [isResizingInProgress, setIsResizingInProgress] = useState(false);
-
-    const [now, setNow] = useState(new Date());
 
     useEffect(() => {
         fetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
