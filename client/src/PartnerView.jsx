@@ -4,7 +4,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, S
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5001/api' : window.location.origin + '/api');
 const DISPLAY_START_HOUR = 8;
 const DISPLAY_END_HOUR = 21;
 

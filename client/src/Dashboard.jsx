@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import { TrendingUp, Calendar, ArrowUpRight, MoreVertical, Search, es } from 'lucide-react';
+import { TrendingUp, Calendar, ArrowUpRight, MoreVertical, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { es as localeEs } from 'date-fns/locale';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5001/api' : window.location.origin + '/api');
 
 export default function Dashboard() {
     const [stats, setStats] = useState(null);
