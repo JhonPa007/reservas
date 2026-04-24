@@ -333,36 +333,6 @@ export default function PartnerView() {
         window.addEventListener('mouseup', onMouseUp);
     };
 
-    const handleCreateAppointment = async (formData) => {
-        try {
-            const startHour = Math.floor(newResData.mins / 60);
-            const startMin = newResData.mins % 60;
-            const startDate = new Date(newResData.date);
-            startDate.setHours(startHour, startMin, 0, 0);
-
-            const selectedServ = servicios.find(s => s.id === parseInt(formData.servicio_id));
-            const duration = selectedServ ? selectedServ.duracion_minutos : 40;
-            const endDate = addMinutes(startDate, duration);
-
-            await fetch(`${API_BASE}/reservas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cliente_id: formData.cliente_id,
-                    empleado_id: newResData.empleadoId,
-                    servicio_id: formData.servicio_id,
-                    sucursal_id: sucursal.id,
-                    fecha_hora_inicio: format(startDate, 'yyyy-MM-dd HH:mm:ss'),
-                    fecha_hora_fin: format(endDate, 'yyyy-MM-dd HH:mm:ss'),
-                    estado: 'RESERVADA',
-                    origen: 'PARTNER'
-                })
-            });
-            setNewResData(null);
-            setViewState('calendar');
-            refreshData();
-        } catch (err) { console.error(err); }
-    };
 
     const updateStatus = async (resId, newStatus) => {
         try {
@@ -692,7 +662,7 @@ export default function PartnerView() {
                                         }}
                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}
                                     >
-                                        <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{emp.nombre_display || emp.nombres} <small style={{ color: '#9ca3af', fontWeight: 400 }}>[{emp.id}]</small></div>
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{emp.nombre_display || emp.nombres}</div>
                                         <ChevronDown size={14} color="#6b7280" />
                                     </div>
                                 </div>
@@ -1697,6 +1667,14 @@ export default function PartnerView() {
                     </>
                 )
             }
+
+            {/* DEBUG PANEL TRANSITORIO */}
+            <div style={{ position: 'fixed', bottom: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '10px', borderRadius: '8px', zIndex: 9999, fontSize: '10px', pointerEvents: 'none' }}>
+                <div>Sucursal: {sucursal?.id} - {sucursal?.nombre}</div>
+                <div>Empleados: {empleados.length} - Visibles: {visibleEmployees.length}</div>
+                <div>Reservas hoy: {reservas.length}</div>
+                <div>Fecha seleccionada: {format(selectedDate, 'yyyy-MM-dd')}</div>
+            </div>
 
             <style dangerouslySetInnerHTML={{
                 __html: `
