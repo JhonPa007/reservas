@@ -50,6 +50,7 @@ export default function PartnerView() {
     const [staffSearchTerm, setStaffSearchTerm] = useState('');
     const staffFilterRef = useRef(null);
     const empMenuRef = useRef(null);
+    const [quickActionMenu, setQuickActionMenu] = useState(null);
     const quickActionMenuRef = useRef(null);
 
     useEffect(() => {
