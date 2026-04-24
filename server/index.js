@@ -258,7 +258,7 @@ app.delete('/api/reservas/:id', async (req, res) => {
 // Gestión de Miembros del Equipo
 app.get('/api/equipo', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM empleados ORDER BY nombres');
+    const result = await pool.query('SELECT * FROM empleados WHERE activo = true ORDER BY nombres');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -398,7 +398,7 @@ app.get('/api/dashboard-stats', async (req, res) => {
       FROM empleados e
       LEFT JOIN current_month cm ON e.id = cm.empleado_id
       LEFT JOIN last_month lm ON e.id = lm.empleado_id
-      WHERE cm.total > 0 OR lm.total > 0
+      WHERE (cm.total > 0 OR lm.total > 0) AND e.activo = true
       ORDER BY este_mes DESC
     `, [sucursalId]);
 
