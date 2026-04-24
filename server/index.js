@@ -191,7 +191,9 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
        FROM reservas r
        JOIN servicios s ON r.servicio_id = s.id
        LEFT JOIN clientes c ON r.cliente_id = c.id
-       WHERE r.sucursal_id = $1 AND r.fecha_hora_inicio::date = $2
+       WHERE r.sucursal_id = $1 
+         AND r.fecha_hora_inicio >= ($2::date) 
+         AND r.fecha_hora_inicio < ($2::date + interval '1 day')
        ORDER BY r.fecha_hora_inicio`,
       [sucursalId, fecha]
     );

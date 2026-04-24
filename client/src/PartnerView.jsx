@@ -34,7 +34,6 @@ export default function PartnerView() {
     const [showConfig, setShowConfig] = useState(false);
     const [hoverRes, setHoverRes] = useState(null);
     const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
-    const [newResData, setNewResData] = useState(null); // {empleadoId, mins, date}
 
     const [showActions, setShowActions] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -223,6 +222,11 @@ export default function PartnerView() {
             setRecurrentes(data.recurrentes || []);
             setServicios(servData);
             setClientes(cliData);
+            console.log("Datos cargados:", {
+                fecha: dateStr,
+                citasCargadas: (data.reservas || []).length,
+                empleados: empData.length
+            });
             setLoading(false);
         } catch (err) {
             console.error(err);
@@ -430,11 +434,11 @@ export default function PartnerView() {
             ...drawerOpen,
             servicio_id: service.id,
             servicio_nombre: service.nombre,
-            servicio_precio: service.precio,
-            servicio_duracion: service.duracion_minutos,
+            servicio_precio: parseFloat(service.precio),
+            servicio_duracion: parseInt(service.duracion_minutos),
             fecha_hora_fin: format(end, 'yyyy-MM-dd HH:mm:ss'),
             endTime: format(end, 'HH:mm'),
-            precio_cobrado: service.precio
+            precio_cobrado: parseFloat(service.precio)
         });
         setViewState('appointment');
     };
@@ -734,7 +738,7 @@ export default function PartnerView() {
 
                                     {/* Reservations with Overlap Logic */}
                                     {(() => {
-                                        const empRes = reservas.filter(r => r.empleado_id === emp.id && r.estado !== 'CANCELADA');
+                                        const empRes = reservas.filter(r => String(r.empleado_id) === String(emp.id) && r.estado !== 'CANCELADA');
                                         const overlapData = processOverlaps(empRes);
 
                                         return empRes.map((res) => {
@@ -854,7 +858,7 @@ export default function PartnerView() {
 
             {/* MAIN DRAWER SYSTEM (SLIDE-IN) */}
             <div style={{
-                position: 'fixed', top: 0, right: (drawerOpen || newResData) ? 0 : '-100%', bottom: 0,
+                position: 'fixed', top: 0, right: drawerOpen ? 0 : '-100%', bottom: 0,
                 width: (viewState === 'profile' || viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search') ? '900px' : '500px', maxWidth: '100%',
                 backgroundColor: 'rgba(0,0,0,0.5)', // Backdrop darker
                 zIndex: 500, transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -876,17 +880,15 @@ export default function PartnerView() {
                                     <div
                                         onClick={() => {
                                             if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'CITA' });
-                                            else if (newResData) setNewResData({ ...newResData, tipo: 'CITA' });
                                         }}
-                                        style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
+                                        style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || 'CITA') === 'CITA' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || 'CITA') === 'CITA' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
                                         Cita
                                     </div>
                                     <div
                                         onClick={() => {
                                             if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
-                                            else if (newResData) setNewResData({ ...newResData, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
                                         }}
-                                        style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
+                                        style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: drawerOpen?.tipo === 'BLOQUEO' ? '#000' : '#9ca3af', borderBottom: drawerOpen?.tipo === 'BLOQUEO' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
                                         Tiempo no disponible
                                     </div>
                                 </>
@@ -895,7 +897,7 @@ export default function PartnerView() {
                                 <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#000' }}>Configuración de turno</div>
                             )}
                         </div>
-                        <button onClick={() => { setDrawerOpen(null); setNewResData(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
+                        <button onClick={() => { setDrawerOpen(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
                     </div>
 
                     {/* VIEW: SHIFT EDIT FORM (Fresha Style) */}
@@ -1010,15 +1012,14 @@ export default function PartnerView() {
                                             key={sub.label}
                                             onClick={() => {
                                                 if (drawerOpen) setDrawerOpen({ ...drawerOpen, subtipo_bloqueo: sub.label });
-                                                else setNewResData({ ...newResData, subtipo_bloqueo: sub.label });
                                             }}
                                             style={{
-                                                padding: '1.25rem', borderRadius: '16px', border: (drawerOpen?.subtipo_bloqueo === sub.label || newResData?.subtipo_bloqueo === sub.label) ? '2px solid #2563eb' : '1px solid #e5e7eb',
-                                                backgroundColor: (drawerOpen?.subtipo_bloqueo === sub.label || newResData?.subtipo_bloqueo === sub.label) ? '#eff6ff' : '#fff',
+                                                padding: '1.25rem', borderRadius: '16px', border: (drawerOpen?.subtipo_bloqueo === sub.label) ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                                                backgroundColor: (drawerOpen?.subtipo_bloqueo === sub.label) ? '#eff6ff' : '#fff',
                                                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
                                             }}
                                         >
-                                            <div style={{ color: (drawerOpen?.subtipo_bloqueo === sub.label || newResData?.subtipo_bloqueo === sub.label) ? '#2563eb' : '#6b7280' }}>{sub.icon}</div>
+                                            <div style={{ color: (drawerOpen?.subtipo_bloqueo === sub.label) ? '#2563eb' : '#6b7280' }}>{sub.icon}</div>
                                             <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{sub.label}</span>
                                         </div>
                                     ))}
@@ -1095,7 +1096,6 @@ export default function PartnerView() {
                                             });
                                             if (resp.ok) {
                                                 setDrawerOpen(null);
-                                                setNewResData(null);
                                                 refreshData();
                                             }
                                         } catch (err) { alert('Error al guardar bloqueo'); }
@@ -1109,7 +1109,7 @@ export default function PartnerView() {
                     )}
 
                     {/* VIEW: APPOINTMENT EDIT / NEW APPOINTMENT / CLIENT CREATE */}
-                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create') && (drawerOpen?.tipo !== 'BLOQUEO' && newResData?.tipo !== 'BLOQUEO') && (
+                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create') && drawerOpen?.tipo !== 'BLOQUEO' && (
                         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
                             {/* PANEL 1: CLIENT SELECTION */}
