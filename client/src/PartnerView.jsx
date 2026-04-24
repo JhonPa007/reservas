@@ -11,10 +11,21 @@ const DISPLAY_END_HOUR = 21;
 /** Utilidad para parsear fechas de DB de forma segura */
 function safeDate(dateStr) {
     if (!dateStr) return new Date();
-    if (dateStr instanceof Date) return dateStr;
-    // Soporte para formato de Postgres "YYYY-MM-DD HH:MM:SS" -> ISO "YYYY-MM-DDTHH:MM:SS"
-    const dStr = String(dateStr).replace(' ', 'T');
-    const d = new Date(dStr);
+    let s = "";
+    if (dateStr instanceof Date) {
+        const y = dateStr.getFullYear();
+        const m = String(dateStr.getMonth() + 1).padStart(2, '0');
+        const d = String(dateStr.getDate()).padStart(2, '0');
+        const hh = String(dateStr.getHours()).padStart(2, '0');
+        const mm = String(dateStr.getMinutes()).padStart(2, '0');
+        const ss = String(dateStr.getSeconds()).padStart(2, '0');
+        s = `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
+    } else {
+        s = String(dateStr).replace(' ', 'T');
+    }
+    if (s.includes('.')) s = s.split('.')[0];
+    if (s.endsWith('Z')) s = s.slice(0, -1);
+    const d = new Date(s);
     return isNaN(d.getTime()) ? new Date() : d;
 }
 
@@ -73,7 +84,8 @@ export default function PartnerView() {
     const [shiftFormData, setShiftFormData] = useState({
         empId: null,
         empNombre: '',
-        intervals: [{ hora_inicio: '09:00', hora_fin: '18:00' }]
+        intervals: [{ hora_inicio: '09:00', hora_fin: '18:00' }],
+        copyToDays: [] // [1, 2, 3, 4, 5] (L, M, X, J, V)
     });
 
     const handleEditShift = (empId) => {
@@ -789,7 +801,7 @@ export default function PartnerView() {
                                                     }}
                                                 >
                                                     <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : res.cliente_nombre}
+                                                        {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : `${res.cliente_nombre} ${res.cliente_apellidos || ''}`}
                                                     </div>
                                                     {!isBlocked && (
                                                         <div style={{ fontSize: '0.65rem', color: colors.text, marginTop: '2px', opacity: 0.8 }}>
@@ -937,15 +949,45 @@ export default function PartnerView() {
                                 </div>
                             ))}
 
-                            <button
-                                onClick={() => {
-                                    const last = shiftFormData.intervals[shiftFormData.intervals.length - 1];
-                                    setShiftFormData({ ...shiftFormData, intervals: [...shiftFormData.intervals, { hora_inicio: last.hora_fin, hora_fin: '21:00' }] });
-                                }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: '1px solid #e5e7eb', borderRadius: '20px', padding: '0.5rem 1rem', width: 'fit-content', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
-                            >
-                                <Plus size={16} /> Añadir turno
-                            </button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => {
+                                        const last = shiftFormData.intervals[shiftFormData.intervals.length - 1];
+                                        setShiftFormData({ ...shiftFormData, intervals: [...shiftFormData.intervals, { hora_inicio: last.hora_fin, hora_fin: '21:00' }] });
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem' }}
+                                >
+                                    <Plus size={16} /> Añadir otro intervalo
+                                </button>
+
+                                <div style={{ display: 'flex', gap: '0.4rem', backgroundColor: '#f3f4f6', padding: '4px', borderRadius: '24px' }}>
+                                    {[
+                                        { l: 'L', v: 1 }, { l: 'M', v: 2 }, { l: 'X', v: 3 }, { l: 'J', v: 4 }, { l: 'V', v: 5 }, { l: 'S', v: 6 }, { l: 'D', v: 0 }
+                                    ].map((dayObj) => {
+                                        const isSelected = shiftFormData.copyToDays.includes(dayObj.v);
+                                        return (
+                                            <button
+                                                key={dayObj.v}
+                                                onClick={() => {
+                                                    const current = shiftFormData.copyToDays;
+                                                    const next = current.includes(dayObj.v)
+                                                        ? current.filter(d => d !== dayObj.v)
+                                                        : [...current, dayObj.v];
+                                                    setShiftFormData({ ...shiftFormData, copyToDays: next });
+                                                }}
+                                                style={{
+                                                    width: '32px', height: '32px', borderRadius: '50%', border: 'none',
+                                                    backgroundColor: isSelected ? '#000' : 'transparent',
+                                                    color: isSelected ? '#fff' : '#6b7280',
+                                                    fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {dayObj.l}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
 
                             <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: 'auto', display: 'flex', gap: '1rem' }}>
                                 <button
@@ -957,25 +999,39 @@ export default function PartnerView() {
                                 <button
                                     onClick={async () => {
                                         try {
-                                            const resp = await fetch(`${API_BASE}/horarios`, {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    empleado_id: shiftFormData.empId,
-                                                    sucursal_id: sucursal.id,
-                                                    fecha: format(selectedDate, 'yyyy-MM-dd'),
-                                                    intervalos: shiftFormData.intervals
+                                            const basePayload = {
+                                                empleado_id: shiftFormData.empId,
+                                                sucursal_id: sucursal.id,
+                                                intervalos: shiftFormData.intervals
+                                            };
+                                            const promises = [
+                                                fetch(`${API_BASE}/horarios`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ ...basePayload, fecha: format(selectedDate, 'yyyy-MM-dd') })
                                                 })
-                                            });
-                                            if (resp.ok) {
-                                                setViewState('calendar');
-                                                refreshData();
+                                            ];
+                                            if (shiftFormData.copyToDays.length > 0) {
+                                                const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
+                                                shiftFormData.copyToDays.forEach(dayIndex => {
+                                                    const targetDate = addDays(start, dayIndex === 0 ? 6 : dayIndex - 1);
+                                                    if (!isSameDay(targetDate, selectedDate)) {
+                                                        promises.push(fetch(`${API_BASE}/horarios`, {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ ...basePayload, fecha: format(targetDate, 'yyyy-MM-dd') })
+                                                        }));
+                                                    }
+                                                });
                                             }
+                                            await Promise.all(promises);
+                                            setViewState('calendar');
+                                            refreshData();
                                         } catch (err) { alert('Error al guardar turnos'); }
                                     }}
-                                    style={{ flex: 1, padding: '1rem', borderRadius: '30px', backgroundColor: '#000', color: 'white', border: 'none', fontWeight: 900, cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '1rem', borderRadius: '30px', backgroundColor: '#2563eb', color: 'white', border: 'none', fontWeight: 900, cursor: 'pointer' }}
                                 >
-                                    Guardar
+                                    Guardar y replicar
                                 </button>
                             </div>
                         </div>
@@ -1228,7 +1284,7 @@ export default function PartnerView() {
                                             <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '2rem', color: '#2563eb', marginBottom: '1rem' }}>
                                                 {drawerOpen?.cliente_nombre?.[0] || 'A'}
                                             </div>
-                                            <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 0.25rem 0' }}>{drawerOpen?.cliente_nombre}</h2>
+                                            <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 0.25rem 0' }}>{drawerOpen?.cliente_nombre} {drawerOpen?.cliente_apellidos || ''}</h2>
                                             <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 1.5rem 0' }}>{drawerOpen?.cliente_telefono || '+51 000 000 000'}</p>
 
                                             <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
@@ -1670,19 +1726,6 @@ export default function PartnerView() {
                 )
             }
 
-            {/* DEBUG PANEL TRANSITORIO */}
-            <div style={{ position: 'fixed', bottom: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '10px', borderRadius: '8px', zIndex: 9999, fontSize: '10px', pointerEvents: 'none' }}>
-                <div>Sucursal: {sucursal?.id} - {sucursal?.nombre}</div>
-                <div>Empleados: {empleados.length} - IDs: {empleados.map(e => e.id).join(',')}</div>
-                <div>Visibles: {visibleEmployees.length} - IDs: {visibleEmployees.map(e => e.id).join(',')}</div>
-                <div>Reservas hoy: {reservas.length}</div>
-                <div>Fecha seleccionada: {format(selectedDate, 'yyyy-MM-dd')}</div>
-                {dbHealth && (
-                    <div style={{ borderTop: '1px solid #555', marginTop: '5px', paddingTop: '5px', color: '#0f0' }}>
-                        DB Total : Res: {dbHealth.reservas} | Emp: {dbHealth.empleados} | Suc: {dbHealth.sucursales}
-                    </div>
-                )}
-            </div>
 
             <style dangerouslySetInnerHTML={{
                 __html: `
