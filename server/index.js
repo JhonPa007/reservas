@@ -189,7 +189,7 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
       `SELECT r.*, s.nombre as servicio_nombre, s.duracion_minutos, s.precio,
               c.razon_social_nombres as cliente_nombre, c.apellidos as cliente_apellidos
        FROM reservas r
-       JOIN servicios s ON r.servicio_id = s.id
+       LEFT JOIN servicios s ON r.servicio_id = s.id
        LEFT JOIN clientes c ON r.cliente_id = c.id
        WHERE r.sucursal_id = $1 
          AND r.fecha_hora_inicio >= ($2::date) 

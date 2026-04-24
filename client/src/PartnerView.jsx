@@ -447,7 +447,9 @@ export default function PartnerView() {
 
     const getTimeTop = (dateStr) => {
         if (!dateStr) return 0;
-        const d = new Date(dateStr);
+        const dStr = String(dateStr).replace(' ', 'T');
+        const d = new Date(dStr);
+        if (isNaN(d.getTime())) return 0;
         const mins = d.getHours() * 60 + d.getMinutes();
         const offsetMins = mins - (DISPLAY_START_HOUR * 60);
         return (offsetMins / (cellDuration || 10)) * rowHeight;
@@ -679,7 +681,7 @@ export default function PartnerView() {
                                         }}
                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}
                                     >
-                                        <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{emp.nombre_display || emp.nombres}</div>
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{emp.nombre_display || emp.nombres} <small style={{ color: '#9ca3af', fontWeight: 400 }}>[{emp.id}]</small></div>
                                         <ChevronDown size={14} color="#6b7280" />
                                     </div>
                                 </div>
@@ -756,9 +758,13 @@ export default function PartnerView() {
                                             // Calcular duración real basada en fechas si no se está redimensionando
                                             let displayDuration = res.duracion_minutos || 40;
                                             if (res.fecha_hora_fin && !isResizingThis) {
-                                                const start = new Date(res.fecha_hora_inicio);
-                                                const end = new Date(res.fecha_hora_fin);
-                                                displayDuration = (end - start) / (1000 * 60);
+                                                const startStr = String(res.fecha_hora_inicio).replace(' ', 'T');
+                                                const endStr = String(res.fecha_hora_fin).replace(' ', 'T');
+                                                const start = new Date(startStr);
+                                                const end = new Date(endStr);
+                                                if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                                                    displayDuration = (end - start) / (1000 * 60);
+                                                }
                                             }
                                             if (isResizingThis) displayDuration = resizingRes.currentDuration;
 
