@@ -55,6 +55,8 @@ export default function PartnerView() {
     const [showConfig, setShowConfig] = useState(false);
     const [hoverRes, setHoverRes] = useState(null);
     const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
+    const [isResizingInProgress, setIsResizingInProgress] = useState(false);
+    const [toast, setToast] = useState(null);
     const [dbHealth, setDbHealth] = useState(null);
 
     const [showActions, setShowActions] = useState(false);
@@ -78,7 +80,6 @@ export default function PartnerView() {
     const quickActionMenuRef = useRef(null);
 
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
-    const [isResizingInProgress, setIsResizingInProgress] = useState(false);
     const [now, setNow] = useState(new Date());
 
     const [shiftFormData, setShiftFormData] = useState({
@@ -205,6 +206,8 @@ export default function PartnerView() {
                         // Pequeño delay para asegurar que DB procesó el cambio
                         setTimeout(() => {
                             refreshData();
+                            setToast("Cita Reprogramada");
+                            setTimeout(() => setToast(null), 3000);
                         }, 200);
 
                     } catch (err) {
@@ -346,14 +349,14 @@ export default function PartnerView() {
         }
 
         const nStart = format(newDate, 'yyyy-MM-dd HH:mm:ss');
-        const nEnd = format(addMinutes(newDate, duration), 'yyyy-MM-dd HH:mm:ss');
+        const nEndStr = format(addMinutes(newDate, duration), 'yyyy-MM-dd HH:mm:ss');
 
         // Actualización optimista local
         setReservas(prev => prev.map(r => String(r.id) === String(resId) ? {
             ...r,
             empleado_id: empleadoId,
             fecha_hora_inicio: nStart,
-            fecha_hora_fin: nEnd
+            fecha_hora_fin: nEndStr
         } : r));
 
         try {
@@ -363,10 +366,12 @@ export default function PartnerView() {
                 body: JSON.stringify({
                     empleado_id: empleadoId,
                     fecha_hora_inicio: nStart,
-                    fecha_hora_fin: nEnd
+                    fecha_hora_fin: nEndStr
                 })
             });
             refreshData();
+            setToast("Cita Reprogramada");
+            setTimeout(() => setToast(null), 3000);
         } catch (err) {
             console.error(err);
             refreshData(); // Rollback en caso de error
@@ -985,6 +990,39 @@ export default function PartnerView() {
                     backgroundColor: 'white', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
                     display: 'flex', flexDirection: 'column', position: 'relative'
                 }}>
+
+                    {/* TOAST MESSAGE */}
+                    {toast && (
+                        <div style={{
+                            position: 'fixed',
+                            bottom: '40px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            backgroundColor: '#1f2937',
+                            color: '#fff',
+                            padding: '12px 24px',
+                            borderRadius: '12px',
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            zIndex: 10000,
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
+                            animation: 'fadeInOut 3s forwards'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }} />
+                                {toast}
+                            </div>
+                        </div>
+                    )}
+
+                    <style>{`
+                        @keyframes fadeInOut {
+                            0% { opacity: 0; transform: translate(-50%, 20px); }
+                            10% { opacity: 1; transform: translate(-50%, 0); }
+                            90% { opacity: 1; transform: translate(-50%, 0); }
+                            100% { opacity: 0; transform: translate(-50%, -10px); }
+                        }
+                    `}</style>
 
                     {/* TOP HEADER */}
                     <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
