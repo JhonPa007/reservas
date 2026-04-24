@@ -133,11 +133,59 @@ app.post('/api/reservas', async (req, res) => {
   }
 });
 
+// Obtener horarios/turnos de un empleado para un día
+app.get('/api/horarios/:empleadoId/:fecha', async (req, res) => {
+  const { empleadoId, fecha } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT id, hora_inicio, hora_fin FROM horarios_empleados WHERE empleado_id = $1 AND fecha = $2 ORDER BY hora_inicio',
+      [empleadoId, fecha]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener horarios' });
+  }
+});
+
+// Guardar turnos (Elimina anteriores y guarda nuevos para ese día)
+app.post('/api/horarios', async (req, res) => {
+  const { empleado_id, sucursal_id, fecha, intervalos } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Eliminar turnos existentes para ese día
+    await client.query(
+      'DELETE FROM horarios_empleados WHERE empleado_id = $1 AND fecha = $2 AND sucursal_id = $3',
+      [empleado_id, fecha, sucursal_id]
+    );
+
+    // Insertar nuevos intervalos
+    for (const interval of intervalos) {
+      await client.query(
+        'INSERT INTO horarios_empleados (empleado_id, sucursal_id, fecha, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4, $5)',
+        [empleado_id, sucursal_id, fecha, interval.hora_inicio, interval.hora_fin]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, message: 'Turnos actualizados' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Error al guardar turnos' });
+  } finally {
+    client.release();
+  }
+});
+
 // Obtener todas las reservas de una sucursal para un día específico
 app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
   const { sucursalId, fecha } = req.params;
   try {
-    const result = await pool.query(
+    // También obtenemos los horarios para saber qué zonas bloquear
+    const resReservas = await pool.query(
       `SELECT r.*, s.nombre as servicio_nombre, s.duracion_minutos, s.precio,
               c.razon_social_nombres as cliente_nombre, c.apellidos as cliente_apellidos
        FROM reservas r
@@ -147,10 +195,19 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
        ORDER BY r.fecha_hora_inicio`,
       [sucursalId, fecha]
     );
-    res.json(result.rows);
+
+    const resHorarios = await pool.query(
+      'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_empleados WHERE sucursal_id = $1 AND fecha = $2',
+      [sucursalId, fecha]
+    );
+
+    res.json({
+      reservas: resReservas.rows,
+      horarios: resHorarios.rows
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al obtener reservas del día' });
+    res.status(500).json({ error: 'Error al obtener datos del día' });
   }
 });
 

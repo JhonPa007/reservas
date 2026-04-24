@@ -15,6 +15,7 @@ export default function PartnerView() {
     const [servicios, setServicios] = useState([]);
     const [clientes, setClientes] = useState([]);
     const [reservas, setReservas] = useState([]);
+    const [horarios, setHorarios] = useState([]);
 
     const [loading, setLoading] = useState(true);
 
@@ -56,6 +57,26 @@ export default function PartnerView() {
     const [empMenu, setEmpMenu] = useState(null); // {empId, x, y}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
     const [now, setNow] = useState(new Date());
+
+    const [shiftFormData, setShiftFormData] = useState({
+        empId: null,
+        empNombre: '',
+        intervals: [{ hora_inicio: '09:00', hora_fin: '18:00' }]
+    });
+
+    const handleEditShift = (empId) => {
+        const emp = empleados.find(e => e.id === empId);
+        const empShifts = horarios.filter(h => h.empleado_id === empId);
+        setShiftFormData({
+            empId,
+            empNombre: emp?.nombre_display || emp?.nombres,
+            intervals: empShifts.length > 0
+                ? empShifts.map(h => ({ hora_inicio: h.hora_inicio.slice(0, 5), hora_fin: h.hora_fin.slice(0, 5) }))
+                : [{ hora_inicio: '09:00', hora_fin: '18:00' }]
+        });
+        setViewState('shift_edit');
+        setEmpMenu(null);
+    };
 
     useEffect(() => {
         function handleGlobalEvents(e) {
@@ -117,6 +138,21 @@ export default function PartnerView() {
         }
     }, [empleados]);
 
+    const isTimeAvailable = (empId, mins) => {
+        const empHorarios = horarios.filter(h => h.empleado_id === empId);
+        if (empHorarios.length === 0) {
+            // Horario por defecto si no hay turnos guardados (9am - 8pm)
+            return mins >= (9 * 60) && mins <= (20 * 60);
+        }
+        return empHorarios.some(h => {
+            const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
+            const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
+            const startMins = hStart * 60 + mStart;
+            const endMins = hEnd * 60 + mEnd;
+            return mins >= startMins && mins < endMins;
+        });
+    };
+
     const handleAddAppointment = (empId) => {
         const nowMins = new Date().getHours() * 60 + Math.floor(new Date().getMinutes() / 10) * 10;
         setNewResData({ empleadoId: empId, mins: nowMins, date: selectedDate });
@@ -139,9 +175,10 @@ export default function PartnerView() {
             fetch(`${API_BASE}/reservas/sucursal/${sucursal.id}/${dateStr}`).then(res => res.json()),
             fetch(`${API_BASE}/servicios`).then(res => res.json()),
             fetch(`${API_BASE}/clientes`).then(res => res.json())
-        ]).then(([empData, resData, servData, cliData]) => {
+        ]).then(([empData, data, servData, cliData]) => {
             setEmpleados(empData);
-            setReservas(resData);
+            setReservas(data.reservas || []);
+            setHorarios(data.horarios || []);
             setServicios(servData);
             setClientes(cliData);
             setLoading(false);
@@ -622,7 +659,7 @@ export default function PartnerView() {
                                     {/* Grid lines & Hover Time */}
                                     {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * 60 / cellDuration }).map((_, i) => {
                                         const mins = DISPLAY_START_HOUR * 60 + i * cellDuration;
-                                        const isAvailable = mins >= (9 * 60) && mins <= (20 * 60);
+                                        const available = isTimeAvailable(emp.id, mins);
                                         const hour = Math.floor(mins / 60);
                                         const m = mins % 60;
                                         const timeStr = `${hour > 12 ? hour - 12 : hour}:${m < 10 ? '0' + m : m} ${hour >= 12 ? 'PM' : 'AM'}`;
@@ -637,8 +674,8 @@ export default function PartnerView() {
                                                 style={{
                                                     height: rowHeight,
                                                     borderBottom: mins % slotDuration === 0 ? '1px solid #e5e7eb' : '1px solid #f3f4f6',
-                                                    backgroundColor: isAvailable ? 'white' : '#f9fafb',
-                                                    backgroundImage: !isAvailable ? 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.02) 8px, rgba(0,0,0,0.02) 16px)' : 'none',
+                                                    backgroundColor: available ? 'white' : '#f9fafb',
+                                                    backgroundImage: !available ? 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.02) 8px, rgba(0,0,0,0.02) 16px)' : 'none',
                                                     position: 'relative',
                                                     cursor: 'pointer'
                                                 }}
@@ -784,25 +821,126 @@ export default function PartnerView() {
                     {/* TOP HEADER */}
                     <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <div
-                                onClick={() => {
-                                    if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'CITA' });
-                                    else if (newResData) setNewResData({ ...newResData, tipo: 'CITA' });
-                                }}
-                                style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
-                                Cita
-                            </div>
-                            <div
-                                onClick={() => {
-                                    if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
-                                    else if (newResData) setNewResData({ ...newResData, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
-                                }}
-                                style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
-                                Tiempo no disponible
-                            </div>
+                            {viewState !== 'shift_edit' && (
+                                <>
+                                    <div
+                                        onClick={() => {
+                                            if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'CITA' });
+                                            else if (newResData) setNewResData({ ...newResData, tipo: 'CITA' });
+                                        }}
+                                        style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
+                                        Cita
+                                    </div>
+                                    <div
+                                        onClick={() => {
+                                            if (drawerOpen) setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                            else if (newResData) setNewResData({ ...newResData, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                        }}
+                                        style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
+                                        Tiempo no disponible
+                                    </div>
+                                </>
+                            )}
+                            {viewState === 'shift_edit' && (
+                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#000' }}>Configuración de turno</div>
+                            )}
                         </div>
                         <button onClick={() => { setDrawerOpen(null); setNewResData(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
                     </div>
+
+                    {/* VIEW: SHIFT EDIT FORM (Fresha Style) */}
+                    {viewState === 'shift_edit' && (
+                        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' }}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <h1 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Turno de {shiftFormData.empNombre} el {format(selectedDate, "eeee, d MMM", { locale: es })}</h1>
+                                <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Solo estás editando los turnos de este día. Para establecer turnos recurrentes, ve a turnos programados.</p>
+                            </div>
+
+                            {shiftFormData.intervals.map((interval, idx) => (
+                                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '1rem', alignItems: 'flex-end' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
+                                        <input
+                                            type="time"
+                                            value={interval.hora_inicio}
+                                            onChange={(e) => {
+                                                const newInts = [...shiftFormData.intervals];
+                                                newInts[idx].hora_inicio = e.target.value;
+                                                setShiftFormData({ ...shiftFormData, intervals: newInts });
+                                            }}
+                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                        />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
+                                        <input
+                                            type="time"
+                                            value={interval.hora_fin}
+                                            onChange={(e) => {
+                                                const newInts = [...shiftFormData.intervals];
+                                                newInts[idx].hora_fin = e.target.value;
+                                                setShiftFormData({ ...shiftFormData, intervals: newInts });
+                                            }}
+                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (shiftFormData.intervals.length > 1) {
+                                                const newInts = shiftFormData.intervals.filter((_, i) => i !== idx);
+                                                setShiftFormData({ ...shiftFormData, intervals: newInts });
+                                            }
+                                        }}
+                                        style={{ background: 'none', border: 'none', paddingBottom: '12px', cursor: 'pointer', color: '#6b7280' }}
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={() => {
+                                    const last = shiftFormData.intervals[shiftFormData.intervals.length - 1];
+                                    setShiftFormData({ ...shiftFormData, intervals: [...shiftFormData.intervals, { hora_inicio: last.hora_fin, hora_fin: '21:00' }] });
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: '1px solid #e5e7eb', borderRadius: '20px', padding: '0.5rem 1rem', width: 'fit-content', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
+                            >
+                                <Plus size={16} /> Añadir turno
+                            </button>
+
+                            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: 'auto', display: 'flex', gap: '1rem' }}>
+                                <button
+                                    onClick={() => setViewState('calendar')}
+                                    style={{ flex: 1, padding: '1rem', borderRadius: '30px', backgroundColor: 'white', color: '#000', border: '1px solid #e5e7eb', fontWeight: 900, cursor: 'pointer' }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const resp = await fetch(`${API_BASE}/horarios`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    empleado_id: shiftFormData.empId,
+                                                    sucursal_id: sucursal.id,
+                                                    fecha: format(selectedDate, 'yyyy-MM-dd'),
+                                                    intervalos: shiftFormData.intervals
+                                                })
+                                            });
+                                            if (resp.ok) {
+                                                setViewState('calendar');
+                                                refreshData();
+                                            }
+                                        } catch (err) { alert('Error al guardar turnos'); }
+                                    }}
+                                    style={{ flex: 1, padding: '1rem', borderRadius: '30px', backgroundColor: '#000', color: 'white', border: 'none', fontWeight: 900, cursor: 'pointer' }}
+                                >
+                                    Guardar
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* VIEW: BLOCK TIME FORM (Fresha Style) */}
                     {(drawerOpen?.tipo === 'BLOQUEO' || newResData?.tipo === 'BLOQUEO') && (
@@ -1410,7 +1548,7 @@ export default function PartnerView() {
                             {[
                                 { label: 'Añadir cita', icon: <Plus size={14} />, action: () => handleAddAppointment(empMenu.empId) },
                                 { label: 'Añadir horario no disponible', icon: <Clock size={14} />, action: () => handleAddBlock(empMenu.empId) },
-                                { label: 'Editar turno', icon: <Settings size={14} /> },
+                                { label: 'Editar turno', icon: <Settings size={14} />, action: () => handleEditShift(empMenu.empId) },
                                 { label: 'Añadir días libres', icon: <Plus size={14} />, action: () => handleAddBlock(empMenu.empId) },
                                 { label: 'Ver miembro del equipo', icon: <User size={14} /> },
                             ].map((opt, i) => (
