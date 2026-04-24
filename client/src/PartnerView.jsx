@@ -192,7 +192,8 @@ export default function PartnerView() {
                     } : r));
 
                     try {
-                        await fetch(`${API_BASE}/reservas/${resId}`, {
+                        console.log("Saving resize:", { id: resId, mins: newMins, end: nEndStr });
+                        const resp = await fetch(`${API_BASE}/reservas/${resId}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -200,8 +201,16 @@ export default function PartnerView() {
                                 fecha_hora_fin: nEndStr
                             })
                         });
+
+                        // Pequeño delay para asegurar que DB procesó el cambio
+                        setTimeout(() => {
+                            refreshData();
+                        }, 200);
+
+                    } catch (err) {
+                        console.error("Error al guardar duración:", err);
                         refreshData();
-                    } catch (err) { console.error("Error al guardar duración"); }
+                    }
                 }
 
                 setResizingRes(null);
@@ -870,11 +879,16 @@ export default function PartnerView() {
                                                         backgroundImage: isBlocked ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.02) 10px, rgba(0,0,0,0.02) 20px)' : 'none'
                                                     }}
                                                 >
-                                                    <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : `${res.cliente_nombre} ${res.cliente_apellidos || ''}`}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: colors.text, opacity: 0.9 }}>
+                                                            {format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(safeDate(res.fecha_hora_fin), 'h:mm a')}
+                                                        </div>
+                                                        <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
+                                                            {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : `${res.cliente_nombre} ${res.cliente_apellidos || ''}`}
+                                                        </div>
                                                     </div>
                                                     {!isBlocked && (
-                                                        <div style={{ fontSize: '0.65rem', color: colors.text, marginTop: '2px', opacity: 0.8 }}>
+                                                        <div style={{ fontSize: '0.6rem', color: colors.text, marginTop: '1px', opacity: 0.7, fontWeight: 600 }}>
                                                             {res.servicio_nombre}
                                                         </div>
                                                     )}
