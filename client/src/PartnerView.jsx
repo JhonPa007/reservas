@@ -447,18 +447,24 @@ export default function PartnerView() {
 
     const getTimeTop = (dateStr) => {
         if (!dateStr) return 0;
-        const dStr = String(dateStr).replace(' ', 'T');
-        const d = new Date(dStr);
+        const d = safeDate(dateStr);
         if (isNaN(d.getTime())) return 0;
-        const mins = d.getHours() * 60 + d.getMinutes();
-        const offsetMins = mins - (DISPLAY_START_HOUR * 60);
-        return (offsetMins / (cellDuration || 10)) * rowHeight;
+        const hour = d.getHours();
+        const minsTotal = hour * 60 + d.getMinutes();
+        const diff = minsTotal - (DISPLAY_START_HOUR * 60);
+        return (diff / (cellDuration || 10)) * rowHeight;
+    };
+
+    const safeDate = (dateStr) => {
+        if (!dateStr) return new Date();
+        if (dateStr instanceof Date) return dateStr;
+        return new Date(String(dateStr).replace(' ', 'T'));
     };
 
     const formatAMPM = (dateStr) => {
         if (!dateStr) return '';
         try {
-            const d = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+            const d = safeDate(dateStr);
             if (isNaN(d.getTime())) return '';
             return format(d, 'h:mm a');
         } catch (e) { return ''; }
@@ -468,23 +474,23 @@ export default function PartnerView() {
     const processOverlaps = (resArray) => {
         if (!resArray || resArray.length === 0) return {};
 
-        const sorted = [...resArray].sort((a, b) => new Date(a.fecha_hora_inicio) - new Date(b.fecha_hora_inicio));
+        const sorted = [...resArray].sort((a, b) => safeDate(a.fecha_hora_inicio) - safeDate(b.fecha_hora_inicio));
         const clusters = [];
 
         sorted.forEach(res => {
-            const start = new Date(res.fecha_hora_inicio).getTime();
+            const start = safeDate(res.fecha_hora_inicio).getTime();
             let duration = res.duracion_minutos || 40;
             if (res.fecha_hora_inicio && res.fecha_hora_fin) {
-                duration = (new Date(res.fecha_hora_fin) - new Date(res.fecha_hora_inicio)) / (1000 * 60);
+                duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / (1000 * 60);
             }
             const end = start + (duration * 60000);
 
             let foundCluster = clusters.find(cluster => {
                 return cluster.some(c => {
-                    const cStart = new Date(c.fecha_hora_inicio).getTime();
+                    const cStart = safeDate(c.fecha_hora_inicio).getTime();
                     let cDuration = c.duracion_minutos || 40;
                     if (c.fecha_hora_inicio && c.fecha_hora_fin) {
-                        cDuration = (new Date(c.fecha_hora_fin) - new Date(c.fecha_hora_inicio)) / (1000 * 60);
+                        cDuration = (safeDate(c.fecha_hora_fin) - safeDate(c.fecha_hora_inicio)) / (1000 * 60);
                     }
                     const cEnd = cStart + (cDuration * 60000);
                     return (start < cEnd && end > cStart);
@@ -500,11 +506,11 @@ export default function PartnerView() {
 
         const results = {};
         clusters.forEach(cluster => {
-            cluster.sort((a, b) => new Date(a.fecha_hora_inicio) - new Date(b.fecha_hora_inicio));
+            cluster.sort((a, b) => safeDate(a.fecha_hora_inicio) - safeDate(b.fecha_hora_inicio));
             const columns = [];
 
             cluster.forEach(res => {
-                const start = new Date(res.fecha_hora_inicio).getTime();
+                const start = safeDate(res.fecha_hora_inicio).getTime();
                 let colIndex = columns.findIndex(colLastEnd => start >= colLastEnd);
 
                 if (colIndex === -1) {
@@ -514,7 +520,7 @@ export default function PartnerView() {
 
                 let duration = res.duracion_minutos || 40;
                 if (res.fecha_hora_inicio && res.fecha_hora_fin) {
-                    duration = (new Date(res.fecha_hora_fin) - new Date(res.fecha_hora_inicio)) / (1000 * 60);
+                    duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / (1000 * 60);
                 }
                 const end = start + (duration * 60000);
                 columns[colIndex] = end;
@@ -758,10 +764,8 @@ export default function PartnerView() {
                                             // Calcular duración real basada en fechas si no se está redimensionando
                                             let displayDuration = res.duracion_minutos || 40;
                                             if (res.fecha_hora_fin && !isResizingThis) {
-                                                const startStr = String(res.fecha_hora_inicio).replace(' ', 'T');
-                                                const endStr = String(res.fecha_hora_fin).replace(' ', 'T');
-                                                const start = new Date(startStr);
-                                                const end = new Date(endStr);
+                                                const start = safeDate(res.fecha_hora_inicio);
+                                                const end = safeDate(res.fecha_hora_fin);
                                                 if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
                                                     displayDuration = (end - start) / (1000 * 60);
                                                 }
@@ -783,8 +787,8 @@ export default function PartnerView() {
                                                     onClick={() => !isResizingInProgress && !resizingRes && (setDrawerOpen({
                                                         ...res,
                                                         tipo: res.tipo || 'CITA',
-                                                        startTime: format(new Date(res.fecha_hora_inicio), 'HH:mm'),
-                                                        endTime: format(new Date(res.fecha_hora_fin), 'HH:mm')
+                                                        startTime: format(safeDate(res.fecha_hora_inicio), 'HH:mm'),
+                                                        endTime: format(safeDate(res.fecha_hora_fin), 'HH:mm')
                                                     }), setViewState('appointment'))}
                                                     style={{
                                                         position: 'absolute',
