@@ -68,8 +68,22 @@ export default function PartnerView() {
     }, []);
 
     useEffect(() => {
+        if (sucursales.length > 0) {
+            const studio = sucursales.find(s => s.nombre === 'JV Studio');
+            if (studio) setSucursal(studio);
+            else setSucursal(sucursales[0]);
+        }
+    }, [sucursales]);
+
+    useEffect(() => {
         if (sucursal) refreshData();
     }, [sucursal, selectedDate]);
+
+    useEffect(() => {
+        if (empleados.length > 0) {
+            setVisibleStaffIds(empleados.map(e => e.id));
+        }
+    }, [empleados]);
 
     const refreshData = () => {
         setLoading(true);
@@ -84,7 +98,6 @@ export default function PartnerView() {
             setReservas(resData);
             setServicios(servData);
             setClientes(cliData);
-            if (visibleStaffIds.length === 0) setVisibleStaffIds(empData.map(e => e.id));
             setLoading(false);
         }).catch(() => setLoading(false));
     };
@@ -502,8 +515,8 @@ export default function PartnerView() {
                                                 <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#fff', borderColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#e5e7eb' }}>
                                                     {visibleStaffIds.includes(emp.id) && <CheckCircle size={14} color="#fff" />}
                                                 </div>
-                                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
-                                                    {((emp.nombres || emp.nombre_display || 'U').trim().match(/[a-zA-Z]/) || ['U'])[0].toUpperCase()}
+                                                <div translate="no" style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
+                                                    {((emp.nombres || emp.nombre_display || 'U').trim().match(/[a-zA-Z]/) || ['U'])[0].toUpperCase()}{((emp.apellidos || '').trim().match(/[a-zA-Z]/) || [''])[0].toUpperCase()}
                                                 </div>
                                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1f2937' }}>{emp.nombres} {emp.apellidos}</span>
                                             </div>
@@ -524,8 +537,8 @@ export default function PartnerView() {
                             <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid #e5e7eb' }} />
                             {visibleEmployees.map(emp => (
                                 <div key={emp.id} style={{ flex: 1, minWidth: '200px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#000', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', color: '#fff' }}>
-                                        {((emp.nombres || emp.nombre_display || 'U').trim().match(/[a-zA-Z]/) || ['U'])[0].toUpperCase()}
+                                    <div translate="no" style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#000', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', color: '#fff' }}>
+                                        {((emp.nombres || emp.nombre_display || 'U').trim().match(/[a-zA-Z]/) || ['U'])[0].toUpperCase()}{((emp.apellidos || '').trim().match(/[a-zA-Z]/) || [''])[0].toUpperCase()}
                                     </div>
                                     <div
                                         onClick={(e) => {
