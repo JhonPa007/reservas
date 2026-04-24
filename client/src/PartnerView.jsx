@@ -166,16 +166,38 @@ export default function PartnerView() {
     };
 
     const handleAddAppointment = (empId) => {
-        const nowMins = new Date().getHours() * 60 + Math.floor(new Date().getMinutes() / 10) * 10;
-        setNewResData({ empleadoId: empId, mins: nowMins, date: selectedDate });
+        const hour = new Date().getHours();
+        const mins = format(new Date(), 'mm');
+        const startDate = new Date(selectedDate);
+        startDate.setHours(hour, parseInt(mins), 0, 0);
+
+        setDrawerOpen({
+            id: 'new',
+            empleado_id: empId,
+            fecha_hora_inicio: format(startDate, 'yyyy-MM-dd HH:mm:ss'),
+            startTime: format(startDate, 'HH:mm'),
+            endTime: format(addMinutes(startDate, 60), 'HH:mm'),
+            tipo: 'CITA'
+        });
         setViewState('appointment');
         setEmpMenu(null);
     };
 
     const handleAddBlock = (empId) => {
-        const nowMins = new Date().getHours() * 60 + Math.floor(new Date().getMinutes() / 10) * 10;
-        setNewResData({ empleadoId: empId, mins: nowMins, date: selectedDate, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
-        setViewState('appointment'); // Reuse appointment view for now but with blocked state
+        const hour = new Date().getHours();
+        const startDate = new Date(selectedDate);
+        startDate.setHours(hour, 0, 0, 0);
+
+        setDrawerOpen({
+            id: 'new',
+            empleado_id: empId,
+            fecha_hora_inicio: format(startDate, 'yyyy-MM-dd HH:mm:ss'),
+            startTime: format(startDate, 'HH:mm'),
+            endTime: format(addMinutes(startDate, 60), 'HH:mm'),
+            tipo: 'BLOQUEO',
+            subtipo_bloqueo: 'Comida'
+        });
+        setViewState('appointment');
         setEmpMenu(null);
     };
 
@@ -350,8 +372,11 @@ export default function PartnerView() {
             id: 'new',
             empleado_id: empId,
             fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
+            startTime: format(newDate, 'HH:mm'),
+            endTime: format(addMinutes(newDate, 60), 'HH:mm'),
             cliente_id: null,
-            servicio_id: null
+            servicio_id: null,
+            tipo: 'CITA'
         });
         setViewState('appointment');
     };
@@ -407,9 +432,11 @@ export default function PartnerView() {
             servicio_nombre: service.nombre,
             servicio_precio: service.precio,
             servicio_duracion: service.duracion_minutos,
-            fecha_hora_fin: format(end, 'yyyy-MM-dd HH:mm:ss')
+            fecha_hora_fin: format(end, 'yyyy-MM-dd HH:mm:ss'),
+            endTime: format(end, 'HH:mm'),
+            precio_cobrado: service.precio
         });
-        setShowServiceSearch(false);
+        setViewState('appointment');
     };
 
     const getDurationHeight = (mins) => (mins / cellDuration) * rowHeight;
@@ -743,7 +770,12 @@ export default function PartnerView() {
                                                     onDragStart={(e) => handleDragStart(e, res)}
                                                     onMouseEnter={(e) => !resizingRes && setHoverRes({ res, x: e.clientX, y: e.clientY })}
                                                     onMouseLeave={() => setHoverRes(null)}
-                                                    onClick={() => !isResizingInProgress && !resizingRes && (setDrawerOpen({ ...res, tipo: res.tipo || 'CITA' }), setViewState('appointment'))}
+                                                    onClick={() => !isResizingInProgress && !resizingRes && (setDrawerOpen({
+                                                        ...res,
+                                                        tipo: res.tipo || 'CITA',
+                                                        startTime: format(new Date(res.fecha_hora_inicio), 'HH:mm'),
+                                                        endTime: format(new Date(res.fecha_hora_fin), 'HH:mm')
+                                                    }), setViewState('appointment'))}
                                                     style={{
                                                         position: 'absolute',
                                                         top: getTimeTop(res.fecha_hora_inicio),
@@ -1013,11 +1045,21 @@ export default function PartnerView() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                 <div>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
-                                    <input type="time" defaultValue="14:00" style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }} />
+                                    <input
+                                        type="time"
+                                        value={drawerOpen?.startTime || '09:00'}
+                                        onChange={(e) => setDrawerOpen({ ...drawerOpen, startTime: e.target.value })}
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                    />
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
-                                    <input type="time" defaultValue="15:00" style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }} />
+                                    <input
+                                        type="time"
+                                        value={drawerOpen?.endTime || '10:00'}
+                                        onChange={(e) => setDrawerOpen({ ...drawerOpen, endTime: e.target.value })}
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                    />
                                 </div>
                             </div>
 
@@ -1029,12 +1071,11 @@ export default function PartnerView() {
                             <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
                                 <button
                                     onClick={async () => {
-                                        // Logic to save block
-                                        const current = drawerOpen || newResData;
-                                        const startTime = '14:00'; // Placeholder for now
-                                        const endTime = '15:00';   // Placeholder for now
-                                        const startISO = `${format(selectedDate, 'yyyy-MM-dd')}T${startTime}:00`;
-                                        const endISO = `${format(selectedDate, 'yyyy-MM-dd')}T${endTime}:00`;
+                                        const current = drawerOpen;
+                                        const startTime = current.startTime || '09:00';
+                                        const endTime = current.endTime || '10:00';
+                                        const startISO = `${format(selectedDate, 'yyyy-MM-dd')} ${startTime}:00`;
+                                        const endISO = `${format(selectedDate, 'yyyy-MM-dd')} ${endTime}:00`;
 
                                         const payload = {
                                             empleado_id: current.empleadoId || current.empleado_id,
@@ -1298,6 +1339,44 @@ export default function PartnerView() {
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                                    {/* TIME SELECTION */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
+                                            <input
+                                                type="time"
+                                                value={drawerOpen?.startTime || '09:00'}
+                                                onChange={(e) => {
+                                                    const start = e.target.value;
+                                                    const newStartDate = `${format(selectedDate, 'yyyy-MM-dd')} ${start}:00`;
+                                                    // Si hay servicio, recalcular fin
+                                                    let newEndDate = drawerOpen.fecha_hora_fin;
+                                                    let endTime = drawerOpen.endTime;
+                                                    if (drawerOpen.servicio_duracion) {
+                                                        const d = addMinutes(new Date(newStartDate), drawerOpen.servicio_duracion);
+                                                        newEndDate = format(d, 'yyyy-MM-dd HH:mm:ss');
+                                                        endTime = format(d, 'HH:mm');
+                                                    }
+                                                    setDrawerOpen({ ...drawerOpen, startTime: start, fecha_hora_inicio: newStartDate, fecha_hora_fin: newEndDate, endTime });
+                                                }}
+                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
+                                            <input
+                                                type="time"
+                                                value={drawerOpen?.endTime || '10:00'}
+                                                onChange={(e) => {
+                                                    const end = e.target.value;
+                                                    const newEndDate = `${format(selectedDate, 'yyyy-MM-dd')} ${end}:00`;
+                                                    setDrawerOpen({ ...drawerOpen, endTime: end, fecha_hora_fin: newEndDate });
+                                                }}
+                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                            />
+                                        </div>
+                                    </div>
+
                                     {/* SERVICE SEARCH (Screenshot 1) */}
                                     <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
                                         <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
@@ -1492,7 +1571,18 @@ export default function PartnerView() {
                             {[
                                 {
                                     label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
-                                        setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(addMinutes(new Date(selectedDate).setHours(0, 0, 0, 0), quickActionMenu.mins + (DISPLAY_START_HOUR * 60)), 'yyyy-MM-dd HH:mm:ss'), duracion_minutos: 40 });
+                                        const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                        const newDate = new Date(selectedDate);
+                                        newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+
+                                        setDrawerOpen({
+                                            id: 'new',
+                                            empleado_id: quickActionMenu.empId,
+                                            fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
+                                            startTime: format(newDate, 'HH:mm'),
+                                            endTime: format(addMinutes(newDate, 60), 'HH:mm'),
+                                            tipo: 'CITA'
+                                        });
                                         setViewState('appointment');
                                         setQuickActionMenu(null);
                                     }
@@ -1505,7 +1595,20 @@ export default function PartnerView() {
                                 },
                                 {
                                     label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
-                                        alert('Funcionalidad de horario no disponible en desarrollo');
+                                        const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                        const newDate = new Date(selectedDate);
+                                        newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+
+                                        setDrawerOpen({
+                                            id: 'new',
+                                            empleado_id: quickActionMenu.empId,
+                                            fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
+                                            startTime: format(newDate, 'HH:mm'),
+                                            endTime: format(addMinutes(newDate, 60), 'HH:mm'),
+                                            tipo: 'BLOQUEO',
+                                            subtipo_bloqueo: 'Comida'
+                                        });
+                                        setViewState('appointment');
                                         setQuickActionMenu(null);
                                     }
                                 }
