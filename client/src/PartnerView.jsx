@@ -117,6 +117,20 @@ export default function PartnerView() {
         }
     }, [empleados]);
 
+    const handleAddAppointment = (empId) => {
+        const nowMins = new Date().getHours() * 60 + Math.floor(new Date().getMinutes() / 10) * 10;
+        setNewResData({ empleadoId: empId, mins: nowMins, date: selectedDate });
+        setViewState('appointment');
+        setEmpMenu(null);
+    };
+
+    const handleAddBlock = (empId) => {
+        const nowMins = new Date().getHours() * 60 + Math.floor(new Date().getMinutes() / 10) * 10;
+        setNewResData({ empleadoId: empId, mins: nowMins, date: selectedDate, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+        setViewState('appointment'); // Reuse appointment view for now but with blocked state
+        setEmpMenu(null);
+    };
+
     const refreshData = () => {
         setLoading(true);
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -642,11 +656,14 @@ export default function PartnerView() {
                                         const overlapData = processOverlaps(empRes);
 
                                         return empRes.map((res) => {
-                                            const colors = {
-                                                'RESERVADA': { bg: '#e0f2fe', border: '#0369a1', text: '#0369a1' },
-                                                'COMPLETADA': { bg: '#f3f4f6', border: '#9ca3af', text: '#374151' },
-                                                'INASISTENCIA': { bg: '#fee2e2', border: '#b91c1c', text: '#b91c1c' }
-                                            }[res.estado] || { bg: '#e0f2fe', border: '#0369a1', text: '#0369a1' };
+                                            const isBlocked = res.tipo === 'BLOQUEO';
+                                            const colors = isBlocked ?
+                                                { bg: '#f3f4f6', border: '#9ca3af', text: '#4b5563' } :
+                                                ({
+                                                    'RESERVADA': { bg: '#e0f2fe', border: '#0369a1', text: '#0369a1' },
+                                                    'COMPLETADA': { bg: '#f3f4f6', border: '#9ca3af', text: '#374151' },
+                                                    'INASISTENCIA': { bg: '#fee2e2', border: '#b91c1c', text: '#b91c1c' }
+                                                }[res.estado] || { bg: '#e0f2fe', border: '#0369a1', text: '#0369a1' });
 
                                             const isResizingThis = resizingRes?.id === res.id;
 
@@ -667,11 +684,11 @@ export default function PartnerView() {
                                                 <div
                                                     key={res.id}
                                                     className="res-card"
-                                                    draggable
+                                                    draggable={!isBlocked}
                                                     onDragStart={(e) => handleDragStart(e, res)}
                                                     onMouseEnter={(e) => !resizingRes && setHoverRes({ res, x: e.clientX, y: e.clientY })}
                                                     onMouseLeave={() => setHoverRes(null)}
-                                                    onClick={() => !isResizingInProgress && !resizingRes && (setDrawerOpen(res), setViewState('appointment'))}
+                                                    onClick={() => !isResizingInProgress && !resizingRes && (setDrawerOpen({ ...res, tipo: res.tipo || 'CITA' }), setViewState('appointment'))}
                                                     style={{
                                                         position: 'absolute',
                                                         top: getTimeTop(res.fecha_hora_inicio),
@@ -679,35 +696,35 @@ export default function PartnerView() {
                                                         left: left,
                                                         width: width,
                                                         backgroundColor: colors.bg,
-                                                        borderLeft: `3px solid ${colors.border}`,
+                                                        borderLeft: `4px solid ${colors.border}`,
                                                         borderBottom: '1px solid rgba(0,0,0,0.05)',
                                                         padding: '0.4rem 0.6rem',
                                                         fontSize: '0.75rem',
                                                         zIndex: isResizingThis ? 100 : 10,
-                                                        cursor: isResizingThis ? 'ns-resize' : 'move',
+                                                        cursor: isBlocked ? 'pointer' : (isResizingThis ? 'ns-resize' : 'move'),
                                                         boxSizing: 'border-box',
                                                         overflow: 'hidden',
                                                         boxShadow: isResizingThis ? '0 4px 12px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)',
-                                                        opacity: isResizingThis ? 0.9 : 1,
+                                                        opacity: isResizingThis ? 0.8 : 1,
                                                         transition: isResizingThis ? 'none' : 'all 0.1s ease',
-                                                        borderRight: totalCols > 1 ? '1px solid rgba(0,0,0,0.1)' : 'none'
+                                                        backgroundImage: isBlocked ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.02) 10px, rgba(0,0,0,0.02) 20px)' : 'none'
                                                     }}
                                                 >
-                                                    <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.cliente_nombre}</div>
-                                                    <div style={{ fontSize: '0.65rem', color: colors.text, opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.servicio_nombre}</div>
-
-                                                    {/* Resize Handle */}
-                                                    <div
-                                                        onMouseDown={(e) => handleResizeStart(e, res)}
-                                                        className="resize-handle"
-                                                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '10px', cursor: 'ns-resize', display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'center', justifyContent: 'center', zIndex: 110 }}
-                                                    >
-                                                        <div style={{ width: '12px', height: '1.5px', backgroundColor: colors.border, opacity: 0.4 }}></div>
-                                                        <div style={{ width: '12px', height: '1.5px', backgroundColor: colors.border, opacity: 0.4 }}></div>
+                                                    <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : res.cliente_nombre}
                                                     </div>
+                                                    {!isBlocked && (
+                                                        <div style={{ fontSize: '0.65rem', color: colors.text, marginTop: '2px', opacity: 0.8 }}>
+                                                            {res.servicio_nombre}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
-                                        });
+
+
+
+                            );
+                                    });
                                     })()}
                                 </div>
                             ))}
@@ -724,31 +741,33 @@ export default function PartnerView() {
             </div>
 
             {/* RESERVATION HOVER TOOLTIP */}
-            {hoverRes && (
-                <div style={{
-                    position: 'fixed', top: hoverRes.y + 10, left: hoverRes.x + 10, backgroundColor: 'white', borderRadius: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 1000, width: '280px', border: '1px solid #e5e7eb'
-                }}>
-                    <div style={{ backgroundColor: '#2563eb', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', color: 'white', fontWeight: 800, fontSize: '0.7rem' }}>
-                        <span>{formatAMPM(hoverRes.res.fecha_hora_inicio)} - {formatAMPM(hoverRes.res.fecha_hora_fin)}</span>
-                        <span>Reservada</span>
-                    </div>
-                    <div style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{hoverRes.res?.cliente_nombre?.[0] || 'C'}</div>
-                            <div>
-                                <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{hoverRes.res.cliente_nombre}</div>
-                                <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>+51 967 091 691</div>
+            {
+                hoverRes && (
+                    <div style={{
+                        position: 'fixed', top: hoverRes.y + 10, left: hoverRes.x + 10, backgroundColor: 'white', borderRadius: '12px',
+                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 1000, width: '280px', border: '1px solid #e5e7eb'
+                    }}>
+                        <div style={{ backgroundColor: '#2563eb', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', color: 'white', fontWeight: 800, fontSize: '0.7rem' }}>
+                            <span>{formatAMPM(hoverRes.res.fecha_hora_inicio)} - {formatAMPM(hoverRes.res.fecha_hora_fin)}</span>
+                            <span>Reservada</span>
+                        </div>
+                        <div style={{ padding: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{hoverRes.res?.cliente_nombre?.[0] || 'C'}</div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{hoverRes.res.cliente_nombre}</div>
+                                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>+51 967 091 691</div>
+                                </div>
                             </div>
+                            <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>{hoverRes.res.servicio_nombre}</span>
+                                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>30 PEN</span>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Atendido por {hoverRes.res.empleado_nombre} • 45 min</div>
                         </div>
-                        <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>{hoverRes.res.servicio_nombre}</span>
-                            <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>30 PEN</span>
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Atendido por {hoverRes.res.empleado_nombre} • 45 min</div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MAIN DRAWER SYSTEM (SLIDE-IN) */}
             <div style={{
@@ -767,12 +786,131 @@ export default function PartnerView() {
                 }}>
 
                     {/* TOP HEADER */}
-                    <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div
+                                onClick={() => setDrawerOpen({ ...drawerOpen, tipo: 'CITA' })}
+                                style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo || 'CITA') === 'CITA' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
+                                Cita
+                            </div>
+                            <div
+                                onClick={() => setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' })}
+                                style={{ fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', color: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '#000' : '#9ca3af', borderBottom: (drawerOpen?.tipo || newResData?.tipo) === 'BLOQUEO' ? '2px solid #000' : 'none', paddingBottom: '4px' }}>
+                                Tiempo no disponible
+                            </div>
+                        </div>
                         <button onClick={() => { setDrawerOpen(null); setNewResData(null); setViewState('calendar'); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
                     </div>
 
+                    {/* VIEW: BLOCK TIME FORM (Fresha Style) */}
+                    {(drawerOpen?.tipo === 'BLOQUEO' || newResData?.tipo === 'BLOQUEO') && (
+                        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem', overflowY: 'auto' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '1rem' }}>Tipo de horario no disponible</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                                    {[
+                                        { label: 'Personalizado', icon: <Plus size={20} /> },
+                                        { label: 'Comida', icon: <Clock size={20} /> },
+                                        { label: 'Reunión', icon: <Users size={20} /> },
+                                        { label: 'Formación', icon: <Search size={20} /> },
+                                        { label: 'Día Libre', icon: <CalendarIcon size={20} /> },
+                                        { label: 'Vacaciones', icon: <Star size={20} /> }
+                                    ].map(sub => (
+                                        <div
+                                            key={sub.label}
+                                            onClick={() => {
+                                                if (drawerOpen) setDrawerOpen({ ...drawerOpen, subtipo_bloqueo: sub.label });
+                                                else setNewResData({ ...newResData, subtipo_bloqueo: sub.label });
+                                            }}
+                                            style={{
+                                                padding: '1.25rem', borderRadius: '16px', border: (drawerOpen?.subtipo_bloqueo === sub.label || newResData?.subtipo_bloqueo === sub.label) ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                                                backgroundColor: (drawerOpen?.subtipo_bloqueo === sub.label || newResData?.subtipo_bloqueo === sub.label) ? '#eff6ff' : '#fff',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
+                                            }}
+                                        >
+                                            <div style={{ color: (drawerOpen?.subtipo_bloqueo === sub.label || newResData?.subtipo_bloqueo === sub.label) ? '#2563eb' : '#6b7280' }}>{sub.icon}</div>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{sub.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Fecha</label>
+                                    <div style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '0.9rem', fontWeight: 700 }}>
+                                        {format(selectedDate, "eeee, d MMM", { locale: es })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Frecuencia</label>
+                                    <select style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}>
+                                        <option>No se repite</option>
+                                        <option>Cada día</option>
+                                        <option>Cada semana</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
+                                    <input type="time" defaultValue="14:00" style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }} />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
+                                    <input type="time" defaultValue="15:00" style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }} />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Descripción (Opcional)</label>
+                                <textarea placeholder="Añadir descripción o comentario" style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.9rem', resize: 'none' }} />
+                            </div>
+
+                            <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+                                <button
+                                    onClick={async () => {
+                                        // Logic to save block
+                                        const current = drawerOpen || newResData;
+                                        const startTime = '14:00'; // Placeholder for now
+                                        const endTime = '15:00';   // Placeholder for now
+                                        const startISO = `${format(selectedDate, 'yyyy-MM-dd')}T${startTime}:00`;
+                                        const endISO = `${format(selectedDate, 'yyyy-MM-dd')}T${endTime}:00`;
+
+                                        const payload = {
+                                            empleado_id: current.empleadoId || current.empleado_id,
+                                            sucursal_id: sucursal.id,
+                                            fecha_hora_inicio: startISO,
+                                            fecha_hora_fin: endISO,
+                                            tipo: 'BLOQUEO',
+                                            subtipo_bloqueo: current.subtipo_bloqueo || 'Personalizado',
+                                            estado: 'RESERVADA'
+                                        };
+
+                                        try {
+                                            const resp = await fetch(`${API_BASE}/reservas`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload)
+                                            });
+                                            if (resp.ok) {
+                                                setDrawerOpen(null);
+                                                setNewResData(null);
+                                                refreshData();
+                                            }
+                                        } catch (err) { alert('Error al guardar bloqueo'); }
+                                    }}
+                                    style={{ width: '100%', padding: '1.25rem', borderRadius: '30px', backgroundColor: '#000', color: 'white', border: 'none', fontWeight: 900, fontSize: '1rem', cursor: 'pointer' }}
+                                >
+                                    Guardar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* VIEW: APPOINTMENT EDIT / NEW APPOINTMENT / CLIENT CREATE */}
-                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create') && (
+                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create') && (drawerOpen?.tipo !== 'BLOQUEO' && newResData?.tipo !== 'BLOQUEO') && (
                         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
                             {/* PANEL 1: CLIENT SELECTION */}
@@ -1169,116 +1307,120 @@ export default function PartnerView() {
             </div>
 
             {/* Quick Action Menu */}
-            {quickActionMenu && (
-                <>
-                    <div
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
-                        onClick={() => setQuickActionMenu(null)}
-                    />
-                    <div style={{
-                        position: 'fixed',
-                        left: quickActionMenu.x + 10,
-                        top: quickActionMenu.y + 10,
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                        padding: '8px',
-                        zIndex: 999,
-                        width: '240px',
-                        border: '1px solid #f3f4f6',
-                        animation: 'fadeIn 0.15s ease-out'
-                    }}>
-                        <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {quickActionMenu.timeStr}
-                            <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
-                        </div>
-                        {[
-                            {
-                                label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
-                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(addMinutes(new Date(selectedDate).setHours(0, 0, 0, 0), quickActionMenu.mins + (DISPLAY_START_HOUR * 60)), 'yyyy-MM-dd HH:mm:ss'), duracion_minutos: 40 });
-                                    setViewState('appointment');
-                                    setQuickActionMenu(null);
-                                }
-                            },
-                            {
-                                label: 'Añadir cita de grupo', icon: <Users size={16} />, action: () => {
-                                    alert('Funcionalidad de cita de grupo en desarrollo');
-                                    setQuickActionMenu(null);
-                                }
-                            },
-                            {
-                                label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
-                                    alert('Funcionalidad de horario no disponible en desarrollo');
-                                    setQuickActionMenu(null);
-                                }
-                            }
-                        ].map((opt, i) => (
-                            <div
-                                key={i}
-                                onClick={opt.action}
-                                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s' }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                            >
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
+            {
+                quickActionMenu && (
+                    <>
+                        <div
+                            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
+                            onClick={() => setQuickActionMenu(null)}
+                        />
+                        <div style={{
+                            position: 'fixed',
+                            left: quickActionMenu.x + 10,
+                            top: quickActionMenu.y + 10,
+                            backgroundColor: 'white',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                            padding: '8px',
+                            zIndex: 999,
+                            width: '240px',
+                            border: '1px solid #f3f4f6',
+                            animation: 'fadeIn 0.15s ease-out'
+                        }}>
+                            <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                {quickActionMenu.timeStr}
+                                <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
                             </div>
-                        ))}
-                        <div style={{ padding: '10px 12px', fontSize: '0.75rem', color: '#6366f1', fontWeight: 600, cursor: 'pointer', borderTop: '1px solid #f3f4f6', marginTop: '4px' }}>
-                            Ajustes de acciones rápidas
+                            {[
+                                {
+                                    label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
+                                        setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(addMinutes(new Date(selectedDate).setHours(0, 0, 0, 0), quickActionMenu.mins + (DISPLAY_START_HOUR * 60)), 'yyyy-MM-dd HH:mm:ss'), duracion_minutos: 40 });
+                                        setViewState('appointment');
+                                        setQuickActionMenu(null);
+                                    }
+                                },
+                                {
+                                    label: 'Añadir cita de grupo', icon: <Users size={16} />, action: () => {
+                                        alert('Funcionalidad de cita de grupo en desarrollo');
+                                        setQuickActionMenu(null);
+                                    }
+                                },
+                                {
+                                    label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
+                                        alert('Funcionalidad de horario no disponible en desarrollo');
+                                        setQuickActionMenu(null);
+                                    }
+                                }
+                            ].map((opt, i) => (
+                                <div
+                                    key={i}
+                                    onClick={opt.action}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                >
+                                    <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                            <div style={{ padding: '10px 12px', fontSize: '0.75rem', color: '#6366f1', fontWeight: 600, cursor: 'pointer', borderTop: '1px solid #f3f4f6', marginTop: '4px' }}>
+                                Ajustes de acciones rápidas
+                            </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>
+                )
+            }
 
             {/* Employee Menu */}
-            {empMenu && (
-                <>
-                    <div
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
-                        onClick={() => setEmpMenu(null)}
-                    />
-                    <div ref={empMenuRef} style={{
-                        position: 'fixed',
-                        left: empMenu.x,
-                        top: empMenu.y + 10,
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-                        padding: '8px',
-                        zIndex: 999,
-                        width: '200px',
-                        border: '1px solid #f3f4f6'
-                    }}>
-                        <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>Vistas</div>
-                        {[
-                            { label: 'Vista de día', icon: <CalendarIcon size={14} /> },
-                            { label: 'Vista de 3 días', icon: <Clock size={14} /> },
-                            { label: 'Vista semanal', icon: <CalendarIcon size={14} /> },
-                            { label: 'Vista mensual', icon: <CalendarIcon size={14} /> },
-                        ].map((opt, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
-                            </div>
-                        ))}
-                        <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '4px 0' }} />
-                        <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>Acciones</div>
-                        {[
-                            { label: 'Añadir cita', icon: <Plus size={14} /> },
-                            { label: 'Añadir horario no disponible', icon: <Clock size={14} /> },
-                            { label: 'Editar turno', icon: <Settings size={14} /> },
-                            { label: 'Añadir días libres', icon: <Plus size={14} /> },
-                            { label: 'Ver miembro del equipo', icon: <User size={14} /> },
-                        ].map((opt, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
+            {
+                empMenu && (
+                    <>
+                        <div
+                            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
+                            onClick={() => setEmpMenu(null)}
+                        />
+                        <div ref={empMenuRef} style={{
+                            position: 'fixed',
+                            left: empMenu.x,
+                            top: empMenu.y + 10,
+                            backgroundColor: 'white',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                            padding: '8px',
+                            zIndex: 999,
+                            width: '200px',
+                            border: '1px solid #f3f4f6'
+                        }}>
+                            <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>Vistas</div>
+                            {[
+                                { label: 'Vista de día', icon: <CalendarIcon size={14} /> },
+                                { label: 'Vista de 3 días', icon: <Clock size={14} /> },
+                                { label: 'Vista semanal', icon: <CalendarIcon size={14} /> },
+                                { label: 'Vista mensual', icon: <CalendarIcon size={14} /> },
+                            ].map((opt, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                    <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
+                                </div>
+                            ))}
+                            <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '4px 0' }} />
+                            <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>Acciones</div>
+                            {[
+                                { label: 'Añadir cita', icon: <Plus size={14} />, action: () => handleAddAppointment(empMenu.empId) },
+                                { label: 'Añadir horario no disponible', icon: <Clock size={14} />, action: () => handleAddBlock(empMenu.empId) },
+                                { label: 'Editar turno', icon: <Settings size={14} /> },
+                                { label: 'Añadir días libres', icon: <Plus size={14} />, action: () => handleAddBlock(empMenu.empId) },
+                                { label: 'Ver miembro del equipo', icon: <User size={14} /> },
+                            ].map((opt, i) => (
+                                <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                    <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )
+            }
 
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -1289,6 +1431,6 @@ export default function PartnerView() {
         .grid-cell:hover .cell-hover-time { display: flex !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}} />
-        </div>
+        </div >
     );
 }
