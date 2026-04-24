@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Sidebar from './Sidebar';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -488,12 +489,7 @@ export default function PartnerView() {
     return (
         <div className="partner-view" style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
 
-            {/* Sidebar Navigation */}
-            <div style={{ width: '64px', backgroundColor: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0', flexShrink: 0 }}>
-                <div style={{ width: '32px', height: '32px', backgroundColor: '#000', borderRadius: '8px', marginBottom: '2rem' }} />
-                <CalendarIcon size={24} color="#000" style={{ marginBottom: '2rem', cursor: 'pointer' }} />
-                <Users size={24} color="#9ca3af" style={{ marginBottom: '2rem', cursor: 'pointer' }} />
-            </div>
+            <Sidebar />
 
             {/* Main Area */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>

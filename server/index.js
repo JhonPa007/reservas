@@ -248,6 +248,110 @@ app.delete('/api/reservas/:id', async (req, res) => {
   }
 });
 
+// Obtener estadísticas para el Dashboard
+app.get('/api/dashboard-stats', async (req, res) => {
+  const { sucursalId } = req.query;
+  try {
+    // 1. Ventas recientes (Últimos 7 días) y gráfico
+    const sales7Days = await pool.query(`
+      SELECT 
+        TO_CHAR(d, 'YYYY-MM-DD') as fecha,
+        COALESCE(SUM(r.precio_cobrado), 0) as ventas,
+        COUNT(r.id) as citas
+      FROM generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day') d
+      LEFT JOIN reservas r ON r.fecha_hora_inicio::date = d::date AND r.sucursal_id = $1 AND r.estado != 'CANCELADA'
+      GROUP BY d
+      ORDER BY d
+    `, [sucursalId]);
+
+    // 2. Próximas citas (Próximos 7 días)
+    const upcoming7Days = await pool.query(`
+      SELECT 
+        TO_CHAR(d, 'YYYY-MM-DD') as fecha,
+        COUNT(CASE WHEN r.estado != 'CANCELADA' THEN 1 END) as confirmado,
+        COUNT(CASE WHEN r.estado = 'CANCELADA' THEN 1 END) as cancelada
+      FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '6 days', '1 day') d
+      LEFT JOIN reservas r ON r.fecha_hora_inicio::date = d::date AND r.sucursal_id = $1
+      GROUP BY d
+      ORDER BY d
+    `, [sucursalId]);
+
+    // 3. Actividad de citas (Últimas 10)
+    const recentActivity = await pool.query(`
+      SELECT r.*, s.nombre as servicio_nombre, e.nombre_display as empleado_nombre, c.razon_social_nombres as cliente_nombre
+      FROM reservas r
+      JOIN servicios s ON r.servicio_id = s.id
+      JOIN empleados e ON r.empleado_id = e.id
+      LEFT JOIN clientes c ON r.cliente_id = c.id
+      WHERE r.sucursal_id = $1
+      ORDER BY r.id DESC
+      LIMIT 10
+    `, [sucursalId]);
+
+    // 4. Mejores servicios (Este mes vs Anterior)
+    const topServices = await pool.query(`
+      WITH current_month AS (
+        SELECT servicio_id, SUM(precio_cobrado) as total
+        FROM reservas 
+        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE)
+        GROUP BY servicio_id
+      ), last_month AS (
+        SELECT servicio_id, SUM(precio_cobrado) as total
+        FROM reservas 
+        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
+          AND fecha_hora_inicio < date_trunc('month', CURRENT_DATE)
+        GROUP BY servicio_id
+      )
+      SELECT s.nombre, COALESCE(cm.total, 0) as este_mes, COALESCE(lm.total, 0) as ultimo_mes
+      FROM servicios s
+      LEFT JOIN current_month cm ON s.id = cm.servicio_id
+      LEFT JOIN last_month lm ON s.id = lm.servicio_id
+      WHERE cm.total > 0 OR lm.total > 0
+      ORDER BY este_mes DESC
+      LIMIT 5
+    `, [sucursalId]);
+
+    // 5. Mejor miembro del equipo (Este mes vs Anterior)
+    const topStaff = await pool.query(`
+      WITH current_month AS (
+        SELECT empleado_id, SUM(precio_cobrado) as total
+        FROM reservas 
+        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE)
+        GROUP BY empleado_id
+      ), last_month AS (
+        SELECT empleado_id, SUM(precio_cobrado) as total
+        FROM reservas 
+        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
+          AND fecha_hora_inicio < date_trunc('month', CURRENT_DATE)
+        GROUP BY empleado_id
+      )
+      SELECT e.nombre_display as nombre, COALESCE(cm.total, 0) as este_mes, COALESCE(lm.total, 0) as ultimo_mes
+      FROM empleados e
+      LEFT JOIN current_month cm ON e.id = cm.empleado_id
+      LEFT JOIN last_month lm ON e.id = lm.empleado_id
+      WHERE cm.total > 0 OR lm.total > 0
+      ORDER BY este_mes DESC
+    `, [sucursalId]);
+
+    res.json({
+      salesGraph: sales7Days.rows,
+      upcomingGraph: upcoming7Days.rows,
+      recentActivity: recentActivity.rows,
+      topServices: topServices.rows,
+      topStaff: topStaff.rows,
+      summary: {
+        totalVentas7d: sales7Days.rows.reduce((a, b) => a + parseFloat(b.ventas), 0),
+        totalCitas7d: sales7Days.rows.reduce((a, b) => a + parseInt(b.citas), 0),
+        proximasCitas: upcoming7Days.rows.reduce((a, b) => a + parseInt(b.confirmado), 0)
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

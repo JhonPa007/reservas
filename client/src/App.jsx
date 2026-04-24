@@ -1,14 +1,17 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import BookingView from './BookingView';
-import PartnerView from './PartnerView';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+const Dashboard = React.lazy(() => import('./Dashboard'));
+const PartnerView = React.lazy(() => import('./PartnerView'));
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PartnerView />} />
-      </Routes>
+      <React.Suspense fallback={<div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
+        <Routes>
+          <Route path="/" element={<PartnerView />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </React.Suspense>
     </BrowserRouter>
   );
 }
