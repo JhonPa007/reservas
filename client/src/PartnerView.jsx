@@ -178,17 +178,31 @@ export default function PartnerView() {
                 const resId = resizingRes.id;
                 const newMins = resizingRes.currentDuration;
 
-                // Actualización optimista local
-                setReservas(prev => prev.map(r => r.id === resId ? { ...r, duracion_minutos: newMins } : r));
+                const targetRes = reservas.find(r => r.id === resId);
+                if (targetRes) {
+                    const start = safeDate(targetRes.fecha_hora_inicio);
+                    const newEnd = addMinutes(start, newMins);
+                    const nEndStr = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
 
-                try {
-                    await fetch(`${API_BASE}/reservas/${resId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ duracion_minutos: newMins })
-                    });
-                    refreshData();
-                } catch (err) { console.error("Error al guardar duración"); }
+                    // Actualización optimista local
+                    setReservas(prev => prev.map(r => r.id === resId ? {
+                        ...r,
+                        duracion_minutos: newMins,
+                        fecha_hora_fin: nEndStr
+                    } : r));
+
+                    try {
+                        await fetch(`${API_BASE}/reservas/${resId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                duracion_minutos: newMins,
+                                fecha_hora_fin: nEndStr
+                            })
+                        });
+                        refreshData();
+                    } catch (err) { console.error("Error al guardar duración"); }
+                }
 
                 setResizingRes(null);
                 setIsResizingInProgress(false);
