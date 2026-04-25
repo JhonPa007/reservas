@@ -18,7 +18,7 @@ import {
 import { es } from 'date-fns/locale';
 import Sidebar from './Sidebar';
 
-const API_BASE = 'https://reservas-production.up.railway.app/api';
+const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5001/api' : window.location.origin + '/api');
 
 const safeDate = (date) => {
     if (!date) return new Date();
@@ -62,33 +62,40 @@ const PartnerView = () => {
     /* --- EFFECTS --- */
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 60000);
+
+        // Initial load of static data
+        fetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
+            const suc = data[0] || null;
+            setSucursal(suc);
+        });
+        fetch(`${API_BASE}/servicios`).then(res => res.json()).then(setServicios).catch(console.error);
+        fetch(`${API_BASE}/clientes`).then(res => res.json()).then(setClientes).catch(console.error);
+
         return () => clearInterval(timer);
     }, []);
 
     useEffect(() => {
-        refreshData();
-    }, [selectedDate]);
+        if (sucursal) {
+            refreshData();
+        }
+    }, [selectedDate, sucursal]);
 
     const refreshData = async () => {
+        if (!sucursal) return;
         try {
             setLoading(true);
-            const [resRes, empRes, sucRes, serRes, cliRes] = await Promise.all([
-                fetch(`${API_BASE}/reservas?fecha=${format(selectedDate, 'yyyy-MM-dd')}`),
-                fetch(`${API_BASE}/empleados`),
-                fetch(`${API_BASE}/sucursales`),
-                fetch(`${API_BASE}/servicios`),
-                fetch(`${API_BASE}/clientes`)
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const [empRes, resRes] = await Promise.all([
+                fetch(`${API_BASE}/empleados/${sucursal.id}`),
+                fetch(`${API_BASE}/reservas/sucursal/${sucursal.id}/${dateStr}`)
             ]);
-            const [rData, eData, sData, servData, cData] = await Promise.all([
-                resRes.json(), empRes.json(), sucRes.json(), serRes.json(), cliRes.json()
+            const [eData, rData] = await Promise.all([
+                empRes.json(), resRes.json()
             ]);
-            setReservas(rData);
             setEmpleados(eData);
-            setSucursal(sData[0] || null);
-            setServicios(servData);
-            setClientes(cData);
+            setReservas(rData);
         } catch (err) {
-            console.error('Error fetching data:', err);
+            console.error('Error fetching dynamic data:', err);
         } finally {
             setLoading(false);
         }
