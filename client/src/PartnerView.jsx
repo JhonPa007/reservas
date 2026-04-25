@@ -371,33 +371,30 @@ export default function PartnerView() {
     };
 
     function isTimeAvailable(empId, mins) {
-        const empHorarios = horarios.filter(h => h.empleado_id === empId);
-        const empRec = recurrentes.filter(h => h.empleado_id === empId);
+        const empIdStr = String(empId);
+        const empHorarios = horarios.filter(h => String(h.empleado_id) === empIdStr);
+        const empRec = recurrentes.filter(h => String(h.empleado_id) === empIdStr);
 
         // Si no hay horarios configurados, permitimos reservar por defecto
         if (empHorarios.length === 0 && empRec.length === 0) return true;
 
-        // Si hay horarios específicos para hoy, mandan sobre la recurrencia
+        // Prioridad 1: Horarios específicos hoy
         if (empHorarios.length > 0) {
             return empHorarios.some(h => {
-                const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
-                const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
-                const startMins = hStart * 60 + mStart;
-                const endMins = hEnd * 60 + mEnd;
-                return mins >= startMins && mins < endMins;
+                const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
+                const [hEnd, mEnd] = (h.hora_fin || '23:59').split(':').map(Number);
+                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
             });
         }
 
-        // Si no hay específicos, miramos los recurrentes (dia_semana)
+        // Prioridad 2: Horarios recurrentes
         if (empRec.length > 0) {
             const dayOfWeek = selectedDate.getDay();
             return empRec.some(h => {
-                if (h.dia_semana !== dayOfWeek) return false;
-                const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
-                const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
-                const startMins = hStart * 60 + mStart;
-                const endMins = hEnd * 60 + mEnd;
-                return mins >= startMins && mins < endMins;
+                if (parseInt(h.dia_semana) !== dayOfWeek) return false;
+                const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
+                const [hEnd, mEnd] = (h.hora_fin || '23:59').split(':').map(Number);
+                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
             });
         }
 
@@ -556,7 +553,7 @@ export default function PartnerView() {
                                         {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
                                             const mins = (DISPLAY_START_HOUR * 60) + (i * cellDuration);
                                             const available = isTimeAvailable(emp.id, mins);
-                                            return <div key={i} onClick={(e) => available && handleCellClick(e, emp.id, mins, '')} style={{ height: rowHeight, cursor: available ? 'cell' : 'not-allowed', backgroundColor: available ? 'transparent' : '#f9fafb' }} />;
+                                            return <div key={i} onClick={(e) => available && handleCellClick(e, emp.id, mins, '')} style={{ height: rowHeight, cursor: available ? 'pointer' : 'not-allowed', backgroundColor: available ? 'transparent' : '#f9fafb' }} />;
                                         })}
 
                                         {empReservas.map(res => {
