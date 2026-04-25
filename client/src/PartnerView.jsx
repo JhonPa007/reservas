@@ -222,7 +222,7 @@ const PartnerView = () => {
                             {empleados.map(emp => (
                                 <div key={emp.id} style={{ flex: 1, padding: '12px', textAlign: 'center', borderLeft: '1px solid #f3f4f6', position: 'relative' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4fb', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{emp.nombre[0]}</div>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4fb', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{emp.nombre?.[0] || 'E'}</div>
                                         <div style={{ fontSize: '0.85rem', fontWeight: 900 }}>{emp.nombre}</div>
                                     </div>
                                     <button onClick={(e) => { e.stopPropagation(); setEmpMenu({ emp, x: e.clientX, y: e.clientY }); }} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer' }}><MoreHorizontal size={14} /></button>
@@ -379,7 +379,7 @@ const PartnerView = () => {
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                                                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#f3f4fb', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem' }}>{drawerOpen.cliente_nombre?.[0]}</div>
+                                                                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#f3f4fb', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem' }}>{drawerOpen.cliente_nombre?.[0] || 'C'}</div>
                                                                     <div>
                                                                         <div style={{ fontWeight: 900, fontSize: '1rem' }}>{drawerOpen.cliente_nombre} {drawerOpen.cliente_apellidos}</div>
                                                                         <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>📱 {String(drawerOpen.cliente_telefono || '').replace('+51', '').trim()}</div>
@@ -423,7 +423,7 @@ const PartnerView = () => {
                                                             <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                                                                 {clientes.filter(c => (c.razon_social_nombres + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase())).map(c => (
                                                                     <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '8px', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900 }}>{c.razon_social_nombres[0]}</div>
+                                                                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900 }}>{c.razon_social_nombres?.[0] || 'C'}</div>
                                                                         <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{c.razon_social_nombres} {c.apellidos}</span>
                                                                     </div>
                                                                 ))}
