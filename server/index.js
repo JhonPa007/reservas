@@ -102,6 +102,23 @@ app.post('/api/clientes', async (req, res) => {
   }
 });
 
+// Actualizar datos de cliente
+app.patch('/api/clientes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { razon_social_nombres, apellidos, telefono, email } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE clientes SET razon_social_nombres = $1, apellidos = $2, telefono = $3, email = $4 WHERE id = $5 RETURNING *',
+      [razon_social_nombres, apellidos, telefono, email, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al actualizar cliente' });
+  }
+});
+
 // Obtener empleados que realizan servicios en una sucursal específica
 app.get('/api/empleados/:sucursalId', async (req, res) => {
   const { sucursalId } = req.params;

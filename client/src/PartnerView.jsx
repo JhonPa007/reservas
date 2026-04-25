@@ -57,6 +57,8 @@ export default function PartnerView() {
     const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
     const [toast, setToast] = useState(null);
+    const [showClientActions, setShowClientActions] = useState(false);
+    const [clientEditData, setClientEditData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
     const [dbHealth, setDbHealth] = useState(null);
 
     const [showActions, setShowActions] = useState(false);
@@ -1529,13 +1531,62 @@ export default function PartnerView() {
                                             <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 0.25rem 0' }}>{drawerOpen?.cliente_nombre} {drawerOpen?.cliente_apellidos || ''}</h2>
                                             <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 1.5rem 0' }}>{drawerOpen?.cliente_telefono || '+51 000 000 000'}</p>
 
-                                            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+                                            <div style={{ display: 'flex', gap: '0.75rem', width: '100%', position: 'relative' }}>
                                                 <button
                                                     onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })}
                                                     style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
                                                 >
                                                     Cambiar
                                                 </button>
+
+                                                {/* ACCIONES DROPDOWN */}
+                                                <div style={{ position: 'relative', flex: 1 }}>
+                                                    <button
+                                                        onClick={() => setShowClientActions(!showClientActions)}
+                                                        style={{ width: '100%', padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                                                    >
+                                                        Acciones <ChevronDown size={14} />
+                                                    </button>
+
+                                                    {showClientActions && (
+                                                        <div style={{ position: 'absolute', top: '110%', left: 0, width: '220px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                                                            <div style={{ padding: '0.5rem' }}>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const c = clientes.find(cli => cli.id === drawerOpen.cliente_id) || { razon_social_nombres: drawerOpen.cliente_nombre, apellidos: drawerOpen.cliente_apellidos, telefono: drawerOpen.cliente_telefono };
+                                                                        setClientEditData({
+                                                                            razon_social_nombres: c.razon_social_nombres || '',
+                                                                            apellidos: c.apellidos || '',
+                                                                            telefono: c.telefono || '',
+                                                                            email: c.email || ''
+                                                                        });
+                                                                        setViewState('client_edit');
+                                                                        setShowClientActions(false);
+                                                                    }}
+                                                                    style={{ width: '100%', textAlign: 'left', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                                                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                >
+                                                                    Editar datos del cliente
+                                                                </button>
+                                                                <button
+                                                                    style={{ width: '100%', textAlign: 'left', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#ef4444' }}
+                                                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                    onClick={() => {
+                                                                        if (window.confirm('¿Eliminar a este cliente de la base de datos?')) {
+                                                                            // TODO: Implementar DELETE cliente
+                                                                            setShowClientActions(false);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Eliminar cliente
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
                                                 <button
                                                     onClick={() => setViewState('profile')}
                                                     style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
@@ -1563,21 +1614,16 @@ export default function PartnerView() {
                                             {/* NEW CLIENT & WALK-IN OPTIONS */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
                                                 <button
-                                                    onClick={() => setViewState('client_create')}
+                                                    onClick={() => {
+                                                        setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
+                                                        setViewState('client_create');
+                                                    }}
                                                     style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', borderRadius: '12px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
                                                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
                                                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                                 >
                                                     <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}><UserPlus size={20} /></div>
                                                     <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Añadir un nuevo cliente</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleSelectClient({ id: 0, razon_social_nombres: 'Cliente sin cita', apellidos: '', telefono: '' })}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', borderRadius: '12px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                >
-                                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}><Users size={20} /></div>
-                                                    <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Sin cita</span>
                                                 </button>
                                             </div>
 
@@ -1611,6 +1657,86 @@ export default function PartnerView() {
                                                             </div>
                                                         </div>
                                                     ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* VIEW: CLIENT EDIT FORM */}
+                                    {viewState === 'client_edit' && (
+                                        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                                <h1 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Editar cliente</h1>
+                                                <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Nombres</label>
+                                                        <input
+                                                            value={clientEditData.razon_social_nombres}
+                                                            onChange={e => setClientEditData({ ...clientEditData, razon_social_nombres: e.target.value })}
+                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Apellidos</label>
+                                                        <input
+                                                            value={clientEditData.apellidos}
+                                                            onChange={e => setClientEditData({ ...clientEditData, apellidos: e.target.value })}
+                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono móvil</label>
+                                                    <input
+                                                        value={clientEditData.telefono}
+                                                        onChange={e => setClientEditData({ ...clientEditData, telefono: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Correo electrónico</label>
+                                                    <input
+                                                        value={clientEditData.email}
+                                                        onChange={e => setClientEditData({ ...clientEditData, email: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const resp = await fetch(`${API_BASE}/clientes/${drawerOpen.cliente_id}`, {
+                                                                method: 'PATCH',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify(clientEditData)
+                                                            });
+                                                            if (resp.ok) {
+                                                                const updated = await resp.json();
+                                                                // Actualizar drawer localmente
+                                                                setDrawerOpen({
+                                                                    ...drawerOpen,
+                                                                    cliente_nombre: updated.razon_social_nombres,
+                                                                    cliente_apellidos: updated.apellidos,
+                                                                    cliente_telefono: updated.telefono
+                                                                });
+                                                                setViewState('appointment');
+                                                                setToast("Cliente actualizado");
+                                                                setTimeout(() => setToast(null), 3000);
+                                                                refreshData();
+                                                                // Refrescar lista de clientes global
+                                                                fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
+                                                            }
+                                                        } catch (err) { alert('Error al guardar'); }
+                                                    }}
+                                                    style={{ marginTop: '1rem', padding: '1rem', borderRadius: '30px', backgroundColor: '#000', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                                                >
+                                                    Guardar cambios
+                                                </button>
                                             </div>
                                         </div>
                                     )}
