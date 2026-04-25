@@ -759,13 +759,15 @@ export default function PartnerView() {
                     <div style={{ paddingLeft: '60px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
                         {visibleEmployees.map(emp => (
                             <div key={emp.id} style={{ flex: 1, minWidth: '150px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                <div
+                                    onClick={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom });
+                                    }}
+                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
+                                >
                                     <div
                                         translate="no"
-                                        onClick={(e) => {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom });
-                                        }}
                                         style={{
                                             width: '42px',
                                             height: '42px',
@@ -777,18 +779,20 @@ export default function PartnerView() {
                                             fontSize: '1rem',
                                             fontWeight: 900,
                                             color: '#fff',
-                                            cursor: 'pointer',
                                             transition: 'transform 0.2s',
                                             boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                                         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                     >
                                         {(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}
                                     </div>
-                                    <span translate="no" style={{ fontWeight: 800, fontSize: '0.75rem', color: '#111827', textAlign: 'center', maxWidth: '120px' }}>
-                                        {emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span translate="no" style={{ fontWeight: 800, fontSize: '0.75rem', color: '#111827', textAlign: 'center', maxWidth: '120px' }}>
+                                            {emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}
+                                        </span>
+                                        <ChevronDown size={14} style={{ transform: empMenu?.empId === emp.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6b7280' }} />
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -1714,18 +1718,52 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
             {empMenu && (
                 <>
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)} />
-                    <div ref={empMenuRef} style={{ position: 'fixed', left: empMenu.x, top: empMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '200px', border: '1px solid #f3f4f6' }}>
-                        <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#9ca3af', fontWeight: 700 }}>Acciones</div>
-                        {[
-                            { label: 'Añadir cita', icon: <Plus size={14} />, action: () => handleAddAppointment(empMenu.empId) },
-                            { label: 'Añadir horario no disponible', icon: <Clock size={14} />, action: () => handleAddBlock(empMenu.empId) },
-                            { label: 'Editar turno', icon: <Settings size={14} />, action: () => handleEditShift(empMenu.empId) }
-                        ].map((opt, i) => (
-                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
-                            </div>
-                        ))}
+                    <div ref={empMenuRef} style={{
+                        position: 'fixed',
+                        left: empMenu.x,
+                        top: empMenu.y + 10,
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                        padding: '12px',
+                        zIndex: 999,
+                        width: '280px',
+                        border: '1px solid #e5e7eb',
+                        animation: 'fadeIn 0.15s ease-out'
+                    }}>
+                        {/* Vistas Section */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                            {[
+                                { label: 'Vista de día', icon: <ExternalLink size={16} /> },
+                                { label: 'Vista de 3 días', icon: <Users size={16} /> },
+                                { label: 'Vista semanal', icon: <CalendarIcon size={16} /> },
+                                { label: 'Vista mensual', icon: <Settings size={16} /> }
+                            ].map((opt, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '8px 4px' }} />
+
+                        {/* Acciones Section */}
+                        <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {[
+                                { label: 'Añadir cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
+                                { label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
+                                { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
+                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => { } },
+                                { label: 'Ver miembro del equipo', icon: <User size={16} />, action: () => { } }
+                            ].map((opt, i) => (
+                                <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </>
             )}
