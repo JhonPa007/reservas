@@ -1395,8 +1395,8 @@ export default function PartnerView() {
                         </div>
                     )}
 
-                    {/* VIEW: APPOINTMENT EDIT / NEW APPOINTMENT / CLIENT CREATE */}
-                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create') && drawerOpen?.tipo !== 'BLOQUEO' && (
+                    {/* VIEW: APPOINTMENT EDIT / NEW APPOINTMENT / CLIENT CREATE / EDIT */}
+                    {(viewState === 'appointment' || viewState === 'client_search' || viewState === 'service_search' || viewState === 'client_create' || viewState === 'client_edit') && drawerOpen?.tipo !== 'BLOQUEO' && (
                         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
                             {/* PANEL 1: CLIENT SELECTION */}
