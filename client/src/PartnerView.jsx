@@ -375,26 +375,29 @@ export default function PartnerView() {
         const empHorarios = horarios.filter(h => String(h.empleado_id) === empIdStr);
         const empRec = recurrentes.filter(h => String(h.empleado_id) === empIdStr);
 
-        // Si no hay horarios configurados, permitimos reservar por defecto
+        // Si no hay ningún horario configurado en el sistema, asumimos que está abierto (para evitar bloqueo total)
         if (empHorarios.length === 0 && empRec.length === 0) return true;
 
-        // Prioridad 1: Horarios específicos hoy
+        const checkTime = (h) => {
+            const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
+            const [hEnd, mEnd] = (h.hora_fin || '23:59').split(':').map(Number);
+            const startMins = hStart * 60 + mStart;
+            const endMins = hEnd * 60 + mEnd;
+            return mins >= startMins && mins < endMins;
+        };
+
+        // Prioridad 1: Horarios específicos para hoy
         if (empHorarios.length > 0) {
-            return empHorarios.some(h => {
-                const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
-                const [hEnd, mEnd] = (h.hora_fin || '23:59').split(':').map(Number);
-                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
-            });
+            return empHorarios.some(checkTime);
         }
 
-        // Prioridad 2: Horarios recurrentes
+        // Prioridad 2: Horarios recurrentes (Normalizando Domingo 0/7)
         if (empRec.length > 0) {
-            const dayOfWeek = selectedDate.getDay();
+            const jsDay = selectedDate.getDay(); // 0 (Dom) a 6 (Sab)
             return empRec.some(h => {
-                if (parseInt(h.dia_semana) !== dayOfWeek) return false;
-                const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
-                const [hEnd, mEnd] = (h.hora_fin || '23:59').split(':').map(Number);
-                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
+                const dbDay = parseInt(h.dia_semana);
+                const dayMatches = dbDay === jsDay || (dbDay === 7 && jsDay === 0);
+                return dayMatches && checkTime(h);
             });
         }
 
@@ -560,8 +563,9 @@ export default function PartnerView() {
                                                     style={{
                                                         height: rowHeight,
                                                         cursor: 'pointer',
-                                                        backgroundColor: available ? 'transparent' : '#f9fafb',
-                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #e5e7eb' : '1px solid #f3f4f6'
+                                                        backgroundColor: available ? 'transparent' : '#f3f4f6',
+                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #e5e7eb' : '1px solid #f3f4f6',
+                                                        opacity: available ? 1 : 0.8
                                                     }}
                                                 />
                                             );
