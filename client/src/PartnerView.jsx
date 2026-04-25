@@ -789,10 +789,10 @@ export default function PartnerView() {
                                         {(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <span translate="no" style={{ fontWeight: 800, fontSize: '0.75rem', color: '#111827', textAlign: 'center', maxWidth: '120px' }}>
+                                        <span translate="no" style={{ fontWeight: 600, fontSize: '0.72rem', color: '#374151', textAlign: 'center', maxWidth: '120px' }}>
                                             {emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}
                                         </span>
-                                        <ChevronDown size={14} style={{ transform: empMenu?.empId === emp.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6b7280' }} />
+                                        <ChevronDown size={12} style={{ transform: empMenu?.empId === emp.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#9ca3af' }} />
                                     </div>
                                 </div>
                             </div>
@@ -1213,23 +1213,19 @@ export default function PartnerView() {
                                                             onClick={() => setShowStatusMenu(!showStatusMenu)}
                                                             style={{
                                                                 width: '100%',
-                                                                padding: '0.75rem',
+                                                                padding: '0.65rem',
                                                                 borderRadius: '16px',
                                                                 border: 'none',
                                                                 backgroundColor:
                                                                     drawerOpen?.status === 'CONFIRMADA' ? '#d1fae5' :
-                                                                        drawerOpen?.status === 'PENDIENTE' ? '#fef3c7' :
-                                                                            drawerOpen?.status === 'EN_PROCESO' ? '#dbeafe' :
-                                                                                drawerOpen?.status === 'FINALIZADA' ? '#e0e7ff' :
-                                                                                    drawerOpen?.status === 'CANCELADA' ? '#fee2e2' : '#f3f4f6',
+                                                                        drawerOpen?.status === 'RESERVADA' ? '#fef3c7' :
+                                                                            drawerOpen?.status === 'INASISTENCIA' ? '#f3f4f6' : '#f3f4f6',
                                                                 color:
                                                                     drawerOpen?.status === 'CONFIRMADA' ? '#065f46' :
-                                                                        drawerOpen?.status === 'PENDIENTE' ? '#92400e' :
-                                                                            drawerOpen?.status === 'EN_PROCESO' ? '#1e40af' :
-                                                                                drawerOpen?.status === 'FINALIZADA' ? '#3730a3' :
-                                                                                    drawerOpen?.status === 'CANCELADA' ? '#991b1b' : '#374151',
-                                                                fontWeight: 900,
-                                                                fontSize: '0.85rem',
+                                                                        drawerOpen?.status === 'RESERVADA' ? '#92400e' :
+                                                                            drawerOpen?.status === 'INASISTENCIA' ? '#4b5563' : '#374151',
+                                                                fontWeight: 600,
+                                                                fontSize: '0.8rem',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -1238,28 +1234,40 @@ export default function PartnerView() {
                                                                 transition: 'all 0.2s'
                                                             }}
                                                         >
-                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }} />
-                                                            {drawerOpen?.status || 'SIN ESTADO'}
-                                                            <ChevronDown size={14} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }} />
+                                                            {drawerOpen?.status || 'RESERVADA'}
+                                                            <ChevronDown size={12} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                                                         </button>
 
                                                         {showStatusMenu && (
                                                             <div style={{ position: 'absolute', top: '110%', left: 0, width: '100%', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 110, border: '1px solid #f3f4f6', overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
                                                                 {[
-                                                                    { id: 'PENDIENTE', color: '#f59e0b', label: 'Pendiente' },
+                                                                    { id: 'RESERVADA', color: '#f59e0b', label: 'Reservada' },
                                                                     { id: 'CONFIRMADA', color: '#10b981', label: 'Confirmada' },
-                                                                    { id: 'EN_PROCESO', color: '#3b82f6', label: 'En proceso' },
-                                                                    { id: 'FINALIZADA', color: '#6366f1', label: 'Finalizada' },
-                                                                    { id: 'CANCELADA', color: '#ef4444', label: 'Cancelada' }
+                                                                    { id: 'INASISTENCIA', color: '#6b7280', label: 'Inasistencia' },
+                                                                    { id: 'CANCELAR', color: '#ef4444', label: 'Cancelar (Eliminar)' }
                                                                 ].map(st => (
                                                                     <div
                                                                         key={st.id}
                                                                         onClick={async () => {
+                                                                            if (st.id === 'CANCELAR') {
+                                                                                if (window.confirm('¿Estás seguro de cancelar esta reserva? Se eliminará de forma permanente.')) {
+                                                                                    if (drawerOpen.id !== 'new') {
+                                                                                        try {
+                                                                                            await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
+                                                                                            refreshData();
+                                                                                        } catch (e) { console.error(e); }
+                                                                                    }
+                                                                                    setDrawerOpen(null);
+                                                                                }
+                                                                                setShowStatusMenu(false);
+                                                                                return;
+                                                                            }
+
                                                                             const updated = { ...drawerOpen, status: st.id };
                                                                             setDrawerOpen(updated);
                                                                             setShowStatusMenu(false);
 
-                                                                            // Si es una cita existente, actualizar en BD inmediatamente
                                                                             if (drawerOpen.id !== 'new') {
                                                                                 try {
                                                                                     await fetch(`${API_BASE}/reservas/${drawerOpen.id}/status`, {
@@ -1268,16 +1276,16 @@ export default function PartnerView() {
                                                                                         body: JSON.stringify({ status: st.id })
                                                                                     });
                                                                                     refreshData();
-                                                                                } catch (e) { console.error("Error updating status", e); }
+                                                                                } catch (e) { console.error(e); }
                                                                             }
                                                                         }}
-                                                                        style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                                                                        style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                                                                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
                                                                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                                                     >
-                                                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: st.color }} />
-                                                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{st.label}</span>
-                                                                        {drawerOpen?.status === st.id && <div style={{ marginLeft: 'auto', color: '#2563eb', fontWeight: 900 }}>✓</div>}
+                                                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: st.color }} />
+                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#374151' }}>{st.label}</span>
+                                                                        {drawerOpen?.status === st.id && <div style={{ marginLeft: 'auto', color: '#2563eb', fontWeight: 600 }}>✓</div>}
                                                                     </div>
                                                                 ))}
                                                             </div>
