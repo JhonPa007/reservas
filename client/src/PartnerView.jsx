@@ -953,33 +953,64 @@ export default function PartnerView() {
             </div>
 
             {/* RESERVATION HOVER TOOLTIP */}
-            {
-                hoverRes && (
+            {(() => {
+                if (!hoverRes) return null;
+
+                // Buscar la versión más reciente de la reserva para reflejar cambios de estado inmediatos
+                const currentRes = reservas.find(r => String(r.id) === String(hoverRes.res.id)) || hoverRes.res;
+
+                const hoverColors = ({
+                    'RESERVADA': { bg: '#2563eb', label: 'Reservada' },
+                    'CONFIRMADA': { bg: '#059669', label: 'Confirmada' },
+                    'INASISTENCIA': { bg: '#ef4444', label: 'Inasistencia' },
+                    'COMPLETADA': { bg: '#10b981', label: 'Completada / Pagada' }
+                }[currentRes.estado] || { bg: '#2563eb', label: 'Reservada' });
+
+                const popupWidth = 280;
+                const popupHeight = 180;
+                let leftPos = hoverRes.x + 15;
+                let topPos = hoverRes.y + 15;
+
+                // Ajustar posición si se sale de la pantalla
+                if (leftPos + popupWidth > window.innerWidth) {
+                    leftPos = hoverRes.x - popupWidth - 15;
+                }
+                if (topPos + popupHeight > window.innerHeight) {
+                    topPos = hoverRes.y - popupHeight - 15;
+                }
+
+                return (
                     <div style={{
-                        position: 'fixed', top: hoverRes.y + 10, left: hoverRes.x + 10, backgroundColor: 'white', borderRadius: '12px',
-                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 1000, width: '280px', border: '1px solid #e5e7eb'
+                        position: 'fixed', top: topPos, left: leftPos, backgroundColor: 'white', borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', zIndex: 1000,
+                        width: `${popupWidth}px`, border: '1px solid #e5e7eb', overflow: 'hidden'
                     }}>
-                        <div style={{ backgroundColor: '#2563eb', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', color: 'white', fontWeight: 800, fontSize: '0.7rem' }}>
-                            <span>{formatAMPM(hoverRes.res.fecha_hora_inicio)} - {formatAMPM(hoverRes.res.fecha_hora_fin)}</span>
-                            <span>Reservada</span>
+                        <div style={{ backgroundColor: hoverColors.bg, padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', color: 'white', fontWeight: 800, fontSize: '0.7rem' }}>
+                            <span>{format(safeDate(currentRes.fecha_hora_inicio), 'h:mm a')} - {format(safeDate(currentRes.fecha_hora_fin), 'h:mm a')}</span>
+                            <span>{hoverColors.label.toUpperCase()}</span>
                         </div>
                         <div style={{ padding: '1rem' }}>
                             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{hoverRes.res?.cliente_nombre?.[0] || 'C'}</div>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#f3f4fb', color: hoverColors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.9rem' }}>
+                                    {currentRes?.cliente_nombre?.[0] || 'C'}
+                                </div>
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{hoverRes.res.cliente_nombre}</div>
-                                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>+51 967 091 691</div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#111' }}>{currentRes.cliente_nombre} {currentRes.cliente_apellidos || ''}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>+51 967 091 691</div>
                                 </div>
                             </div>
-                            <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>{hoverRes.res.servicio_nombre}</span>
-                                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>30 PEN</span>
+                            <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 800, fontSize: '0.8rem', color: '#111' }}>{currentRes.servicio_nombre}</span>
+                                <span style={{ fontWeight: 900, fontSize: '0.85rem', color: '#111' }}>30 PEN</span>
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Atendido por {hoverRes.res.empleado_nombre} • 45 min</div>
+                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#d1d5db' }} />
+                                Atendido por {currentRes.empleado_nombre || 'Especialista'} • 45 min
+                            </div>
                         </div>
                     </div>
-                )
-            }
+                );
+            })()}
 
             {/* MAIN DRAWER SYSTEM (SLIDE-IN) */}
             <div style={{
