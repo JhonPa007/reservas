@@ -113,7 +113,8 @@ export default function PartnerView() {
                 setEmpMenu(null);
                 setQuickActionMenu(null);
                 setShowConfig(false);
-                setViewState('search');
+                setDrawerOpen(null);
+                setViewState('appointment');
             }
 
             // Close staff filter on click outside
@@ -960,8 +961,14 @@ export default function PartnerView() {
 
                 {/* DRAWER / MODAL LAYER */}
                 {drawerOpen && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease-out' }}>
-                        <div style={{ width: '100%', maxWidth: '850px', backgroundColor: '#f9fafb', height: '100%', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)', display: 'flex', overflow: 'hidden' }}>
+                    <div
+                        onClick={() => setDrawerOpen(null)}
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease-out' }}
+                    >
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ width: '100%', maxWidth: '850px', backgroundColor: '#f9fafb', height: '100%', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)', display: 'flex', overflow: 'hidden' }}
+                        >
 
                             {/* DRAWER LEFT: DATA & SELECTORS */}
                             <div style={{ width: '400px', backgroundColor: '#fff', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
@@ -1327,13 +1334,21 @@ export default function PartnerView() {
                             </div>
 
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#fff' }}>
-                                <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid #f3f4f6', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid #f3f4f6', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                     <div style={{ cursor: 'pointer' }} onClick={() => setViewState('date_picker')}>
                                         <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             {drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'eee d MMM', { locale: es }) : 'Fecha'} <ChevronDown size={20} />
                                         </h3>
                                         <span style={{ fontSize: '0.9rem', opacity: 0.9, fontWeight: 600 }}>{drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es }) : 'Hora'} • No se repite</span>
                                     </div>
+                                    <button
+                                        onClick={() => setDrawerOpen(null)}
+                                        style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', color: 'white', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                                    >
+                                        <X size={24} strokeWidth={3} />
+                                    </button>
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
