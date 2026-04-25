@@ -1096,7 +1096,7 @@ export default function PartnerView() {
                             {drawerOpen?.id && (drawerOpen?.tipo || 'CITA') === 'CITA' && (
                                 <div style={{ position: 'relative' }}>
                                     <select
-                                        value={drawerOpen.estado || 'RESERVADA'}
+                                        value={drawerOpen?.estado || 'RESERVADA'}
                                         onChange={async (e) => {
                                             const novoEstado = e.target.value;
                                             if (novoEstado === 'CANCELADA') {
@@ -1127,14 +1127,14 @@ export default function PartnerView() {
                                             cursor: 'pointer',
                                             outline: 'none',
                                             border: '1px solid #e5e7eb',
-                                            backgroundColor: (drawerOpen.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen.estado === 'INASISTENCIA' ? '#fef2f2' : (drawerOpen.estado === 'COMPLETADA' ? '#f3f4f6' : '#eff6ff'))),
-                                            color: (drawerOpen.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen.estado === 'INASISTENCIA' ? '#ef4444' : (drawerOpen.estado === 'COMPLETADA' ? '#6b7280' : '#2563eb')))
+                                            backgroundColor: (drawerOpen?.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen?.estado === 'INASISTENCIA' ? '#fef2f2' : (drawerOpen?.estado === 'COMPLETADA' ? '#f3f4f6' : '#eff6ff'))),
+                                            color: (drawerOpen?.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen?.estado === 'INASISTENCIA' ? '#ef4444' : (drawerOpen?.estado === 'COMPLETADA' ? '#6b7280' : '#2563eb')))
                                         }}
                                     >
                                         <option value="RESERVADA">Reservada</option>
                                         <option value="CONFIRMADA">Confirmada</option>
                                         <option value="INASISTENCIA">Inasistencia</option>
-                                        {drawerOpen.estado === 'COMPLETADA' && <option value="COMPLETADA">Completada / Pagada</option>}
+                                        {drawerOpen?.estado === 'COMPLETADA' && <option value="COMPLETADA">Completada / Pagada</option>}
                                         <option value="CANCELADA">Eliminar / Cancelar</option>
                                     </select>
                                 </div>
@@ -1698,7 +1698,7 @@ export default function PartnerView() {
                                                 </div>
                                                 <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 0.25rem 0' }}>{drawerOpen?.cliente_nombre} {drawerOpen?.cliente_apellidos || ''}</h2>
                                                 <p style={{ fontSize: '0.95rem', color: '#6b7280', margin: '0 0 1.5rem 0' }}>
-                                                    {drawerOpen?.cliente_telefono?.replace('+51', '').trim() || 'Sin teléfono'}
+                                                    {String(drawerOpen?.cliente_telefono || '').replace('+51', '').trim() || 'Sin teléfono'}
                                                 </p>
 
                                                 <div style={{ display: 'flex', gap: '0.75rem', width: '100%', position: 'relative' }}>
@@ -1767,11 +1767,21 @@ export default function PartnerView() {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 1rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
                                                     <span>🎂</span>
-                                                    <span style={{ fontWeight: 600 }}>{clientes.find(c => c.id === drawerOpen.cliente_id)?.fecha_nacimiento ? format(new Date(clientes.find(c => c.id === drawerOpen.cliente_id).fecha_nacimiento), 'd MMM yyyy', { locale: es }) : 'Añadir fecha de nacimiento'}</span>
+                                                    <span style={{ fontWeight: 600 }}>
+                                                        {(() => {
+                                                            const client = clientes.find(c => c.id === drawerOpen?.cliente_id);
+                                                            return client?.fecha_nacimiento ? format(safeDate(client.fecha_nacimiento), 'd MMM yyyy', { locale: es }) : 'Añadir fecha de nacimiento';
+                                                        })()}
+                                                    </span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
                                                     <span>✨</span>
-                                                    <span style={{ fontWeight: 600 }}>Creado en {clientes.find(c => c.id === drawerOpen.cliente_id)?.created_at ? format(new Date(clientes.find(c => c.id === drawerOpen.cliente_id).created_at), 'd MMM yyyy', { locale: es }) : '24 abr 2026'}</span>
+                                                    <span style={{ fontWeight: 600 }}>
+                                                        {(() => {
+                                                            const client = clientes.find(c => c.id === drawerOpen?.cliente_id);
+                                                            return client?.created_at ? `Creado en ${format(safeDate(client.created_at), 'd MMM yyyy', { locale: es })}` : 'Creado recientemente';
+                                                        })()}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1848,9 +1858,9 @@ export default function PartnerView() {
                                 <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid #f3f4f6', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ cursor: 'pointer' }} onClick={() => setViewState('date_picker')}>
                                         <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {format(new Date(drawerOpen.fecha_hora_inicio), 'eee d MMM', { locale: es })} <ChevronDown size={20} />
+                                            {drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'eee d MMM', { locale: es }) : 'Fecha'} <ChevronDown size={20} />
                                         </h3>
-                                        <span style={{ fontSize: '0.9rem', opacity: 0.9, fontWeight: 600 }}>{format(new Date(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es })} • No se repite</span>
+                                        <span style={{ fontSize: '0.9rem', opacity: 0.9, fontWeight: 600 }}>{drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es }) : 'Hora'} • No se repite</span>
                                     </div>
                                 </div>
 
@@ -1869,7 +1879,7 @@ export default function PartnerView() {
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Seleccionar día</label>
                                                 <input
                                                     type="date"
-                                                    value={format(new Date(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')}
+                                                    value={drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd') : ''}
                                                     onChange={(e) => {
                                                         const newDate = e.target.value;
                                                         const currentStartTime = drawerOpen.startTime || '09:00';
@@ -1898,7 +1908,7 @@ export default function PartnerView() {
                                                             <button
                                                                 key={timeStr}
                                                                 onClick={() => {
-                                                                    const datePart = format(new Date(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
+                                                                    const datePart = drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd');
                                                                     const newStartISO = `${datePart} ${timeStr}:00`;
                                                                     let newEndISO = drawerOpen.fecha_hora_fin;
                                                                     let endTime = drawerOpen.endTime;
@@ -1941,10 +1951,10 @@ export default function PartnerView() {
                                                             const start = e.target.value;
                                                             const newStartDate = `${format(selectedDate, 'yyyy-MM-dd')} ${start}:00`;
                                                             // Si hay servicio, recalcular fin
-                                                            let newEndDate = drawerOpen.fecha_hora_fin;
-                                                            let endTime = drawerOpen.endTime;
-                                                            if (drawerOpen.servicio_duracion) {
-                                                                const d = addMinutes(new Date(newStartDate), drawerOpen.servicio_duracion);
+                                                            let newEndDate = drawerOpen?.fecha_hora_fin;
+                                                            let endTime = drawerOpen?.endTime;
+                                                            if (drawerOpen?.servicio_duracion) {
+                                                                const d = addMinutes(safeDate(newStartDate), drawerOpen.servicio_duracion);
                                                                 newEndDate = format(d, 'yyyy-MM-dd HH:mm:ss');
                                                                 endTime = format(d, 'HH:mm');
                                                             }
@@ -2137,155 +2147,73 @@ export default function PartnerView() {
             </div>
 
             {/* Quick Action Menu */}
-            {
-                quickActionMenu && (
-                    <>
-                        <div
-                            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
-                            onClick={() => setQuickActionMenu(null)}
-                        />
-                        <div style={{
-                            position: 'fixed',
-                            left: quickActionMenu.x + 10,
-                            top: quickActionMenu.y + 10,
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                            padding: '8px',
-                            zIndex: 999,
-                            width: '240px',
-                            border: '1px solid #f3f4f6',
-                            animation: 'fadeIn 0.15s ease-out'
-                        }}>
-                            <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                {quickActionMenu.timeStr}
-                                <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
-                            </div>
-                            {[
-                                {
-                                    label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
-                                        const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
-                                        const newDate = new Date(selectedDate);
-                                        newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
-
-                                        setDrawerOpen({
-                                            id: 'new',
-                                            empleado_id: quickActionMenu.empId,
-                                            fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
-                                            startTime: format(newDate, 'HH:mm'),
-                                            endTime: format(addMinutes(newDate, 60), 'HH:mm'),
-                                            tipo: 'CITA'
-                                        });
-                                        setViewState('appointment');
-                                        setQuickActionMenu(null);
-                                    }
-                                },
-                                {
-                                    label: 'Añadir cita de grupo', icon: <Users size={16} />, action: () => {
-                                        alert('Funcionalidad de cita de grupo en desarrollo');
-                                        setQuickActionMenu(null);
-                                    }
-                                },
-                                {
-                                    label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
-                                        const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
-                                        const newDate = new Date(selectedDate);
-                                        newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
-
-                                        setDrawerOpen({
-                                            id: 'new',
-                                            empleado_id: quickActionMenu.empId,
-                                            fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
-                                            startTime: format(newDate, 'HH:mm'),
-                                            endTime: format(addMinutes(newDate, 60), 'HH:mm'),
-                                            tipo: 'BLOQUEO',
-                                            subtipo_bloqueo: 'Comida'
-                                        });
-                                        setViewState('appointment');
-                                        setQuickActionMenu(null);
-                                    }
-                                }
-                            ].map((opt, i) => (
-                                <div
-                                    key={i}
-                                    onClick={opt.action}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                >
-                                    <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                    <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
-                                </div>
-                            ))}
-                            <div style={{ padding: '10px 12px', fontSize: '0.75rem', color: '#6366f1', fontWeight: 600, cursor: 'pointer', borderTop: '1px solid #f3f4f6', marginTop: '4px' }}>
-                                Ajustes de acciones rápidas
-                            </div>
+            {quickActionMenu && (
+                <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setQuickActionMenu(null)} />
+                    <div style={{ position: 'fixed', left: quickActionMenu.x + 10, top: quickActionMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '240px', border: '1px solid #f3f4f6' }}>
+                        <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {quickActionMenu.timeStr}
+                            <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
                         </div>
-                    </>
-                )
-            }
+                        {[
+                            {
+                                label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
+                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const newDate = new Date(selectedDate);
+                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'CITA' });
+                                    setViewState('appointment'); setQuickActionMenu(null);
+                                }
+                            },
+                            {
+                                label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
+                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const newDate = new Date(selectedDate);
+                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                    setViewState('appointment'); setQuickActionMenu(null);
+                                }
+                            }
+                        ].map((opt, i) => (
+                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
 
             {/* Employee Menu */}
-            {
-                empMenu && (
-                    <>
-                        <div
-                            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
-                            onClick={() => setEmpMenu(null)}
-                        />
-                        <div ref={empMenuRef} style={{
-                            position: 'fixed',
-                            left: empMenu.x,
-                            top: empMenu.y + 10,
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-                            padding: '8px',
-                            zIndex: 999,
-                            width: '200px',
-                            border: '1px solid #f3f4f6'
-                        }}>
-                            <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>Vistas</div>
-                            {[
-                                { label: 'Vista de día', icon: <CalendarIcon size={14} /> },
-                                { label: 'Vista de 3 días', icon: <Clock size={14} /> },
-                                { label: 'Vista semanal', icon: <CalendarIcon size={14} /> },
-                                { label: 'Vista mensual', icon: <CalendarIcon size={14} /> },
-                            ].map((opt, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                    <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
-                                </div>
-                            ))}
-                            <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '4px 0' }} />
-                            <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>Acciones</div>
-                            {[
-                                { label: 'Añadir cita', icon: <Plus size={14} />, action: () => handleAddAppointment(empMenu.empId) },
-                                { label: 'Añadir horario no disponible', icon: <Clock size={14} />, action: () => handleAddBlock(empMenu.empId) },
-                                { label: 'Editar turno', icon: <Settings size={14} />, action: () => handleEditShift(empMenu.empId) },
-                                { label: 'Añadir días libres', icon: <Plus size={14} />, action: () => handleAddBlock(empMenu.empId) },
-                                { label: 'Ver miembro del equipo', icon: <User size={14} /> },
-                            ].map((opt, i) => (
-                                <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                    <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                )
-            }
+            {empMenu && (
+                <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)} />
+                    <div ref={empMenuRef} style={{ position: 'fixed', left: empMenu.x, top: empMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '200px', border: '1px solid #f3f4f6' }}>
+                        <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#9ca3af', fontWeight: 700 }}>Acciones</div>
+                        {[
+                            { label: 'Añadir cita', icon: <Plus size={14} />, action: () => handleAddAppointment(empMenu.empId) },
+                            { label: 'Añadir horario no disponible', icon: <Clock size={14} />, action: () => handleAddBlock(empMenu.empId) },
+                            { label: 'Editar turno', icon: <Settings size={14} />, action: () => handleEditShift(empMenu.empId) }
+                        ].map((opt, i) => (
+                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
 
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-        .btn-icon { border: none; background: none; padding: 0.4rem; cursor: pointer; border-radius: 6px; }
-        .btn-icon:hover { background-color: #f3f4f6; }
-        .btn-secondary:hover { background-color: #f9fafb; }
-        .res-card:hover { filter: brightness(0.97); }
-        .grid-cell:hover .cell-hover-time { display: flex !important; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-      `}} />
-        </div >
+                .btn-icon:hover { background-color: #f3f4f6; }
+                .btn-secondary:hover { background-color: #f9fafb; }
+                .res-card:hover { filter: brightness(0.97); }
+                .grid-cell:hover .cell-hover-time { display: flex !important; }
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+            `}} />
+        </div>
+    </div>
     );
 }
