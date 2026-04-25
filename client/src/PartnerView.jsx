@@ -2204,15 +2204,15 @@ export default function PartnerView() {
                 </>
             )}
 
-
             <style dangerouslySetInnerHTML={{
                 __html: `
-                .btn-icon:hover { background-color: #f3f4f6; }
-                .btn-secondary:hover { background-color: #f9fafb; }
-                .res-card:hover { filter: brightness(0.97); }
-                .grid-cell:hover .cell-hover-time { display: flex !important; }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-            `}} />
+                    .btn-icon:hover { background-color: #f3f4f6; }
+                    .btn-secondary:hover { background-color: #f9fafb; }
+                    .res-card:hover { filter: brightness(0.97); }
+                    .grid-cell:hover .cell-hover-time { display: flex !important; }
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+                `
+            }} />
         </div>
     </div>
     );
