@@ -1207,94 +1207,9 @@ export default function PartnerView() {
                                                 </p>
 
                                                 <div style={{ display: 'flex', gap: '0.5rem', width: '100%', position: 'relative', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                                    {/* STATUS SELECTOR */}
-                                                    <div style={{ position: 'relative', flex: '1 1 100%', marginBottom: '0.25rem' }}>
-                                                        <button
-                                                            onClick={() => setShowStatusMenu(!showStatusMenu)}
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '0.65rem',
-                                                                borderRadius: '16px',
-                                                                border: 'none',
-                                                                backgroundColor:
-                                                                    drawerOpen?.status === 'CONFIRMADA' ? '#d1fae5' :
-                                                                        drawerOpen?.status === 'RESERVADA' ? '#fef3c7' :
-                                                                            drawerOpen?.status === 'INASISTENCIA' ? '#f3f4f6' : '#f3f4f6',
-                                                                color:
-                                                                    drawerOpen?.status === 'CONFIRMADA' ? '#065f46' :
-                                                                        drawerOpen?.status === 'RESERVADA' ? '#92400e' :
-                                                                            drawerOpen?.status === 'INASISTENCIA' ? '#4b5563' : '#374151',
-                                                                fontWeight: 600,
-                                                                fontSize: '0.8rem',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                gap: '0.5rem',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                        >
-                                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }} />
-                                                            {drawerOpen?.status || 'RESERVADA'}
-                                                            <ChevronDown size={12} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                                                        </button>
-
-                                                        {showStatusMenu && (
-                                                            <div style={{ position: 'absolute', top: '110%', left: 0, width: '100%', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 110, border: '1px solid #f3f4f6', overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
-                                                                {[
-                                                                    { id: 'RESERVADA', color: '#f59e0b', label: 'Reservada' },
-                                                                    { id: 'CONFIRMADA', color: '#10b981', label: 'Confirmada' },
-                                                                    { id: 'INASISTENCIA', color: '#6b7280', label: 'Inasistencia' },
-                                                                    { id: 'CANCELAR', color: '#ef4444', label: 'Cancelar (Eliminar)' }
-                                                                ].map(st => (
-                                                                    <div
-                                                                        key={st.id}
-                                                                        onClick={async () => {
-                                                                            if (st.id === 'CANCELAR') {
-                                                                                if (window.confirm('¿Estás seguro de cancelar esta reserva? Se eliminará de forma permanente.')) {
-                                                                                    if (drawerOpen.id !== 'new') {
-                                                                                        try {
-                                                                                            await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
-                                                                                            refreshData();
-                                                                                        } catch (e) { console.error(e); }
-                                                                                    }
-                                                                                    setDrawerOpen(null);
-                                                                                }
-                                                                                setShowStatusMenu(false);
-                                                                                return;
-                                                                            }
-
-                                                                            const updated = { ...drawerOpen, status: st.id };
-                                                                            setDrawerOpen(updated);
-                                                                            setShowStatusMenu(false);
-
-                                                                            if (drawerOpen.id !== 'new') {
-                                                                                try {
-                                                                                    await fetch(`${API_BASE}/reservas/${drawerOpen.id}/status`, {
-                                                                                        method: 'PATCH',
-                                                                                        headers: { 'Content-Type': 'application/json' },
-                                                                                        body: JSON.stringify({ status: st.id })
-                                                                                    });
-                                                                                    refreshData();
-                                                                                } catch (e) { console.error(e); }
-                                                                            }
-                                                                        }}
-                                                                        style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                                    >
-                                                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: st.color }} />
-                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#374151' }}>{st.label}</span>
-                                                                        {drawerOpen?.status === st.id && <div style={{ marginLeft: 'auto', color: '#2563eb', fontWeight: 600 }}>✓</div>}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
                                                     <button
                                                         onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })}
-                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                                                     >
                                                         Cambiar
                                                     </button>
@@ -1446,19 +1361,105 @@ export default function PartnerView() {
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#fff' }}>
                                 <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid #f3f4f6', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                     <div style={{ cursor: 'pointer' }} onClick={() => setViewState('date_picker')}>
-                                        <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'eee d MMM', { locale: es }) : 'Fecha'} <ChevronDown size={20} />
+                                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'eee d MMM', { locale: es }) : 'Fecha'} <ChevronDown size={18} />
                                         </h3>
-                                        <span style={{ fontSize: '0.9rem', opacity: 0.9, fontWeight: 600 }}>{drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es }) : 'Hora'} • No se repite</span>
+                                        <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 500 }}>{drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es }) : 'Hora'} • No se repite</span>
                                     </div>
-                                    <button
-                                        onClick={() => setDrawerOpen(null)}
-                                        style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', color: 'white', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-                                    >
-                                        <X size={24} strokeWidth={3} />
-                                    </button>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        {/* Status Selector in Header */}
+                                        <div style={{ position: 'relative' }}>
+                                            <button
+                                                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                                                style={{
+                                                    padding: '0.4rem 0.8rem',
+                                                    borderRadius: '20px',
+                                                    border: '1px solid rgba(255,255,255,0.4)',
+                                                    backgroundColor: 'rgba(255,255,255,0.15)',
+                                                    color: 'white',
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.25)'}
+                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                            >
+                                                <div style={{
+                                                    width: '6px', height: '6px', borderRadius: '50%',
+                                                    backgroundColor:
+                                                        drawerOpen?.status === 'CONFIRMADA' ? '#10b981' :
+                                                            drawerOpen?.status === 'RESERVADA' ? '#f59e0b' :
+                                                                drawerOpen?.status === 'INASISTENCIA' ? '#9ca3af' : '#fff'
+                                                }} />
+                                                {drawerOpen?.status || 'RESERVADA'}
+                                                <ChevronDown size={14} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                            </button>
+
+                                            {showStatusMenu && (
+                                                <div style={{ position: 'absolute', top: '115%', right: 0, width: '220px', backgroundColor: 'white', borderRadius: '14px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', zIndex: 110, border: '1px solid #e5e7eb', overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
+                                                    {[
+                                                        { id: 'RESERVADA', color: '#f59e0b', label: 'Reservada', icon: <CalendarIcon size={14} /> },
+                                                        { id: 'CONFIRMADA', color: '#10b981', label: 'Confirmada', icon: <Check size={14} /> },
+                                                        { id: 'INASISTENCIA', color: '#6b7280', label: 'Inasistencia', icon: <UserX size={14} /> },
+                                                        { id: 'CANCELAR', color: '#ef4444', label: 'Cancelar (Eliminar)', icon: <X size={14} /> }
+                                                    ].map(st => (
+                                                        <div
+                                                            key={st.id}
+                                                            onClick={async () => {
+                                                                if (st.id === 'CANCELAR') {
+                                                                    if (window.confirm('¿Estás seguro de cancelar esta reserva? Se eliminará de forma permanente.')) {
+                                                                        if (drawerOpen.id !== 'new') {
+                                                                            try {
+                                                                                await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
+                                                                                refreshData();
+                                                                            } catch (e) { console.error(e); }
+                                                                        }
+                                                                        setDrawerOpen(null);
+                                                                    }
+                                                                    setShowStatusMenu(false);
+                                                                    return;
+                                                                }
+                                                                const updated = { ...drawerOpen, status: st.id };
+                                                                setDrawerOpen(updated);
+                                                                setShowStatusMenu(false);
+                                                                if (drawerOpen.id !== 'new') {
+                                                                    try {
+                                                                        await fetch(`${API_BASE}/reservas/${drawerOpen.id}/status`, {
+                                                                            method: 'PATCH',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ status: st.id })
+                                                                        });
+                                                                        refreshData();
+                                                                    } catch (e) { console.error(e); }
+                                                                }
+                                                            }}
+                                                            style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            <div style={{ color: st.color }}>{st.icon}</div>
+                                                            <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>{st.label}</span>
+                                                            {drawerOpen?.status === st.id && <div style={{ marginLeft: 'auto', color: '#2563eb' }}><Check size={14} strokeWidth={3} /></div>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            onClick={() => setDrawerOpen(null)}
+                                            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', color: 'white', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                                        >
+                                            <X size={20} strokeWidth={2} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
