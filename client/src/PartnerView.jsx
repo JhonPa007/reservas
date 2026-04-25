@@ -58,6 +58,7 @@ export default function PartnerView() {
     const [profileTab, setProfileTab] = useState('resumen');
 
     const [showConfig, setShowConfig] = useState(false);
+    const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [hoverRes, setHoverRes] = useState(null);
     const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
@@ -1205,10 +1206,87 @@ export default function PartnerView() {
                                                     {String(drawerOpen?.cliente_telefono || '').replace('+51', '').trim() || 'Sin teléfono'}
                                                 </p>
 
-                                                <div style={{ display: 'flex', gap: '0.75rem', width: '100%', position: 'relative' }}>
+                                                <div style={{ display: 'flex', gap: '0.5rem', width: '100%', position: 'relative', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                    {/* STATUS SELECTOR */}
+                                                    <div style={{ position: 'relative', flex: '1 1 100%', marginBottom: '0.25rem' }}>
+                                                        <button
+                                                            onClick={() => setShowStatusMenu(!showStatusMenu)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.75rem',
+                                                                borderRadius: '16px',
+                                                                border: 'none',
+                                                                backgroundColor:
+                                                                    drawerOpen?.status === 'CONFIRMADA' ? '#d1fae5' :
+                                                                        drawerOpen?.status === 'PENDIENTE' ? '#fef3c7' :
+                                                                            drawerOpen?.status === 'EN_PROCESO' ? '#dbeafe' :
+                                                                                drawerOpen?.status === 'FINALIZADA' ? '#e0e7ff' :
+                                                                                    drawerOpen?.status === 'CANCELADA' ? '#fee2e2' : '#f3f4f6',
+                                                                color:
+                                                                    drawerOpen?.status === 'CONFIRMADA' ? '#065f46' :
+                                                                        drawerOpen?.status === 'PENDIENTE' ? '#92400e' :
+                                                                            drawerOpen?.status === 'EN_PROCESO' ? '#1e40af' :
+                                                                                drawerOpen?.status === 'FINALIZADA' ? '#3730a3' :
+                                                                                    drawerOpen?.status === 'CANCELADA' ? '#991b1b' : '#374151',
+                                                                fontWeight: 900,
+                                                                fontSize: '0.85rem',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '0.5rem',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }} />
+                                                            {drawerOpen?.status || 'SIN ESTADO'}
+                                                            <ChevronDown size={14} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                        </button>
+
+                                                        {showStatusMenu && (
+                                                            <div style={{ position: 'absolute', top: '110%', left: 0, width: '100%', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 110, border: '1px solid #f3f4f6', overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
+                                                                {[
+                                                                    { id: 'PENDIENTE', color: '#f59e0b', label: 'Pendiente' },
+                                                                    { id: 'CONFIRMADA', color: '#10b981', label: 'Confirmada' },
+                                                                    { id: 'EN_PROCESO', color: '#3b82f6', label: 'En proceso' },
+                                                                    { id: 'FINALIZADA', color: '#6366f1', label: 'Finalizada' },
+                                                                    { id: 'CANCELADA', color: '#ef4444', label: 'Cancelada' }
+                                                                ].map(st => (
+                                                                    <div
+                                                                        key={st.id}
+                                                                        onClick={async () => {
+                                                                            const updated = { ...drawerOpen, status: st.id };
+                                                                            setDrawerOpen(updated);
+                                                                            setShowStatusMenu(false);
+
+                                                                            // Si es una cita existente, actualizar en BD inmediatamente
+                                                                            if (drawerOpen.id !== 'new') {
+                                                                                try {
+                                                                                    await fetch(`${API_BASE}/reservas/${drawerOpen.id}/status`, {
+                                                                                        method: 'PATCH',
+                                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                                        body: JSON.stringify({ status: st.id })
+                                                                                    });
+                                                                                    refreshData();
+                                                                                } catch (e) { console.error("Error updating status", e); }
+                                                                            }
+                                                                        }}
+                                                                        style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                    >
+                                                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: st.color }} />
+                                                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{st.label}</span>
+                                                                        {drawerOpen?.status === st.id && <div style={{ marginLeft: 'auto', color: '#2563eb', fontWeight: 900 }}>✓</div>}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
                                                     <button
                                                         onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })}
-                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
                                                     >
                                                         Cambiar
                                                     </button>
@@ -1216,7 +1294,7 @@ export default function PartnerView() {
                                                     <div style={{ position: 'relative', flex: 1 }}>
                                                         <button
                                                             onClick={() => setShowClientActions(!showClientActions)}
-                                                            style={{ width: '100%', padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                                                            style={{ width: '100%', padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
                                                         >
                                                             Acciones <ChevronDown size={14} />
                                                         </button>
@@ -1261,9 +1339,9 @@ export default function PartnerView() {
 
                                                     <button
                                                         onClick={() => setViewState('profile')}
-                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
                                                     >
-                                                        Ver perfil
+                                                        Perfil
                                                     </button>
                                                 </div>
                                             </div>
