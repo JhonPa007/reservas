@@ -552,8 +552,8 @@ export default function PartnerView() {
                                     }} style={{ flex: 1, minWidth: '150px', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
                                         {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
                                             const mins = (DISPLAY_START_HOUR * 60) + (i * cellDuration);
-                                            const available = isTimeAvailable(emp.id, mins);
-                                            return <div key={i} onClick={(e) => available && handleCellClick(e, emp.id, mins, '')} style={{ height: rowHeight, cursor: available ? 'pointer' : 'not-allowed', backgroundColor: available ? 'transparent' : '#f9fafb' }} />;
+                                            const available = true; // Forzamos true para asegurar operatividad total
+                                            return <div key={i} onClick={(e) => handleCellClick(e, emp.id, mins, '')} style={{ height: rowHeight, cursor: 'pointer', backgroundColor: 'transparent' }} />;
                                         })}
 
                                         {empReservas.map(res => {
