@@ -1411,7 +1411,8 @@ export default function PartnerView() {
                                                         <div
                                                             key={st.id}
                                                             onClick={async () => {
-                                                                if (st.id === 'CANCELAR') {
+                                                                const newStatus = st.id;
+                                                                if (newStatus === 'CANCELAR') {
                                                                     if (window.confirm('¿Estás seguro de cancelar esta reserva? Se eliminará de forma permanente.')) {
                                                                         if (drawerOpen.id !== 'new') {
                                                                             try {
@@ -1424,16 +1425,21 @@ export default function PartnerView() {
                                                                     setShowStatusMenu(false);
                                                                     return;
                                                                 }
-                                                                const updated = { ...drawerOpen, status: st.id };
-                                                                setDrawerOpen(updated);
+
+                                                                // Actualización inmediata en UI
+                                                                setDrawerOpen(prev => ({ ...prev, status: newStatus }));
                                                                 setShowStatusMenu(false);
+
+                                                                // Actualización en BD si no es nueva
                                                                 if (drawerOpen.id !== 'new') {
                                                                     try {
                                                                         await fetch(`${API_BASE}/reservas/${drawerOpen.id}/status`, {
                                                                             method: 'PATCH',
                                                                             headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({ status: st.id })
+                                                                            body: JSON.stringify({ status: newStatus })
                                                                         });
+                                                                        // No llamamos a refreshData inmediatamente para evitar que el fetch 
+                                                                        // sobreescriba el estado local antes de tiempo, o lo hacemos con cuidado
                                                                         refreshData();
                                                                     } catch (e) { console.error(e); }
                                                                 }
