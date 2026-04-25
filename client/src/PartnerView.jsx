@@ -2146,7 +2146,28 @@ export default function PartnerView() {
                 </div>
             </div>
 
-            {/* Quick Action Menu */}
+            <FloatingMenus
+                quickActionMenu={quickActionMenu}
+                setQuickActionMenu={setQuickActionMenu}
+                empMenu={empMenu}
+                setEmpMenu={setEmpMenu}
+                empMenuRef={empMenuRef}
+                selectedDate={selectedDate}
+                setDrawerOpen={setDrawerOpen}
+                setViewState={setViewState}
+                handleAddAppointment={handleAddAppointment}
+                handleAddBlock={handleAddBlock}
+                handleEditShift={handleEditShift}
+                DISPLAY_START_HOUR={DISPLAY_START_HOUR}
+            />
+        </div>
+    </div >
+    );
+}
+
+const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, DISPLAY_START_HOUR }) => {
+    return (
+        <>
             {quickActionMenu && (
                 <>
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setQuickActionMenu(null)} />
@@ -2176,27 +2197,6 @@ export default function PartnerView() {
                             }
                         ].map((opt, i) => (
                             <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
-
-            {/* Employee Menu */}
-            {empMenu && (
-                <>
-                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)} />
-                    <div ref={empMenuRef} style={{ position: 'fixed', left: empMenu.x, top: empMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '200px', border: '1px solid #f3f4f6' }}>
-                        <div style={{ padding: '6px 12px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#9ca3af', fontWeight: 700 }}>Acciones</div>
-                        {[
-                            { label: 'Añadir cita', icon: <Plus size={14} />, action: () => handleAddAppointment(empMenu.empId) },
-                            { label: 'Añadir horario no disponible', icon: <Clock size={14} />, action: () => handleAddBlock(empMenu.empId) },
-                            { label: 'Editar turno', icon: <Settings size={14} />, action: () => handleEditShift(empMenu.empId) }
-                        ].map((opt, i) => (
-                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
                                 <div style={{ fontSize: '0.8rem', color: '#374151' }}>{opt.label}</div>
                             </div>
                         ))}
