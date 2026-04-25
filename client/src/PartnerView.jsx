@@ -829,10 +829,12 @@ export default function PartnerView() {
                                                 ({
                                                     'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                     'CONFIRMADA': { bg: '#ecfdf5', border: '#059669', text: '#065f46' },
-                                                    'INASISTENCIA': { bg: '#fffbeb', border: '#d97706', text: '#92400e' }
+                                                    'INASISTENCIA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' },
+                                                    'COMPLETADA': { bg: '#f0fdf4', border: '#10b981', text: '#166534' }
                                                 }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' });
 
                                             const isResizingThis = resizingRes?.id === res.id;
+                                            const isModificable = res.estado === 'RESERVADA' || res.estado === 'CONFIRMADA' || isBlocked;
 
                                             // Calcular duración real basada en fechas si no se está redimensionando
                                             let displayDuration = res.duracion_minutos || 40;
@@ -849,12 +851,16 @@ export default function PartnerView() {
                                             const width = `${100 / totalCols}%`;
                                             const left = `${(100 / totalCols) * colIndex}%`;
 
+                                            // Tiempo dinámico para la etiqueta
+                                            const startTime = safeDate(res.fecha_hora_inicio);
+                                            const endTime = isResizingThis ? addMinutes(startTime, displayDuration) : safeDate(res.fecha_hora_fin);
+
                                             return (
                                                 <div
                                                     key={res.id}
                                                     className="res-card"
-                                                    draggable={!isBlocked}
-                                                    onDragStart={(e) => handleDragStart(e, res)}
+                                                    draggable={isModificable && !isBlocked}
+                                                    onDragStart={(e) => isModificable && handleDragStart(e, res)}
                                                     onMouseEnter={(e) => !resizingRes && setHoverRes({ res, x: e.clientX, y: e.clientY })}
                                                     onMouseLeave={() => setHoverRes(null)}
                                                     onClick={() => !isResizingInProgress && !resizingRes && (setDrawerOpen({
@@ -875,7 +881,7 @@ export default function PartnerView() {
                                                         padding: '0.4rem 0.6rem',
                                                         fontSize: '0.75rem',
                                                         zIndex: isResizingThis ? 100 : 10,
-                                                        cursor: isBlocked ? 'pointer' : (isResizingThis ? 'ns-resize' : 'move'),
+                                                        cursor: isBlocked ? 'pointer' : (!isModificable ? 'default' : (isResizingThis ? 'ns-resize' : 'move')),
                                                         boxSizing: 'border-box',
                                                         overflow: 'hidden',
                                                         boxShadow: isResizingThis ? '0 4px 12px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)',
@@ -886,7 +892,7 @@ export default function PartnerView() {
                                                 >
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                         <div style={{ fontSize: '0.65rem', fontWeight: 800, color: colors.text, opacity: 0.9 }}>
-                                                            {format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(safeDate(res.fecha_hora_fin), 'h:mm a')}
+                                                            {format(startTime, 'h:mm')} - {format(endTime, 'h:mm a')}
                                                         </div>
                                                         <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
                                                             {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : `${res.cliente_nombre} ${res.cliente_apellidos || ''}`}
@@ -899,7 +905,7 @@ export default function PartnerView() {
                                                     )}
 
                                                     {/* Manija de redimensionamiento (Resize Handle) */}
-                                                    {!isBlocked && (
+                                                    {isModificable && !isBlocked && (
                                                         <div
                                                             onMouseDown={(e) => {
                                                                 e.stopPropagation();
