@@ -371,25 +371,36 @@ export default function PartnerView() {
     };
 
     function isTimeAvailable(empId, mins) {
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const empHorarios = horarios.filter(h => h.empleado_id === empId);
+        const empRec = recurrentes.filter(h => h.empleado_id === empId);
+
+        // Si no hay horarios configurados, permitimos reservar por defecto
+        if (empHorarios.length === 0 && empRec.length === 0) return true;
+
+        // Si hay horarios específicos para hoy, mandan sobre la recurrencia
         if (empHorarios.length > 0) {
             return empHorarios.some(h => {
                 const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
                 const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
-                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
+                const startMins = hStart * 60 + mStart;
+                const endMins = hEnd * 60 + mEnd;
+                return mins >= startMins && mins < endMins;
             });
         }
-        const empRec = recurrentes.filter(h => h.empleado_id === empId);
+
+        // Si no hay específicos, miramos los recurrentes (dia_semana)
         if (empRec.length > 0) {
-            const dayOfWeek = selectedDate.getDay(); // 0-6
+            const dayOfWeek = selectedDate.getDay();
             return empRec.some(h => {
                 if (h.dia_semana !== dayOfWeek) return false;
                 const [hStart, mStart] = h.hora_inicio.split(':').map(Number);
                 const [hEnd, mEnd] = h.hora_fin.split(':').map(Number);
-                return mins >= (hStart * 60 + mStart) && mins < (hEnd * 60 + mEnd);
+                const startMins = hStart * 60 + mStart;
+                const endMins = hEnd * 60 + mEnd;
+                return mins >= startMins && mins < endMins;
             });
         }
+
         return false;
     }
 
