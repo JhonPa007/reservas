@@ -445,7 +445,16 @@ export default function PartnerView() {
     }
 
     const timelineTop = ((now.getHours() * 60 + now.getMinutes() - DISPLAY_START_HOUR * 60) / cellDuration) * rowHeight;
-    const visibleEmployees = empleados.filter(emp => staffFilterMode === 'with_appointments' ? reservas.some(r => r.empleado_id === emp.id) : visibleStaffIds.includes(emp.id));
+    const visibleEmployees = useMemo(() => {
+        if (!empleados || empleados.length === 0) return [];
+        if (staffFilterMode === 'with_appointments') {
+            return empleados.filter(emp => reservas.some(r => String(r.empleado_id) === String(emp.id)));
+        }
+        // Si no hay ids visibles seleccionados, mostramos todos por defecto para evitar pantalla vacía
+        if (!visibleStaffIds || visibleStaffIds.length === 0) return empleados;
+
+        return empleados.filter(emp => visibleStaffIds.some(vId => String(vId) === String(emp.id)));
+    }, [empleados, reservas, staffFilterMode, visibleStaffIds]);
 
     return (
         <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
@@ -742,15 +751,189 @@ export default function PartnerView() {
                 )}
             </div>
 
-            {empMenu && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)}>
-                    <div ref={empMenuRef} style={{ position: 'fixed', left: empMenu.x, top: empMenu.y, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '220px', border: '1px solid #e5e7eb' }}>
-                        <div onClick={() => handleAddAppointment(empMenu.empId)} style={{ padding: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Añadir cita</div>
-                        <div onClick={() => handleAddBlock(empMenu.empId)} style={{ padding: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Bloquear horario</div>
+            {/* VIEW: CLIENT PROFILE (3 PANELS) */}
+            {viewState === 'profile' && (
+                <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+                    {/* Profile Sidebar Menu */}
+                    <div style={{ width: '220px', backgroundColor: '#f9fafb', borderRight: '1px solid #e5e7eb', padding: '1.5rem 0' }}>
+                        {['Resumen', 'Citas', 'Ventas', 'Datos del cliente', 'Artículos', 'Documentos', 'Billetera'].map(tab => (
+                            <div
+                                key={tab}
+                                onClick={() => setProfileTab(tab.toLowerCase())}
+                                style={{
+                                    padding: '0.75rem 1.5rem', fontSize: '0.85rem', fontWeight: profileTab === tab.toLowerCase() ? 800 : 500,
+                                    color: profileTab === tab.toLowerCase() ? '#000' : '#4b5563', cursor: 'pointer',
+                                    backgroundColor: profileTab === tab.toLowerCase() ? '#fff' : 'transparent',
+                                    borderRight: profileTab === tab.toLowerCase() ? '3px solid #000' : 'none'
+                                }}
+                            >
+                                {tab}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Profile Content - Resumen */}
+                    <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+                        <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '2rem' }}>Resumen</h1>
+
+                        {/* Top Row Stats */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <span style={{ fontWeight: 900, fontSize: '1rem' }}>Billetera</span>
+                                    <span style={{ color: '#2563eb', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer' }}>Ver Billetera</span>
+                                </div>
+                                <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.85rem' }}>Saldo</div>
+                                <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>0 PEN</div>
+                            </div>
+
+                            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem' }}>
+                                <div style={{ fontWeight: 900, fontSize: '1rem', marginBottom: '1.5rem' }}>Resumen</div>
+                                <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.85rem' }}>Total de ventas</div>
+                                <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>250 PEN</div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Grid Stats */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            {[
+                                { label: 'Citas', val: '17' },
+                                { label: 'Valoración', val: '-' },
+                                { label: 'Cancelada', val: '3' },
+                                { label: 'Inasistencia', val: '0' }
+                            ].map((stat, idx) => (
+                                <div key={idx} style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.25rem', position: 'relative' }}>
+                                    <Info size={14} style={{ position: 'absolute', top: '1rem', right: '1rem', color: '#d1d5db' }} />
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.5rem', color: '#111' }}>{stat.label}</div>
+                                    <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>{stat.val}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Personal Info Bar */}
+                        <div style={{ marginTop: '2.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
+                            <div style={{ display: 'flex', gap: '2rem', fontSize: '0.85rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><User size={16} /> Añadir pronombres</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><CalendarIcon size={16} /> Añadir fecha de nacimiento</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><Plus size={16} /> Creado en 10 ago 2025</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
-            <style dangerouslySetInnerHTML={{ __html: `.btn-icon { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; } .btn-icon:hover { background: #e5e7eb; } .btn-secondary { background: white; border: 1px solid #e5e7eb; padding: 0.5rem; border-radius: 10px; cursor: pointer; }` }} />
+
+            <FloatingMenus
+                quickActionMenu={quickActionMenu}
+                setQuickActionMenu={setQuickActionMenu}
+                empMenu={empMenu}
+                setEmpMenu={setEmpMenu}
+                empMenuRef={empMenuRef}
+                selectedDate={selectedDate}
+                setDrawerOpen={setDrawerOpen}
+                setViewState={setViewState}
+                handleAddAppointment={handleAddAppointment}
+                handleAddBlock={handleAddBlock}
+                handleEditShift={handleEditShift}
+                DISPLAY_START_HOUR={DISPLAY_START_HOUR}
+            />
+            <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
         </div>
     );
 }
+
+const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, DISPLAY_START_HOUR }) => {
+    return (
+        <>
+            {quickActionMenu && (
+                <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setQuickActionMenu(null)} />
+                    <div style={{ position: 'fixed', left: quickActionMenu.x + 10, top: quickActionMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '240px', border: '1px solid #f3f4f6' }}>
+                        <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {quickActionMenu.timeStr}
+                            <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
+                        </div>
+                        {[
+                            {
+                                label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
+                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const newDate = new Date(selectedDate);
+                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'CITA' });
+                                    setViewState('appointment'); setQuickActionMenu(null);
+                                }
+                            },
+                            {
+                                label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
+                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const newDate = new Date(selectedDate);
+                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                    setViewState('appointment'); setQuickActionMenu(null);
+                                }
+                            }
+                        ].map((opt, i) => (
+                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {empMenu && (
+                <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)} />
+                    <div ref={empMenuRef} style={{
+                        position: 'fixed',
+                        left: empMenu.x,
+                        top: empMenu.y + 10,
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                        padding: '12px',
+                        zIndex: 999,
+                        width: '280px',
+                        border: '1px solid #e5e7eb',
+                        animation: 'fadeIn 0.15s ease-out'
+                    }}>
+                        {/* Vistas Section */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                            {[
+                                { label: 'Vista de día', icon: <ExternalLink size={16} /> },
+                                { label: 'Vista de 3 días', icon: <Users size={16} /> },
+                                { label: 'Vista semanal', icon: <CalendarIcon size={16} /> },
+                                { label: 'Vista mensual', icon: <Settings size={16} /> }
+                            ].map((opt, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '8px 4px' }} />
+
+                        {/* Acciones Section */}
+                        <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {[
+                                { label: 'Añadir cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
+                                { label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
+                                { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
+                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => { } },
+                                { label: 'Ver miembro del equipo', icon: <User size={16} />, action: () => { } }
+                            ].map((opt, i) => (
+                                <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+        </>
+    );
+};
