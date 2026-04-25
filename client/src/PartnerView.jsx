@@ -11,21 +11,15 @@ const DISPLAY_END_HOUR = 21;
 /** Utilidad para parsear fechas de DB de forma segura */
 function safeDate(dateStr) {
     if (!dateStr) return new Date();
-    let s = "";
-    if (dateStr instanceof Date) {
-        const y = dateStr.getFullYear();
-        const m = String(dateStr.getMonth() + 1).padStart(2, '0');
-        const d = String(dateStr.getDate()).padStart(2, '0');
-        const hh = String(dateStr.getHours()).padStart(2, '0');
-        const mm = String(dateStr.getMinutes()).padStart(2, '0');
-        const ss = String(dateStr.getSeconds()).padStart(2, '0');
-        s = `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
-    } else {
-        s = String(dateStr).replace(' ', 'T');
-    }
+    if (dateStr instanceof Date) return dateStr;
+
+    // Si la fecha viene de la DB con espacio (YYYY-MM-DD HH:mm:ss)
+    // No usamos 'T' para que el navegador la interprete como Hora Local siempre
+    let s = String(dateStr);
     if (s.includes('.')) s = s.split('.')[0];
     if (s.endsWith('Z')) s = s.slice(0, -1);
-    const d = new Date(s);
+
+    const d = new Date(s.replace('T', ' ')); // Reemplazamos T por espacio para forzar hora local
     return isNaN(d.getTime()) ? new Date() : d;
 }
 
@@ -132,6 +126,15 @@ export default function PartnerView() {
             if (empMenu && empMenuRef.current && !empMenuRef.current.contains(e.target)) {
                 setEmpMenu(null);
             }
+
+            // Close drawer on click outside
+            if (drawerOpen && drawerRef.current && !drawerRef.current.contains(e.target)) {
+                // Solo si el clic no es en un elemento que deba ignorarse (como menus desplegables)
+                if (!e.target.closest('.no-close-drawer')) {
+                    setDrawerOpen(null);
+                    setViewState('appointment');
+                }
+            }
         }
 
         window.addEventListener('keydown', handleGlobalEvents);
@@ -140,7 +143,7 @@ export default function PartnerView() {
             window.removeEventListener('keydown', handleGlobalEvents);
             window.removeEventListener('mousedown', handleGlobalEvents);
         };
-    }, [showStaffFilter, empMenu]);
+    }, [showStaffFilter, empMenu, drawerOpen, quickActionMenu, showConfig, profileDrawerOpen]);
 
     useEffect(() => {
         fetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
@@ -178,7 +181,9 @@ export default function PartnerView() {
         const handleGlobalMouseMove = (e) => {
             if (resizingRes) {
                 const deltaY = e.clientY - resizingRes.startY;
-                const newDuration = Math.max(15, resizingRes.originalDuration + Math.round(deltaY / 2.333));
+                // Cálculo dinámico según rowHeight y escala
+                const deltaMins = Math.round(deltaY / rowHeight) * cellDuration;
+                const newDuration = Math.max(cellDuration, resizingRes.originalDuration + deltaMins);
                 setResizingRes(curr => ({ ...curr, currentDuration: newDuration }));
             }
         };
@@ -667,7 +672,7 @@ export default function PartnerView() {
                                 <span>
                                     {staffFilterMode === 'with_appointments' ? 'Miembros con citas' :
                                         (visibleStaffIds.length >= empleados.length || visibleStaffIds.length === 0) ? 'Todo el equipo' :
-                                            `${visibleStaffIds.length} miembros`}
+                                            `${visibleStaffIds.length} ${visibleStaffIds.length === 1 ? 'miembro' : 'miembros'}`}
                                 </span>
                                 <ChevronRight size={14} style={{ transform: showStaffFilter ? 'rotate(-90deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }} />
                             </button>
@@ -789,7 +794,7 @@ export default function PartnerView() {
                                         {(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <span translate="no" style={{ fontWeight: 600, fontSize: '0.72rem', color: '#374151', textAlign: 'center', maxWidth: '120px' }}>
+                                        <span translate="no" style={{ fontWeight: 600, fontSize: '0.65rem', color: '#374151', textAlign: 'center', maxWidth: '120px' }}>
                                             {emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}
                                         </span>
                                         <ChevronDown size={12} style={{ transform: empMenu?.empId === emp.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#9ca3af' }} />
@@ -1398,6 +1403,15 @@ export default function PartnerView() {
                                                 }} />
                                                 {drawerOpen?.status || 'RESERVADA'}
                                                 <ChevronDown size={14} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                            </button>
+
+                                            <button
+                                                onClick={() => setDrawerOpen(null)}
+                                                style={{ background: 'none', border: 'none', color: 'white', opacity: 0.8, cursor: 'pointer', marginLeft: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                                onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+                                            >
+                                                <X size={20} fontWeight={900} />
                                             </button>
 
                                             {showStatusMenu && (
