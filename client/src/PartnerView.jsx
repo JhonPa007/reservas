@@ -830,7 +830,7 @@ export default function PartnerView() {
                                                     'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                     'CONFIRMADA': { bg: '#ecfdf5', border: '#059669', text: '#065f46' },
                                                     'INASISTENCIA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' },
-                                                    'COMPLETADA': { bg: '#f0fdf4', border: '#10b981', text: '#166534' }
+                                                    'COMPLETADA': { bg: '#f3f4f6', border: '#d1d5db', text: '#6b7280' }
                                                 }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' });
 
                                             const isResizingThis = resizingRes?.id === res.id;
@@ -963,7 +963,7 @@ export default function PartnerView() {
                     'RESERVADA': { bg: '#2563eb', label: 'Reservada' },
                     'CONFIRMADA': { bg: '#059669', label: 'Confirmada' },
                     'INASISTENCIA': { bg: '#ef4444', label: 'Inasistencia' },
-                    'COMPLETADA': { bg: '#10b981', label: 'Completada / Pagada' }
+                    'COMPLETADA': { bg: '#6b7280', label: 'Completada / Pagada' }
                 }[currentRes.estado] || { bg: '#2563eb', label: 'Reservada' });
 
                 const popupWidth = 280;
@@ -1121,8 +1121,8 @@ export default function PartnerView() {
                                             cursor: 'pointer',
                                             outline: 'none',
                                             border: '1px solid #e5e7eb',
-                                            backgroundColor: (drawerOpen.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen.estado === 'INASISTENCIA' ? '#fef2f2' : (drawerOpen.estado === 'COMPLETADA' ? '#f0fdf4' : '#eff6ff'))),
-                                            color: (drawerOpen.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen.estado === 'INASISTENCIA' ? '#ef4444' : (drawerOpen.estado === 'COMPLETADA' ? '#10b981' : '#2563eb')))
+                                            backgroundColor: (drawerOpen.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen.estado === 'INASISTENCIA' ? '#fef2f2' : (drawerOpen.estado === 'COMPLETADA' ? '#f3f4f6' : '#eff6ff'))),
+                                            color: (drawerOpen.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen.estado === 'INASISTENCIA' ? '#ef4444' : (drawerOpen.estado === 'COMPLETADA' ? '#6b7280' : '#2563eb')))
                                         }}
                                     >
                                         <option value="RESERVADA">Reservada</option>
