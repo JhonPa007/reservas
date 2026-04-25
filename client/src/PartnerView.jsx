@@ -552,8 +552,19 @@ export default function PartnerView() {
                                     }} style={{ flex: 1, minWidth: '150px', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
                                         {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
                                             const mins = (DISPLAY_START_HOUR * 60) + (i * cellDuration);
-                                            const available = true; // Forzamos true para asegurar operatividad total
-                                            return <div key={i} onClick={(e) => handleCellClick(e, emp.id, mins, '')} style={{ height: rowHeight, cursor: 'pointer', backgroundColor: 'transparent' }} />;
+                                            const available = isTimeAvailable(emp.id, mins);
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    onClick={(e) => handleCellClick(e, emp.id, mins, '')}
+                                                    style={{
+                                                        height: rowHeight,
+                                                        cursor: 'pointer',
+                                                        backgroundColor: available ? 'transparent' : '#f9fafb',
+                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #e5e7eb' : '1px solid #f3f4f6'
+                                                    }}
+                                                />
+                                            );
                                         })}
 
                                         {empReservas.map(res => {
