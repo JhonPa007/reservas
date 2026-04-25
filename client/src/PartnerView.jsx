@@ -1128,7 +1128,7 @@ export default function PartnerView() {
                                         <option value="RESERVADA">Reservada</option>
                                         <option value="CONFIRMADA">Confirmada</option>
                                         <option value="INASISTENCIA">Inasistencia</option>
-                                        <option value="COMPLETADA">Completada / Pagada</option>
+                                        {drawerOpen.estado === 'COMPLETADA' && <option value="COMPLETADA">Completada / Pagada</option>}
                                         <option value="CANCELADA">Eliminar / Cancelar</option>
                                     </select>
                                 </div>
