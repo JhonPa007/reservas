@@ -92,10 +92,18 @@ const PartnerView = () => {
             const [eData, rData] = await Promise.all([
                 empRes.json(), resRes.json()
             ]);
-            setEmpleados(eData);
-            setReservas(rData);
+
+            // Blindaje: Asegurar que empleados y reservas sean arreglos
+            setEmpleados(Array.isArray(eData) ? eData : []);
+
+            // El endpoint /reservas/sucursal devuelve un objeto { reservas: [], horarios: [], ... }
+            const actualReservas = rData && rData.reservas ? rData.reservas : (Array.isArray(rData) ? rData : []);
+            setReservas(actualReservas);
+
         } catch (err) {
             console.error('Error fetching dynamic data:', err);
+            setEmpleados([]);
+            setReservas([]);
         } finally {
             setLoading(false);
         }
