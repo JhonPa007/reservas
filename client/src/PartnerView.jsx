@@ -1362,9 +1362,9 @@ export default function PartnerView() {
                                 <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid #f3f4f6', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                     <div style={{ cursor: 'pointer' }} onClick={() => setViewState('date_picker')}>
                                         <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'eee d MMM', { locale: es }) : 'Fecha'} <ChevronDown size={18} />
+                                            {drawerOpen?.fecha_hora_inicio ? format(safeDate(drawerOpen.fecha_hora_inicio), 'eeee d MMMM', { locale: es }) : 'Fecha'} <ChevronDown size={18} />
                                         </h3>
-                                        <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 500 }}>{drawerOpen?.fecha_hora_inicio ? format(new Date(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es }) : 'Hora'} • No se repite</span>
+                                        <span style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 500 }}>{drawerOpen?.fecha_hora_inicio ? format(safeDate(drawerOpen.fecha_hora_inicio), 'h:mm a', { locale: es }) : 'Hora'} • No se repite</span>
                                     </div>
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -1544,96 +1544,55 @@ export default function PartnerView() {
                                         </div>
                                     ) : (
                                         <>
-                                            {/* TIME SELECTION */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                            {/* DRAWER CONTENT - FRESHA STYLE */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                                {/* Details Section */}
                                                 <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
-                                                    <input
-                                                        type="time"
-                                                        value={drawerOpen?.startTime || '09:00'}
-                                                        onChange={(e) => {
-                                                            const start = e.target.value;
-                                                            const newStartDate = `${format(selectedDate, 'yyyy-MM-dd')} ${start}:00`;
-                                                            // Si hay servicio, recalcular fin
-                                                            let newEndDate = drawerOpen?.fecha_hora_fin;
-                                                            let endTime = drawerOpen?.endTime;
-                                                            if (drawerOpen?.servicio_duracion) {
-                                                                const d = addMinutes(safeDate(newStartDate), drawerOpen.servicio_duracion);
-                                                                newEndDate = format(d, 'yyyy-MM-dd HH:mm:ss');
-                                                                endTime = format(d, 'HH:mm');
-                                                            }
-                                                            setDrawerOpen({ ...drawerOpen, startTime: start, fecha_hora_inicio: newStartDate, fecha_hora_fin: newEndDate, endTime });
-                                                        }}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
-                                                    <input
-                                                        type="time"
-                                                        value={drawerOpen?.endTime || '10:00'}
-                                                        onChange={(e) => {
-                                                            const end = e.target.value;
-                                                            const newEndDate = `${format(selectedDate, 'yyyy-MM-dd')} ${end}:00`;
-                                                            setDrawerOpen({ ...drawerOpen, endTime: end, fecha_hora_fin: newEndDate });
-                                                        }}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
-                                                    />
-                                                </div>
-                                            </div>
+                                                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#374151' }}>Servicios</h4>
 
-                                            {/* SERVICE SEARCH (Screenshot 1) */}
-                                            <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
-                                                <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-                                                <input
-                                                    placeholder="Buscar por nombre de servicio"
-                                                    value={serviceSearchTerm}
-                                                    onChange={(e) => setServiceSearchTerm(e.target.value)}
-                                                    style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '0.95rem', outline: 'none' }}
-                                                />
-                                            </div>
-
-                                            {/* SERVICE LIST GROUPED */}
-                                            <div>
-                                                <h4 style={{ fontSize: '0.9rem', fontWeight: 900, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    Servicios para varones <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: '0.75rem' }}>{servicios.length}</span>
-                                                </h4>
-
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                    {servicios
-                                                        .filter(s => s.nombre.toLowerCase().includes(serviceSearchTerm.toLowerCase()))
-                                                        .map(s => (
-                                                            <div
-                                                                key={s.id}
-                                                                onClick={() => handleSelectService(s)}
-                                                                style={{
-                                                                    padding: '1.25rem',
-                                                                    borderRadius: '16px',
-                                                                    border: drawerOpen?.servicio_id === s.id ? '2px solid #2563eb' : '1px solid #f3f4f6',
-                                                                    backgroundColor: drawerOpen?.servicio_id === s.id ? '#eff6ff' : '#fff',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: 'flex-start',
-                                                                    transition: 'all 0.2s'
-                                                                }}
-                                                                onMouseEnter={e => {
-                                                                    if (drawerOpen?.servicio_id !== s.id) e.currentTarget.style.borderColor = '#d1d5db';
-                                                                }}
-                                                                onMouseLeave={e => {
-                                                                    if (drawerOpen?.servicio_id !== s.id) e.currentTarget.style.borderColor = '#f3f4f6';
-                                                                }}
-                                                            >
-                                                                <div>
-                                                                    <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.25rem' }}>{s.nombre}</div>
-                                                                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{s.duracion_minutos || 45}min</div>
-                                                                </div>
-                                                                <div style={{ textAlign: 'right' }}>
-                                                                    <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.75rem', marginBottom: '0.25rem' }}>desde</div>
-                                                                    <div style={{ fontWeight: 900, fontSize: '1rem' }}>{s.precio} PEN</div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                        <div style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid #e5e7eb', position: 'relative' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                                                <span style={{ fontWeight: 600, fontSize: '1.05rem', color: '#111827' }}>{drawerOpen?.servicio_nombre || 'Servicio'}</span>
+                                                                <span style={{ fontWeight: 600, fontSize: '1rem', color: '#111827' }}>{drawerOpen?.servicio_precio || 0} PEN</span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#6b7280', fontSize: '0.85rem' }}>
+                                                                <span>{drawerOpen?.fecha_hora_inicio ? format(safeDate(drawerOpen.fecha_hora_inicio), 'h:mm a') : '00:00'}</span>
+                                                                <span>•</span>
+                                                                <span>{drawerOpen?.servicio_duracion || 60} min</span>
+                                                                <span>•</span>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#374151', fontWeight: 500 }}>
+                                                                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: getAvatarColor(drawerOpen.empleado_id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 800 }}>
+                                                                        {(empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'U')[0].toUpperCase()}
+                                                                    </div>
+                                                                    {empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'Colaborador'}
                                                                 </div>
                                                             </div>
-                                                        ))}
+                                                        </div>
+
+                                                        <button
+                                                            onClick={() => setViewState('service_selector')}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.85rem',
+                                                                borderRadius: '12px',
+                                                                border: '1px dashed #d1d5db',
+                                                                background: 'none',
+                                                                color: '#2563eb',
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '0.5rem',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            <Plus size={16} /> Añadir servicio
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </>
