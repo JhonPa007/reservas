@@ -78,6 +78,7 @@ export default function PartnerView() {
     const [staffSearchTerm, setStaffSearchTerm] = useState('');
     const staffFilterRef = useRef(null);
     const empMenuRef = useRef(null);
+    const drawerRef = useRef(null);
     const [quickActionMenu, setQuickActionMenu] = useState(null);
     const quickActionMenuRef = useRef(null);
 
@@ -143,7 +144,7 @@ export default function PartnerView() {
             window.removeEventListener('keydown', handleGlobalEvents);
             window.removeEventListener('mousedown', handleGlobalEvents);
         };
-    }, [showStaffFilter, empMenu, drawerOpen, quickActionMenu, showConfig, profileDrawerOpen]);
+    }, [showStaffFilter, empMenu, drawerOpen, quickActionMenu, showConfig]);
 
     useEffect(() => {
         fetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
@@ -996,6 +997,7 @@ export default function PartnerView() {
                         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease-out' }}
                     >
                         <div
+                            ref={drawerRef}
                             onClick={(e) => e.stopPropagation()}
                             style={{ width: '100%', maxWidth: '850px', backgroundColor: '#f9fafb', height: '100%', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)', display: 'flex', overflow: 'hidden' }}
                         >
