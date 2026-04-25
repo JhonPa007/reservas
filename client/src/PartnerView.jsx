@@ -892,7 +892,7 @@ export default function PartnerView() {
                                                 >
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                         <div style={{ fontSize: '0.65rem', fontWeight: 800, color: colors.text, opacity: 0.9 }}>
-                                                            {format(startTime, 'h:mm')} - {format(endTime, 'h:mm a')}
+                                                            {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
                                                         </div>
                                                         <div style={{ fontWeight: 800, color: colors.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
                                                             {isBlocked ? (res.subtipo_bloqueo || 'BLOQUEO').toUpperCase() : `${res.cliente_nombre} ${res.cliente_apellidos || ''}`}
@@ -1090,13 +1090,14 @@ export default function PartnerView() {
                                             cursor: 'pointer',
                                             outline: 'none',
                                             border: '1px solid #e5e7eb',
-                                            backgroundColor: (drawerOpen.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen.estado === 'INASISTENCIA' ? '#fffbeb' : '#eff6ff')),
-                                            color: (drawerOpen.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen.estado === 'INASISTENCIA' ? '#d97706' : '#2563eb'))
+                                            backgroundColor: (drawerOpen.estado === 'CONFIRMADA' ? '#ecfdf5' : (drawerOpen.estado === 'INASISTENCIA' ? '#fef2f2' : (drawerOpen.estado === 'COMPLETADA' ? '#f0fdf4' : '#eff6ff'))),
+                                            color: (drawerOpen.estado === 'CONFIRMADA' ? '#059669' : (drawerOpen.estado === 'INASISTENCIA' ? '#ef4444' : (drawerOpen.estado === 'COMPLETADA' ? '#10b981' : '#2563eb')))
                                         }}
                                     >
                                         <option value="RESERVADA">Reservada</option>
                                         <option value="CONFIRMADA">Confirmada</option>
                                         <option value="INASISTENCIA">Inasistencia</option>
+                                        <option value="COMPLETADA">Completada / Pagada</option>
                                         <option value="CANCELADA">Eliminar / Cancelar</option>
                                     </select>
                                 </div>
