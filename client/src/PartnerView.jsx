@@ -29,6 +29,11 @@ function safeDate(dateStr) {
     return isNaN(d.getTime()) ? new Date() : d;
 }
 
+const getAvatarColor = (id) => {
+    const colors = ['#000000', '#c2410c', '#0f766e', '#1e40af', '#7e22ce', '#be123c', '#15803d', '#4338ca'];
+    return colors[id % colors.length] || '#000000';
+};
+
 export default function PartnerView() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [sucursal, setSucursal] = useState({ id: 1, nombre: 'JV Studio' });
@@ -660,7 +665,7 @@ export default function PartnerView() {
                                 <Users size={16} />
                                 <span>
                                     {staffFilterMode === 'with_appointments' ? 'Miembros con citas' :
-                                        visibleStaffIds.length === empleados.length ? 'Todo el equipo' :
+                                        (visibleStaffIds.length >= empleados.length || visibleStaffIds.length === 0) ? 'Todo el equipo' :
                                             `${visibleStaffIds.length} miembros`}
                                 </span>
                                 <ChevronRight size={14} style={{ transform: showStaffFilter ? 'rotate(-90deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }} />
@@ -734,8 +739,8 @@ export default function PartnerView() {
                                                 <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#fff', borderColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#e5e7eb' }}>
                                                     {visibleStaffIds.includes(emp.id) && <CheckCircle size={14} color="#fff" />}
                                                 </div>
-                                                <div translate="no" style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
-                                                    {((emp.nombres || emp.nombre_display || 'U').trim().match(/[a-zA-Z]/) || ['U'])[0].toUpperCase()}{((emp.apellidos || '').trim().match(/[a-zA-Z]/) || [''])[0].toUpperCase()}
+                                                <div translate="no" style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
+                                                    {(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}
                                                 </div>
                                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1f2937' }}>{emp.nombres} {emp.apellidos}</span>
                                             </div>
@@ -761,14 +766,29 @@ export default function PartnerView() {
                                             const rect = e.currentTarget.getBoundingClientRect();
                                             setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom });
                                         }}
-                                        style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 900, color: '#fff', cursor: 'pointer', transition: 'transform 0.2s' }}
+                                        style={{
+                                            width: '42px',
+                                            height: '42px',
+                                            borderRadius: '50%',
+                                            backgroundColor: getAvatarColor(emp.id),
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '1rem',
+                                            fontWeight: 900,
+                                            color: '#fff',
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s',
+                                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                                        }}
                                         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                     >
-                                        {((emp.nombres || emp.nombre_display || 'U').trim().match(/[a-zA-Z]/) || ['U'])[0].toUpperCase()}{((emp.apellidos || '').trim().match(/[a-zA-Z]/) || [''])[0].toUpperCase()}
+                                        {(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}
                                     </div>
-                                    <span translate="no" style={{ fontWeight: 800, fontSize: '0.85rem', color: '#111827' }}>{emp.nombres} {emp.apellidos}</span>
-                                    <span style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>JV Studio</span>
+                                    <span translate="no" style={{ fontWeight: 800, fontSize: '0.75rem', color: '#111827', textAlign: 'center', maxWidth: '120px' }}>
+                                        {emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}
+                                    </span>
                                 </div>
                             </div>
                         ))}
