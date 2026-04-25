@@ -33,6 +33,7 @@ const PartnerView = () => {
     const [reservas, setReservas] = useState([]);
     const [empleados, setEmpleados] = useState([]);
     const [sucursal, setSucursal] = useState(null);
+    const [sucursales, setSucursales] = useState([]);
     const [drawerOpen, setDrawerOpen] = useState(null); // { id, ...reserva }
     const [viewState, setViewState] = useState('appointment'); // 'appointment' | 'date_picker' | 'profile' | ...
     const [servicios, setServicios] = useState([]);
@@ -65,6 +66,7 @@ const PartnerView = () => {
 
         // Initial load of static data
         fetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
+            setSucursales(data);
             const suc = data[0] || null;
             setSucursal(suc);
         });
@@ -196,16 +198,20 @@ const PartnerView = () => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ display: 'flex', backgroundColor: '#f3f4f6', borderRadius: '24px', padding: '4px' }}>
-                            <button onClick={() => setView('calendar')} style={{ background: view === 'calendar' ? 'white' : 'transparent', border: 'none', padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: view === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>Calendario</button>
-                            <button onClick={() => setView('clients')} style={{ background: view === 'clients' ? 'white' : 'transparent', border: 'none', padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', boxShadow: view === 'clients' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>Clientes</button>
-                        </div>
+                        <h1 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Agenda</h1>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                        <select
+                            value={sucursal?.id || ''}
+                            onChange={(e) => {
+                                const suc = sucursales.find(s => s.id === parseInt(e.target.value));
+                                setSucursal(suc);
+                            }}
+                            style={{ border: '1px solid #e5e7eb', background: 'white', padding: '0.5rem 1rem', borderRadius: '12px', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}
+                        >
+                            {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                        </select>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}><Search size={18} /><Bell size={18} /></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '1.25rem', borderLeft: '1px solid #e5e7eb' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: '0.8rem' }}>A</div>
-                        </div>
                     </div>
                 </header>
 
