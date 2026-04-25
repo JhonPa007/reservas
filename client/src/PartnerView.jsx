@@ -1408,7 +1408,91 @@ export default function PartnerView() {
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-                                    {viewState === 'client_create' ? (
+                                    {viewState === 'client_edit' ? (
+                                        /* VIEW: CLIENT EDIT FORM */
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', padding: 0 }}>← Volver</button>
+                                                <h4 style={{ margin: 0, fontWeight: 900 }}>Editar cliente</h4>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Nombres</label>
+                                                        <input
+                                                            value={clientEditData.razon_social_nombres}
+                                                            onChange={e => setClientEditData({ ...clientEditData, razon_social_nombres: e.target.value })}
+                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Apellidos</label>
+                                                        <input
+                                                            value={clientEditData.apellidos}
+                                                            onChange={e => setClientEditData({ ...clientEditData, apellidos: e.target.value })}
+                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono móvil</label>
+                                                    <input
+                                                        value={clientEditData.telefono}
+                                                        onChange={e => setClientEditData({ ...clientEditData, telefono: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Correo electrónico</label>
+                                                    <input
+                                                        value={clientEditData.email}
+                                                        onChange={e => setClientEditData({ ...clientEditData, email: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                    />
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                                    <button
+                                                        onClick={() => setViewState('appointment')}
+                                                        style={{ flex: 1, padding: '1rem', borderRadius: '30px', backgroundColor: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', fontWeight: 800, cursor: 'pointer' }}
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                const resp = await fetch(`${API_BASE}/clientes/${drawerOpen.cliente_id}`, {
+                                                                    method: 'PATCH',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify(clientEditData)
+                                                                });
+                                                                if (resp.ok) {
+                                                                    const updated = await resp.json();
+                                                                    setDrawerOpen({
+                                                                        ...drawerOpen,
+                                                                        cliente_nombre: updated.razon_social_nombres,
+                                                                        cliente_apellidos: updated.apellidos,
+                                                                        cliente_telefono: updated.telefono
+                                                                    });
+                                                                    setViewState('appointment');
+                                                                    setToast("Cliente actualizado");
+                                                                    setTimeout(() => setToast(null), 3000);
+                                                                    refreshData();
+                                                                    fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
+                                                                }
+                                                            } catch (err) { alert('Error al guardar'); }
+                                                        }}
+                                                        style={{ flex: 2, padding: '1rem', borderRadius: '30px', backgroundColor: '#000', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                                                    >
+                                                        Guardar cambios
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : viewState === 'client_create' ? (
                                         /* NEW CLIENT FORM */
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                             <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>← Volver</button>
@@ -1661,85 +1745,6 @@ export default function PartnerView() {
                                         </div>
                                     )}
 
-                                    {/* VIEW: CLIENT EDIT FORM */}
-                                    {viewState === 'client_edit' && (
-                                        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                                <h1 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Editar cliente</h1>
-                                                <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={20} /></button>
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                                    <div>
-                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Nombres</label>
-                                                        <input
-                                                            value={clientEditData.razon_social_nombres}
-                                                            onChange={e => setClientEditData({ ...clientEditData, razon_social_nombres: e.target.value })}
-                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Apellidos</label>
-                                                        <input
-                                                            value={clientEditData.apellidos}
-                                                            onChange={e => setClientEditData({ ...clientEditData, apellidos: e.target.value })}
-                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Teléfono móvil</label>
-                                                    <input
-                                                        value={clientEditData.telefono}
-                                                        onChange={e => setClientEditData({ ...clientEditData, telefono: e.target.value })}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Correo electrónico</label>
-                                                    <input
-                                                        value={clientEditData.email}
-                                                        onChange={e => setClientEditData({ ...clientEditData, email: e.target.value })}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
-                                                    />
-                                                </div>
-
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            const resp = await fetch(`${API_BASE}/clientes/${drawerOpen.cliente_id}`, {
-                                                                method: 'PATCH',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify(clientEditData)
-                                                            });
-                                                            if (resp.ok) {
-                                                                const updated = await resp.json();
-                                                                // Actualizar drawer localmente
-                                                                setDrawerOpen({
-                                                                    ...drawerOpen,
-                                                                    cliente_nombre: updated.razon_social_nombres,
-                                                                    cliente_apellidos: updated.apellidos,
-                                                                    cliente_telefono: updated.telefono
-                                                                });
-                                                                setViewState('appointment');
-                                                                setToast("Cliente actualizado");
-                                                                setTimeout(() => setToast(null), 3000);
-                                                                refreshData();
-                                                                // Refrescar lista de clientes global
-                                                                fetch(`${API_BASE}/clientes`).then(r => r.json()).then(setClientes);
-                                                            }
-                                                        } catch (err) { alert('Error al guardar'); }
-                                                    }}
-                                                    style={{ marginTop: '1rem', padding: '1rem', borderRadius: '30px', backgroundColor: '#000', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}
-                                                >
-                                                    Guardar cambios
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
