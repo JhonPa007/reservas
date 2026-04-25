@@ -1403,7 +1403,7 @@ export default function PartnerView() {
                                             {showStatusMenu && (
                                                 <div style={{ position: 'absolute', top: '115%', right: 0, width: '220px', backgroundColor: 'white', borderRadius: '14px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', zIndex: 110, border: '1px solid #e5e7eb', overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
                                                     {[
-                                                        { id: 'RESERVADA', color: '#f59e0b', label: 'Reservada', icon: <CalendarIcon size={14} /> },
+                                                        { id: 'RESERVADA', color: '#f59e0b', label: 'Reservada', icon: <Calendar size={14} /> },
                                                         { id: 'CONFIRMADA', color: '#10b981', label: 'Confirmada', icon: <Check size={14} /> },
                                                         { id: 'INASISTENCIA', color: '#6b7280', label: 'Inasistencia', icon: <UserX size={14} /> },
                                                         { id: 'CANCELAR', color: '#ef4444', label: 'Cancelar (Eliminar)', icon: <X size={14} /> }
