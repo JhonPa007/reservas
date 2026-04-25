@@ -203,12 +203,12 @@ export default function PartnerView() {
                             })
                         });
 
-                        // Pequeño delay para asegurar que DB procesó el cambio
+                        // Delay más conservador para asegurar estabilidad en DB
                         setTimeout(() => {
                             refreshData();
                             setToast("Cita Reprogramada");
                             setTimeout(() => setToast(null), 3000);
-                        }, 200);
+                        }, 500);
 
                     } catch (err) {
                         console.error("Error al guardar duración:", err);
@@ -351,12 +351,13 @@ export default function PartnerView() {
         const nStart = format(newDate, 'yyyy-MM-dd HH:mm:ss');
         const nEndStr = format(addMinutes(newDate, duration), 'yyyy-MM-dd HH:mm:ss');
 
-        // Actualización optimista local
+        // Actualización optimista local COMPLETA
         setReservas(prev => prev.map(r => String(r.id) === String(resId) ? {
             ...r,
             empleado_id: empleadoId,
             fecha_hora_inicio: nStart,
-            fecha_hora_fin: nEndStr
+            fecha_hora_fin: nEndStr,
+            duracion_minutos: duration
         } : r));
 
         try {
@@ -369,9 +370,12 @@ export default function PartnerView() {
                     fecha_hora_fin: nEndStr
                 })
             });
-            refreshData();
-            setToast("Cita Reprogramada");
-            setTimeout(() => setToast(null), 3000);
+            // Delay para asegurar que el servidor procesó el cambio antes de refrescar
+            setTimeout(() => {
+                refreshData();
+                setToast("Cita Reprogramada");
+                setTimeout(() => setToast(null), 3000);
+            }, 500);
         } catch (err) {
             console.error(err);
             refreshData(); // Rollback en caso de error
