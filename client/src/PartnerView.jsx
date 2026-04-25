@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Sidebar from './Sidebar';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -915,13 +915,12 @@ export default function PartnerView() {
 
                                             // CITA
                                             const colorScheme = {
-                                                'PENDIENTE': { bg: '#eff6ff', border: '#2173df', text: '#1e40af', accent: '#3b82f6' },
+                                                'RESERVADA': { bg: '#eff6ff', border: '#2173df', text: '#1e40af', accent: '#3b82f6' },
                                                 'CONFIRMADA': { bg: '#f0fdf4', border: '#22c55e', text: '#166534', accent: '#22c55e' },
-                                                'EN_PROCESO': { bg: '#fdf4ff', border: '#d946ef', text: '#701a75', accent: '#d946ef' },
-                                                'FINALIZADA': { bg: '#f8fafc', border: '#cbd5e1', text: '#475569', accent: '#64748b' },
+                                                'INASISTENCIA': { bg: '#f8fafc', border: '#cbd5e1', text: '#475569', accent: '#64748b' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b', accent: '#ef4444' }
                                             };
-                                            const theme = colorScheme[res.estado] || colorScheme['PENDIENTE'];
+                                            const theme = colorScheme[res.estado] || colorScheme['RESERVADA'];
 
                                             return (
                                                 <div
@@ -958,8 +957,8 @@ export default function PartnerView() {
                                                     }}
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: theme.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {res.cliente_nombre || 'Sin nombre'}
+                                                        <span translate="no" style={{ fontSize: '0.65rem', fontWeight: 900, color: theme.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos?.split(' ')[0] || ''}` : 'Sin nombre'}
                                                         </span>
                                                         {res.estado === 'CONFIRMADA' && <CheckCircle size={10} color={theme.accent} />}
                                                     </div>
@@ -1204,97 +1203,113 @@ export default function PartnerView() {
                                         </div>
                                     ) : drawerOpen?.cliente_id ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '2rem' }}>
-                                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '2rem', color: '#2563eb', marginBottom: '1rem' }}>
-                                                    {drawerOpen?.cliente_nombre?.[0] || 'A'}
-                                                </div>
-                                                <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 0.25rem 0' }}>{drawerOpen?.cliente_nombre} {drawerOpen?.cliente_apellidos || ''}</h2>
-                                                <p style={{ fontSize: '0.95rem', color: '#6b7280', margin: '0 0 1.5rem 0' }}>
-                                                    {String(drawerOpen?.cliente_telefono || '').replace('+51', '').trim() || 'Sin teléfono'}
-                                                </p>
-
-                                                <div style={{ display: 'flex', gap: '0.5rem', width: '100%', position: 'relative', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                                    <button
-                                                        onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })}
-                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
-                                                    >
-                                                        Cambiar
-                                                    </button>
-
-                                                    <div style={{ position: 'relative', flex: 1 }}>
-                                                        <button
-                                                            onClick={() => setShowClientActions(!showClientActions)}
-                                                            style={{ width: '100%', padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
-                                                        >
-                                                            Acciones <ChevronDown size={14} />
-                                                        </button>
-
-                                                        {showClientActions && (
-                                                            <div style={{ position: 'absolute', top: '110%', left: 0, width: '220px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-                                                                <div style={{ padding: '0.5rem' }}>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const c = clientes.find(cli => cli.id === drawerOpen.cliente_id) || { razon_social_nombres: drawerOpen.cliente_nombre, apellidos: drawerOpen.cliente_apellidos, telefono: drawerOpen.cliente_telefono };
-                                                                            setClientEditData({
-                                                                                razon_social_nombres: c.razon_social_nombres || '',
-                                                                                apellidos: c.apellidos || '',
-                                                                                telefono: c.telefono || '',
-                                                                                email: c.email || ''
-                                                                            });
-                                                                            setViewState('client_edit');
-                                                                            setShowClientActions(false);
-                                                                        }}
-                                                                        style={{ width: '100%', textAlign: 'left', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
-                                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                                    >
-                                                                        Editar datos del cliente
-                                                                    </button>
-                                                                    <button
-                                                                        style={{ width: '100%', textAlign: 'left', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#ef4444' }}
-                                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                                        onClick={() => {
-                                                                            if (window.confirm('¿Eliminar a este cliente de la base de datos?')) {
-                                                                                setShowClientActions(false);
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        Eliminar cliente
-                                                                    </button>
-                                                                </div>
+                                            {/* CENTRALIZED CLIENT DATA LOOKUP */}
+                                            {(() => {
+                                                const fullClient = clientes.find(c => c.id === drawerOpen?.cliente_id) || {};
+                                                return (
+                                                    <>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '2rem', width: '100%' }}>
+                                                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '2rem', color: '#2563eb', marginBottom: '1rem' }}>
+                                                                {fullClient.razon_social_nombres?.[0] || 'C'}
                                                             </div>
-                                                        )}
-                                                    </div>
+                                                            <h2 translate="no" style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 0.25rem 0' }}>
+                                                                {fullClient.razon_social_nombres} {fullClient.apellidos || ''}
+                                                            </h2>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#6b7280', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                                                                <Phone size={14} />
+                                                                <span>{fullClient.telefono || 'Sin teléfono'}</span>
+                                                                <Pencil size={12} style={{ cursor: 'pointer', marginLeft: '4px', opacity: 0.6 }} onClick={() => {
+                                                                    setClientEditData(fullClient);
+                                                                    setViewState('client_edit');
+                                                                }} />
+                                                            </div>
 
-                                                    <button
-                                                        onClick={() => setViewState('profile')}
-                                                        style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
-                                                    >
-                                                        Perfil
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 1rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
-                                                    <span>🎂</span>
-                                                    <span style={{ fontWeight: 600 }}>
-                                                        {(() => {
-                                                            const client = clientes.find(c => c.id === drawerOpen?.cliente_id);
-                                                            return client?.fecha_nacimiento ? format(safeDate(client.fecha_nacimiento), 'd MMM yyyy', { locale: es }) : 'Añadir fecha de nacimiento';
-                                                        })()}
-                                                    </span>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
-                                                    <span>✨</span>
-                                                    <span style={{ fontWeight: 600 }}>
-                                                        {(() => {
-                                                            const client = clientes.find(c => c.id === drawerOpen?.cliente_id);
-                                                            return client?.created_at ? `Creado en ${format(safeDate(client.created_at), 'd MMM yyyy', { locale: es })}` : 'Creado recientemente';
-                                                        })()}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%', position: 'relative', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                                <button
+                                                                    onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })}
+                                                                    style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                                                                >
+                                                                    Cambiar
+                                                                </button>
+
+                                                                <div style={{ position: 'relative', flex: 1 }}>
+                                                                    <button
+                                                                        onClick={() => setShowClientActions(!showClientActions)}
+                                                                        style={{ width: '100%', padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                                                                    >
+                                                                        Acciones <ChevronDown size={14} />
+                                                                    </button>
+
+                                                                    {showClientActions && (
+                                                                        <div style={{ position: 'absolute', top: '110%', left: 0, width: '220px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                                                                            <div style={{ padding: '0.5rem' }}>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setClientEditData(fullClient);
+                                                                                        setViewState('client_edit');
+                                                                                        setShowClientActions(false);
+                                                                                    }}
+                                                                                    style={{ width: '100%', textAlign: 'left', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                                                                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                                >
+                                                                                    Editar datos del cliente
+                                                                                </button>
+                                                                                <button
+                                                                                    style={{ width: '100%', textAlign: 'left', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#ef4444' }}
+                                                                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                                                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                                    onClick={() => {
+                                                                                        if (window.confirm('¿Eliminar a este cliente de la base de datos?')) {
+                                                                                            setShowClientActions(false);
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    Eliminar cliente
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <button
+                                                                    onClick={() => setViewState('profile')}
+                                                                    style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                                                                >
+                                                                    Perfil
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 1rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                                <Mail size={16} />
+                                                                <span style={{ fontWeight: 600 }}>{fullClient.email || 'Añadir correo electrónico'}</span>
+                                                                <Pencil size={12} style={{ cursor: 'pointer', marginLeft: 'auto', opacity: 0.6 }} onClick={() => {
+                                                                    setClientEditData(fullClient);
+                                                                    setViewState('client_edit');
+                                                                }} />
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                                <CalendarIcon size={16} />
+                                                                <span style={{ fontWeight: 600 }}>
+                                                                    {fullClient.fecha_nacimiento ? format(safeDate(fullClient.fecha_nacimiento), 'd MMM yyyy', { locale: es }) : 'Añadir fecha de nacimiento'}
+                                                                </span>
+                                                                <Pencil size={12} style={{ cursor: 'pointer', marginLeft: 'auto', opacity: 0.6 }} onClick={() => {
+                                                                    setClientEditData(fullClient);
+                                                                    setViewState('client_edit');
+                                                                }} />
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                                <Clock size={16} />
+                                                                <span style={{ fontWeight: 600 }}>
+                                                                    {fullClient.created_at ? `Registrado el ${format(safeDate(fullClient.created_at), 'd MMM yyyy', { locale: es })}` : 'Registrado recientemente'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     ) : (
                                         /* CLIENT SELECTION FLOW */
@@ -1399,11 +1414,11 @@ export default function PartnerView() {
                                                 <div style={{
                                                     width: '6px', height: '6px', borderRadius: '50%',
                                                     backgroundColor:
-                                                        drawerOpen?.status === 'CONFIRMADA' ? '#10b981' :
-                                                            drawerOpen?.status === 'RESERVADA' ? '#f59e0b' :
-                                                                drawerOpen?.status === 'INASISTENCIA' ? '#9ca3af' : '#fff'
+                                                        drawerOpen?.estado === 'CONFIRMADA' ? '#10b981' :
+                                                            drawerOpen?.estado === 'RESERVADA' ? '#f59e0b' :
+                                                                drawerOpen?.estado === 'INASISTENCIA' ? '#9ca3af' : '#fff'
                                                 }} />
-                                                {drawerOpen?.status || 'RESERVADA'}
+                                                {drawerOpen?.estado || 'RESERVADA'}
                                                 <ChevronDown size={14} style={{ transform: showStatusMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                                             </button>
 
@@ -1443,7 +1458,7 @@ export default function PartnerView() {
                                                                 }
 
                                                                 // Actualización inmediata en UI
-                                                                setDrawerOpen(prev => ({ ...prev, status: newStatus }));
+                                                                setDrawerOpen(prev => ({ ...prev, estado: newStatus }));
                                                                 setShowStatusMenu(false);
 
                                                                 // Actualización en BD si no es nueva
@@ -1452,10 +1467,8 @@ export default function PartnerView() {
                                                                         await fetch(`${API_BASE}/reservas/${drawerOpen.id}/status`, {
                                                                             method: 'PATCH',
                                                                             headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({ status: newStatus })
+                                                                            body: JSON.stringify({ estado: newStatus })
                                                                         });
-                                                                        // No llamamos a refreshData inmediatamente para evitar que el fetch 
-                                                                        // sobreescriba el estado local antes de tiempo, o lo hacemos con cuidado
                                                                         refreshData();
                                                                     } catch (e) { console.error(e); }
                                                                 }
@@ -1739,7 +1752,7 @@ export default function PartnerView() {
                 handleEditShift={handleEditShift}
                 DISPLAY_START_HOUR={DISPLAY_START_HOUR}
             />
-        </div>
+        </div >
     );
 }
 
@@ -1835,12 +1848,7 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
                     </div>
                 </>
             )}
-
             <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
         </>
     );
 };
-
-
-
-
