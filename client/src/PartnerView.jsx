@@ -376,34 +376,38 @@ export default function PartnerView() {
             const empHorarios = (horarios || []).filter(h => String(h.empleado_id) === empIdStr);
             const empRec = (recurrentes || []).filter(h => String(h.empleado_id) === empIdStr);
 
-            // Si no hay horarios configurables definidos para este empleado, permitimos todo por defecto (BLANCO)
-            if (empHorarios.length === 0 && empRec.length === 0) return true;
-
+            // FUNCIÓN DE COMPROBACIÓN DE HORA
             const check = (h) => {
-                const [hStart] = String(h.hora_inicio || '00:00').split(':').map(Number);
-                const [hEnd] = String(h.hora_fin || '23:59').split(':').map(Number);
-                const [mStart] = String(h.hora_inicio || '00:00').split(':').slice(1).map(Number);
-                const [mEnd] = String(h.hora_fin || '23:59').split(':').slice(1).map(Number);
+                const [hStart, mStart] = String(h.hora_inicio || '00:00').split(':').map(Number);
+                const [hEnd, mEnd] = String(h.hora_fin || '23:59').split(':').map(Number);
                 const sMins = hStart * 60 + (mStart || 0);
                 const eMins = hEnd * 60 + (mEnd || 0);
                 return mins >= sMins && mins < eMins;
             };
 
+            // 1. Horarios específicos del día (tienen prioridad absoluta)
             if (empHorarios.length > 0) return empHorarios.some(check);
 
+            // 2. Horarios recurrentes
             if (empRec.length > 0) {
                 const jsDay = selectedDate.getDay();
-                return empRec.some(h => {
+                const matchedRecs = empRec.filter(h => {
                     const dbDay = parseInt(h.dia_semana);
-                    const dayMatches = dbDay === jsDay || (dbDay === 7 && jsDay === 0);
-                    return dayMatches && check(h);
+                    return dbDay === jsDay || (dbDay === 7 && jsDay === 0);
                 });
+                if (matchedRecs.length > 0) return matchedRecs.some(check);
+                // Si hay horarios recurrentes pero NINGUNO coincide con hoy domingo/día actual, 
+                // significa que este empleado NO trabaja hoy. -> RAYAS
+                return false;
             }
 
-            return true; // Fallback a blanco
+            // 3. Fallback: Si no hay absolutamente nada configurado (ni hoy ni recurrente), 
+            // asumimos disponible solo si NO es domingo (para evitar el susto de todo gris entre semana)
+            const isSunday = selectedDate.getDay() === 0;
+            return !isSunday;
         } catch (e) {
             console.error("Error en isTimeAvailable:", e);
-            return true; // Ante error, blanco siempre
+            return true;
         }
     }
 
