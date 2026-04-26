@@ -377,25 +377,33 @@ export default function PartnerView() {
             const empRec = (recurrentes || []).filter(h => String(h.empleado_id) === empIdStr);
 
             const check = (h) => {
-                const [hStart, mStart] = String(h.hora_inicio || '00:00').split(':').map(Number);
-                const [hEnd, mEnd] = String(h.hora_fin || '23:59').split(':').map(Number);
-                const sMins = hStart * 60 + (mStart || 0);
-                const eMins = hEnd * 60 + (mEnd || 0);
+                if (!h.hora_inicio || !h.hora_fin) return false;
+                const [hS, mS] = h.hora_inicio.split(':').map(Number);
+                const [hE, mE] = h.hora_fin.split(':').map(Number);
+                const sMins = hS * 60 + (mS || 0);
+                const eMins = hE * 60 + (mE || 0);
                 return mins >= sMins && mins < eMins;
             };
 
+            // 1. Prioridad: Horarios específicos hoy
             if (empHorarios.length > 0) return empHorarios.some(check);
+
+            // 2. Prioridad: Horarios recurrentes
             if (empRec.length > 0) {
                 const jsDay = selectedDate.getDay();
-                const matchedRecs = empRec.filter(h => {
+                const todayRecs = empRec.filter(h => {
                     const dbDay = parseInt(h.dia_semana);
                     return dbDay === jsDay || (dbDay === 7 && jsDay === 0);
                 });
-                return matchedRecs.some(check);
+                // Si tiene horarios recurrentes pero NINGUNO es hoy: DESCANSA (GRIS)
+                if (todayRecs.length === 0) return false;
+                return todayRecs.some(check);
             }
-            return false; // Por defecto GRIS (No habilitado)
+
+            // 3. Fallback: Si no hay NADA configurado en la DB para este empleado, blanco (para no bloquear)
+            return true;
         } catch (e) {
-            return false;
+            return true;
         }
     }
 
