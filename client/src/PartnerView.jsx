@@ -563,8 +563,8 @@ export default function PartnerView() {
                                                     style={{
                                                         height: rowHeight,
                                                         cursor: 'pointer',
-                                                        backgroundColor: available ? '#fff' : '#f8f9fa',
-                                                        backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(229, 231, 235, 0.5) 10px, rgba(229, 231, 235, 0.5) 11px)',
+                                                        backgroundColor: available ? '#ffffff' : '#fafafa',
+                                                        backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.6) 3px, rgba(229, 231, 235, 0.6) 4px)',
                                                         borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #e5e7eb' : '1px solid #f3f4f6',
                                                     }}
                                                 />
