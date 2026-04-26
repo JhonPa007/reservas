@@ -376,7 +376,6 @@ export default function PartnerView() {
             const empHorarios = (horarios || []).filter(h => String(h.empleado_id) === empIdStr);
             const empRec = (recurrentes || []).filter(h => String(h.empleado_id) === empIdStr);
 
-            // FUNCIÓN DE COMPROBACIÓN DE HORA
             const check = (h) => {
                 const [hStart, mStart] = String(h.hora_inicio || '00:00').split(':').map(Number);
                 const [hEnd, mEnd] = String(h.hora_fin || '23:59').split(':').map(Number);
@@ -385,30 +384,27 @@ export default function PartnerView() {
                 return mins >= sMins && mins < eMins;
             };
 
-            // 1. Horarios específicos del día (tienen prioridad absoluta)
             if (empHorarios.length > 0) return empHorarios.some(check);
-
-            // 2. Horarios recurrentes
             if (empRec.length > 0) {
                 const jsDay = selectedDate.getDay();
                 const matchedRecs = empRec.filter(h => {
                     const dbDay = parseInt(h.dia_semana);
                     return dbDay === jsDay || (dbDay === 7 && jsDay === 0);
                 });
-                if (matchedRecs.length > 0) return matchedRecs.some(check);
-                // Si hay horarios recurrentes pero NINGUNO coincide con hoy domingo/día actual, 
-                // significa que este empleado NO trabaja hoy. -> RAYAS
-                return false;
+                return matchedRecs.some(check);
             }
-
-            // 3. Fallback: Si no hay absolutamente nada configurado (ni hoy ni recurrente), 
-            // asumimos disponible solo si NO es domingo (para evitar el susto de todo gris entre semana)
-            const isSunday = selectedDate.getDay() === 0;
-            return !isSunday;
+            return false; // Por defecto GRIS (No habilitado)
         } catch (e) {
-            console.error("Error en isTimeAvailable:", e);
-            return true;
+            return false;
         }
+    }
+
+    function formatTimeTooltip(mins) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        const period = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
     }
 
     function getDurationHeight(mins) { return (mins / cellDuration) * rowHeight; }
@@ -566,6 +562,7 @@ export default function PartnerView() {
                                             return (
                                                 <div
                                                     key={i}
+                                                    title={formatTimeTooltip(mins)}
                                                     onClick={(e) => handleCellClick(e, emp.id, mins, '')}
                                                     style={{
                                                         height: rowHeight,
