@@ -232,6 +232,10 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
 
     console.log(`[GET /api/reservas] Sucursal: ${sucursalId}, Fecha: ${fecha}, Encontradas: ${resReservas.rows.length}`);
 
+    // Extraemos el día de la semana de forma manual para evitar líos de UTC (YYYY-MM-DD -> 0=Dom)
+    const [y, m, d] = fecha.split('-').map(Number);
+    const dayOfWeek = new Date(y, m - 1, d).getDay();
+
     const resHorarios = await pool.query(
       'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_empleados WHERE sucursal_id = $1 AND fecha = $2',
       [sucursalId, fecha]
@@ -239,7 +243,7 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
 
     const resRecurrentes = await pool.query(
       'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_recurrentes WHERE sucursal_id = $1 AND dia_semana = $2',
-      [sucursalId, new Date(fecha).getUTCDay()]
+      [sucursalId, dayOfWeek]
     );
 
     res.json({
