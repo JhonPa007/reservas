@@ -400,10 +400,10 @@ export default function PartnerView() {
                 return todayRecs.some(check);
             }
 
-            // 3. Fallback: Si no hay NADA configurado en la DB para este empleado, blanco (para no bloquear)
-            return true;
+            // 3. Fallback: Si no hay absolutamente NADA configurado, mostramos como NO disponible (GRIS)
+            return false;
         } catch (e) {
-            return true;
+            return false;
         }
     }
 

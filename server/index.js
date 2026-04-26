@@ -235,6 +235,9 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
     const [y, m, d] = fecha.split('-').map(Number);
     const dayOfWeek = new Date(y, m - 1, d).getDay();
 
+    // Ajuste para base de datos (JS Sunday=0 -> DB Sunday=7)
+    const dbDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+
     const resHorarios = await pool.query(
       'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_empleados WHERE fecha = $1',
       [fecha]
@@ -242,7 +245,7 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
 
     const resRecurrentes = await pool.query(
       'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_empleado WHERE dia_semana = $1',
-      [dayOfWeek]
+      [dbDay]
     );
 
     res.json({
