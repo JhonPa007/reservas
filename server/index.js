@@ -241,7 +241,7 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
     );
 
     const resRecurrentes = await pool.query(
-      'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_recurrentes WHERE dia_semana = $1',
+      'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_empleado WHERE dia_semana = $1',
       [dayOfWeek]
     );
 
