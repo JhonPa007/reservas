@@ -375,8 +375,8 @@ export default function PartnerView() {
         const empHorarios = horarios.filter(h => String(h.empleado_id) === empIdStr);
         const empRec = recurrentes.filter(h => String(h.empleado_id) === empIdStr);
 
-        // Si no hay ningún horario configurado en el sistema, asumimos que está abierto (para evitar bloqueo total)
-        if (empHorarios.length === 0 && empRec.length === 0) return true;
+        // Si no hay ningún horario configurado para este empleado hoy ni recurrente, mostramos como cerrado (gris)
+        if (empHorarios.length === 0 && empRec.length === 0) return false;
 
         const checkTime = (h) => {
             const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
@@ -563,9 +563,9 @@ export default function PartnerView() {
                                                     style={{
                                                         height: rowHeight,
                                                         cursor: 'pointer',
-                                                        backgroundColor: available ? 'transparent' : '#f3f4f6',
+                                                        backgroundColor: available ? '#fff' : '#f8f9fa',
+                                                        backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(229, 231, 235, 0.5) 10px, rgba(229, 231, 235, 0.5) 11px)',
                                                         borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #e5e7eb' : '1px solid #f3f4f6',
-                                                        opacity: available ? 1 : 0.8
                                                     }}
                                                 />
                                             );
