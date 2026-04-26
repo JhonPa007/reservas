@@ -124,8 +124,7 @@ app.get('/api/empleados/:sucursalId', async (req, res) => {
   const { sucursalId } = req.params;
   try {
     const result = await pool.query(
-      'SELECT id, nombres, apellidos, nombre_display FROM empleados WHERE (sucursal_id = $1 OR sucursal_id IS NULL) AND realiza_servicios = true AND activo = true ORDER BY nombres',
-      [sucursalId]
+      'SELECT id, nombres, apellidos, nombre_display FROM empleados WHERE realiza_servicios = true AND activo = true ORDER BY nombres'
     );
     res.json(result.rows);
   } catch (err) {

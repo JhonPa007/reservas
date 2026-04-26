@@ -371,37 +371,40 @@ export default function PartnerView() {
     };
 
     function isTimeAvailable(empId, mins) {
-        const empIdStr = String(empId);
-        const empHorarios = horarios.filter(h => String(h.empleado_id) === empIdStr);
-        const empRec = recurrentes.filter(h => String(h.empleado_id) === empIdStr);
+        try {
+            const empIdStr = String(empId);
+            const empHorarios = (horarios || []).filter(h => String(h.empleado_id) === empIdStr);
+            const empRec = (recurrentes || []).filter(h => String(h.empleado_id) === empIdStr);
 
-        // Si no hay ningún horario configurado para este empleado hoy ni recurrente, mostramos como cerrado (gris)
-        if (empHorarios.length === 0 && empRec.length === 0) return false;
+            // Si no hay horarios configurables definidos para este empleado, permitimos todo por defecto (BLANCO)
+            if (empHorarios.length === 0 && empRec.length === 0) return true;
 
-        const checkTime = (h) => {
-            const [hStart, mStart] = (h.hora_inicio || '00:00').split(':').map(Number);
-            const [hEnd, mEnd] = (h.hora_fin || '23:59').split(':').map(Number);
-            const startMins = hStart * 60 + mStart;
-            const endMins = hEnd * 60 + mEnd;
-            return mins >= startMins && mins < endMins;
-        };
+            const check = (h) => {
+                const [hStart] = String(h.hora_inicio || '00:00').split(':').map(Number);
+                const [hEnd] = String(h.hora_fin || '23:59').split(':').map(Number);
+                const [mStart] = String(h.hora_inicio || '00:00').split(':').slice(1).map(Number);
+                const [mEnd] = String(h.hora_fin || '23:59').split(':').slice(1).map(Number);
+                const sMins = hStart * 60 + (mStart || 0);
+                const eMins = hEnd * 60 + (mEnd || 0);
+                return mins >= sMins && mins < eMins;
+            };
 
-        // Prioridad 1: Horarios específicos para hoy
-        if (empHorarios.length > 0) {
-            return empHorarios.some(checkTime);
+            if (empHorarios.length > 0) return empHorarios.some(check);
+
+            if (empRec.length > 0) {
+                const jsDay = selectedDate.getDay();
+                return empRec.some(h => {
+                    const dbDay = parseInt(h.dia_semana);
+                    const dayMatches = dbDay === jsDay || (dbDay === 7 && jsDay === 0);
+                    return dayMatches && check(h);
+                });
+            }
+
+            return true; // Fallback a blanco
+        } catch (e) {
+            console.error("Error en isTimeAvailable:", e);
+            return true; // Ante error, blanco siempre
         }
-
-        // Prioridad 2: Horarios recurrentes (Normalizando Domingo 0/7)
-        if (empRec.length > 0) {
-            const jsDay = selectedDate.getDay(); // 0 (Dom) a 6 (Sab)
-            return empRec.some(h => {
-                const dbDay = parseInt(h.dia_semana);
-                const dayMatches = dbDay === jsDay || (dbDay === 7 && jsDay === 0);
-                return dayMatches && checkTime(h);
-            });
-        }
-
-        return false;
     }
 
     function getDurationHeight(mins) { return (mins / cellDuration) * rowHeight; }
