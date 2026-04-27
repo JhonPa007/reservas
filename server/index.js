@@ -26,7 +26,7 @@ app.get('/api/health', async (req, res) => {
       sucursales: resSucs.rows[0].count,
       reservas: resRes.rows[0].count,
       empleados: resEmps.rows[0].count,
-      db_url_prefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.slice(0, 20) : 'not defined'
+      db_url_prefix: (process.env.DATABASE_URL || '').slice(0, 20)
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -119,9 +119,8 @@ app.patch('/api/clientes/:id', async (req, res) => {
   }
 });
 
-// Obtener empleados que realizan servicios en una sucursal específica
+// Obtener empleados que realizan servicios
 app.get('/api/empleados/:sucursalId', async (req, res) => {
-  const { sucursalId } = req.params;
   try {
     const result = await pool.query(
       'SELECT id, nombres, apellidos, nombre_display FROM empleados WHERE realiza_servicios = true AND activo = true ORDER BY nombres'
@@ -131,23 +130,6 @@ app.get('/api/empleados/:sucursalId', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener empleados' });
   }
-});
-
-// Obtener disponibilidad (Lógica simplificada para empezar)
-app.get('/api/disponibilidad', async (req, res) => {
-  const { sucursalId, empleadoId, fecha, duracion } = req.query;
-  // TODO: Implementar lógica de slots reales basada en reservas existentes y horarios
-  // Por ahora devolvemos slots de prueba cada 30 min entre 9am y 6pm
-  const slots = [];
-  const startHour = 9;
-  const endHour = 18;
-
-  for (let i = startHour; i < endHour; i++) {
-    slots.push(`${i}:00`);
-    slots.push(`${i}:30`);
-  }
-
-  res.json(slots);
 });
 
 // Crear una reserva
@@ -165,58 +147,10 @@ app.post('/api/reservas', async (req, res) => {
   }
 });
 
-// Obtener horarios/turnos de un empleado para un día
-app.get('/api/horarios/:empleadoId/:fecha', async (req, res) => {
-  const { empleadoId, fecha } = req.params;
-  try {
-    const result = await pool.query(
-      'SELECT id, hora_inicio, hora_fin FROM horarios_empleados WHERE empleado_id = $1 AND fecha = $2 ORDER BY hora_inicio',
-      [empleadoId, fecha]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener horarios' });
-  }
-});
-
-// Guardar turnos (Elimina anteriores y guarda nuevos para ese día)
-app.post('/api/horarios', async (req, res) => {
-  const { empleado_id, sucursal_id, fecha, intervalos } = req.body;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Eliminar turnos existentes para ese día
-    await client.query(
-      'DELETE FROM horarios_empleados WHERE empleado_id = $1 AND fecha = $2 AND sucursal_id = $3',
-      [empleado_id, fecha, sucursal_id]
-    );
-
-    // Insertar nuevos intervalos
-    for (const interval of intervalos) {
-      await client.query(
-        'INSERT INTO horarios_empleados (empleado_id, sucursal_id, fecha, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4, $5)',
-        [empleado_id, sucursal_id, fecha, interval.hora_inicio, interval.hora_fin]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.status(200).json({ success: true, message: 'Turnos actualizados' });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error(err);
-    res.status(500).json({ error: 'Error al guardar turnos' });
-  } finally {
-    client.release();
-  }
-});
-
 // Obtener todas las reservas de una sucursal para un día específico
 app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
   const { sucursalId, fecha } = req.params;
   try {
-    // También obtenemos los horarios para saber qué zonas bloquear
     const resReservas = await pool.query(
       `SELECT r.*, s.nombre as servicio_nombre, s.duracion_minutos, s.precio,
               c.razon_social_nombres as cliente_nombre, c.apellidos as cliente_apellidos
@@ -229,9 +163,6 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
       [sucursalId, fecha]
     );
 
-    console.log(`[GET /api/reservas] Sucursal: ${sucursalId}, Fecha: ${fecha}, Encontradas: ${resReservas.rows.length}`);
-
-    // Extraemos el día de la semana de forma manual para evitar líos de UTC (YYYY-MM-DD -> 0=Dom)
     const [y, m, d] = fecha.split('-').map(Number);
     const dayOfWeek = new Date(y, m - 1, d).getDay();
 
@@ -240,26 +171,16 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
       [fecha]
     );
 
+    // CRÍTICO: Obtener todos los horarios recurrentes de la tabla semanal real
     const resRecurrentes = await pool.query(
-      'SELECT id, empleado_id, hora_inicio, hora_fin FROM horarios_recurrentes',
-      []
+      'SELECT id, empleado_id, dia_semana, hora_inicio, hora_fin FROM horarios_recurrentes WHERE dia_semana = $1',
+      [dayOfWeek]
     );
 
-    // DEBUG LOGS
-    console.log(`[DEBUG] Fecha: ${fecha}, JS Day: ${dayOfWeek}`);
-    console.log(`[DEBUG] Recurrentes encontrados: ${resRecurrentes.rows.length}`);
     const summary = {};
     resRecurrentes.rows.forEach(r => {
       summary[r.empleado_id] = (summary[r.empleado_id] || 0) + 1;
     });
-
-    const fs = require('fs');
-    fs.writeFileSync('debug_api_last.json', JSON.stringify({
-      fecha,
-      dayOfWeek,
-      recurrentes: resRecurrentes.rows,
-      summary
-    }, null, 2));
 
     res.json({
       reservas: resReservas.rows,
@@ -270,6 +191,7 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
         fecha,
         dayOfWeek,
         dbDayCount: resRecurrentes.rows.length,
+        dbPrefix: (process.env.DATABASE_URL || '').substring(0, 20),
         summary
       }
     });
@@ -279,135 +201,67 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
   }
 });
 
-// Actualizar una reserva (drag & drop, re-schedule, cambiar empleado o estado)
+// Otros endpoints necesarios
 app.patch('/api/reservas/:id', async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
   const fields = Object.keys(updates);
   const values = Object.values(updates);
-
   if (fields.length === 0) return res.status(400).json({ error: 'No hay campos para actualizar' });
-
   const setClause = fields.map((field, index) => `${field} = $${index + 1}`).join(', ');
-
   try {
-    const result = await pool.query(
-      `UPDATE reservas SET ${setClause} WHERE id = $${fields.length + 1} RETURNING *`,
-      [...values, id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Reserva no encontrada' });
+    const result = await pool.query(`UPDATE reservas SET ${setClause} WHERE id = $${fields.length + 1} RETURNING *`, [...values, id]);
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al actualizar la reserva' });
+    res.status(500).json({ error: 'Error al actualizar' });
   }
 });
 
-// Eliminar/Anular una reserva
 app.delete('/api/reservas/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query('DELETE FROM reservas WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Reserva no encontrada' });
-    res.json({ message: 'Reserva eliminada con éxito', deleted: result.rows[0] });
+    await pool.query('DELETE FROM reservas WHERE id = $1', [id]);
+    res.json({ success: true });
   } catch (err) {
-    console.error('SERVER ERROR:', err.message, err.stack);
-    res.status(500).json({ error: `Internal Server Error: ${err.message}` });
+    res.status(500).json({ error: 'Error al eliminar' });
   }
 });
 
-// Obtener estadísticas para el Dashboard
-// Gestión de Miembros del Equipo
 app.get('/api/equipo', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM empleados WHERE activo = true ORDER BY nombres');
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Error al obtener equipo' });
   }
 });
 
-app.post('/api/equipo/miembros', async (req, res) => {
-  const { nombres, apellidos, nombre_display, email, telefono, dni, sucursal_id, realizar_servicios } = req.body;
-  try {
-    const result = await pool.query(
-      `INSERT INTO empleados (nombres, apellidos, nombre_display, email, telefono, dni, sucursal_id, realiza_servicios, activo) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) RETURNING *`,
-      [nombres, apellidos, nombre_display || `${nombres} ${apellidos}`, email, telefono, dni, sucursal_id || 1, realizar_servicios !== false]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al crear miembro' });
-  }
-});
-
-// Guardar Horarios Recurrentes (Semanal)
 app.post('/api/equipo/horarios-recurrentes', async (req, res) => {
-  const { empleado_id, sucursal_id, horarios } = req.body; // horarios: [{dia_semana, hora_inicio, hora_fin}]
+  const { empleado_id, sucursal_id, horarios } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM horarios_recurrentes WHERE empleado_id = $1 AND sucursal_id = $2', [empleado_id, sucursal_id]);
-
     for (const h of horarios) {
       await client.query(
         'INSERT INTO horarios_recurrentes (empleado_id, sucursal_id, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4, $5)',
         [empleado_id, sucursal_id, h.dia_semana, h.hora_inicio, h.hora_fin]
       );
     }
-
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error(err);
-    res.status(500).json({ error: 'Error al guardar horarios recurrentes' });
+    res.status(500).json({ error: 'Error al guardar' });
   } finally {
     client.release();
-  }
-});
-
-app.get('/api/equipo/horarios-recurrentes/:empleadoId', async (req, res) => {
-  const { empleadoId } = req.params;
-  try {
-    const result = await pool.query('SELECT * FROM horarios_recurrentes WHERE empleado_id = $1 ORDER BY dia_semana, hora_inicio', [empleadoId]);
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener horarios' });
   }
 });
 
 app.get('/api/dashboard-stats', async (req, res) => {
   const { sucursalId } = req.query;
   try {
-    // 1. Ventas recientes (Últimos 7 días) y gráfico
-    const sales7Days = await pool.query(`
-      SELECT 
-        TO_CHAR(d, 'YYYY-MM-DD') as fecha,
-        COALESCE(SUM(r.precio_cobrado), 0) as ventas,
-        COUNT(r.id) as citas
-      FROM generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day') d
-      LEFT JOIN reservas r ON r.fecha_hora_inicio::date = d::date AND r.sucursal_id = $1 AND r.estado != 'CANCELADA'
-      GROUP BY d
-      ORDER BY d
-    `, [sucursalId]);
-
-    // 2. Próximas citas (Próximos 7 días)
-    const upcoming7Days = await pool.query(`
-      SELECT 
-        TO_CHAR(d, 'YYYY-MM-DD') as fecha,
-        COUNT(CASE WHEN r.estado != 'CANCELADA' THEN 1 END) as confirmado,
-        COUNT(CASE WHEN r.estado = 'CANCELADA' THEN 1 END) as cancelada
-      FROM generate_series(CURRENT_DATE, CURRENT_DATE + INTERVAL '6 days', '1 day') d
-      LEFT JOIN reservas r ON r.fecha_hora_inicio::date = d::date AND r.sucursal_id = $1
-      GROUP BY d
-      ORDER BY d
-    `, [sucursalId]);
-
-    // 3. Actividad de citas (Últimas 10)
+    // 1. Actividad de citas (Últimas 10)
     const recentActivity = await pool.query(`
       SELECT r.*, s.nombre as servicio_nombre, e.nombre_display as empleado_nombre, c.razon_social_nombres as cliente_nombre
       FROM reservas r
@@ -419,67 +273,16 @@ app.get('/api/dashboard-stats', async (req, res) => {
       LIMIT 10
     `, [sucursalId]);
 
-    // 4. Mejores servicios (Este mes vs Anterior)
-    const topServices = await pool.query(`
-      WITH current_month AS (
-        SELECT servicio_id, SUM(precio_cobrado) as total
-        FROM reservas 
-        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE)
-        GROUP BY servicio_id
-      ), last_month AS (
-        SELECT servicio_id, SUM(precio_cobrado) as total
-        FROM reservas 
-        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
-          AND fecha_hora_inicio < date_trunc('month', CURRENT_DATE)
-        GROUP BY servicio_id
-      )
-      SELECT s.nombre, COALESCE(cm.total, 0) as este_mes, COALESCE(lm.total, 0) as ultimo_mes
-      FROM servicios s
-      LEFT JOIN current_month cm ON s.id = cm.servicio_id
-      LEFT JOIN last_month lm ON s.id = lm.servicio_id
-      WHERE cm.total > 0 OR lm.total > 0
-      ORDER BY este_mes DESC
-      LIMIT 5
-    `, [sucursalId]);
-
-    // 5. Mejor miembro del equipo (Este mes vs Anterior)
-    const topStaff = await pool.query(`
-      WITH current_month AS (
-        SELECT empleado_id, SUM(precio_cobrado) as total
-        FROM reservas 
-        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE)
-        GROUP BY empleado_id
-      ), last_month AS (
-        SELECT empleado_id, SUM(precio_cobrado) as total
-        FROM reservas 
-        WHERE sucursal_id = $1 AND fecha_hora_inicio >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
-          AND fecha_hora_inicio < date_trunc('month', CURRENT_DATE)
-        GROUP BY empleado_id
-      )
-      SELECT e.nombre_display as nombre, COALESCE(cm.total, 0) as este_mes, COALESCE(lm.total, 0) as ultimo_mes
-      FROM empleados e
-      LEFT JOIN current_month cm ON e.id = cm.empleado_id
-      LEFT JOIN last_month lm ON e.id = lm.empleado_id
-      WHERE (cm.total > 0 OR lm.total > 0) AND e.activo = true
-      ORDER BY este_mes DESC
-    `, [sucursalId]);
-
     res.json({
-      salesGraph: sales7Days.rows,
-      upcomingGraph: upcoming7Days.rows,
       recentActivity: recentActivity.rows,
-      topServices: topServices.rows,
-      topStaff: topStaff.rows,
-      summary: {
-        totalVentas7d: sales7Days.rows.reduce((a, b) => a + parseFloat(b.ventas), 0),
-        totalCitas7d: sales7Days.rows.reduce((a, b) => a + parseInt(b.citas), 0),
-        proximasCitas: upcoming7Days.rows.reduce((a, b) => a + parseInt(b.confirmado), 0)
-      }
+      salesGraph: [],
+      upcomingGraph: [],
+      topServices: [],
+      topStaff: [],
+      summary: { totalVentas7d: 0, totalCitas7d: 0, proximasCitas: 0 }
     });
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener estadísticas' });
+    res.status(500).json({ error: 'Error stats' });
   }
 });
 
@@ -488,14 +291,11 @@ app.listen(port, () => {
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION:', err.message, err.stack);
+  console.error('UNCAUGHT EXCEPTION:', err.message);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   console.error('UNHANDLED REJECTION:', reason);
   process.exit(1);
 });
-/ /  
- T E S T _ D E P L O Y  
- 
