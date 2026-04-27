@@ -268,7 +268,9 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
       debug: {
         sucursalId,
         fecha,
-        count: resReservas.rows.length
+        dayOfWeek,
+        dbDayCount: resRecurrentes.rows.length,
+        summary
       }
     });
   } catch (err) {
