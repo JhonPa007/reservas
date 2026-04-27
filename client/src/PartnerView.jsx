@@ -5,8 +5,8 @@ import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, se
 import { es } from 'date-fns/locale';
 
 const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5001/api' : window.location.origin + '/api');
-const DISPLAY_START_HOUR = 8;
-const DISPLAY_END_HOUR = 21;
+const DISPLAY_START_HOUR = 6;
+const DISPLAY_END_HOUR = 23;
 
 /** Utilidad para parsear fechas de DB de forma segura */
 function safeDate(dateStr) {
@@ -469,6 +469,22 @@ export default function PartnerView() {
 
     return (
         <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
+            <style>
+                {`
+                .time-cell-hover { position: relative; }
+                .time-cell-hover:hover::after {
+                    content: attr(data-time);
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    color: #9ca3af;
+                    pointer-events: none;
+                }
+                `}
+            </style>
             <Sidebar />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                 {/* Header */}
@@ -481,7 +497,6 @@ export default function PartnerView() {
                         >
                             {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                         </select>
-                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>R:{recurrentes.length} DB:{reservas[0]?.db_info || '...'}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
                             <button onClick={() => {
                                 const prev = new Date(selectedDate);
@@ -539,7 +554,7 @@ export default function PartnerView() {
                             <div key={emp.id} style={{ flex: 1, minWidth: '150px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #f3f4f6' }}>
                                 <div onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
                                     <div translate="no" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
-                                    <span translate="no" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#374151' }}>{emp.nombre_display || emp.nombres}</span>
+                                    <span translate="no" style={{ fontWeight: 900, fontSize: '0.75rem', color: '#111827' }}>{emp.nombre_display || emp.nombres}</span>
                                 </div>
                             </div>
                         ))}
@@ -549,14 +564,14 @@ export default function PartnerView() {
                         <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
                             {Array.from({ length: DISPLAY_END_HOUR - DISPLAY_START_HOUR }).map((_, i) => (
                                 <div key={i} style={{ height: (60 / cellDuration) * rowHeight, position: 'relative' }}>
-                                    <span style={{ position: 'absolute', top: '-10px', right: '8px', fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af' }}>{format(setHours(new Date(), DISPLAY_START_HOUR + i), 'h a')}</span>
+                                    <span style={{ position: 'absolute', top: '-10px', right: '8px', fontSize: '0.7rem', fontWeight: 900, color: '#111827' }}>{format(setHours(new Date(), DISPLAY_START_HOUR + i), 'h:mm a').toLowerCase()}</span>
                                 </div>
                             ))}
                         </div>
 
                         <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
                             {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => (
-                                <div key={i} style={{ position: 'absolute', top: i * rowHeight, left: 0, right: 0, height: '1px', backgroundColor: i % (60 / cellDuration) === 0 ? '#e5e7eb' : '#f3f4f6', zIndex: 1 }} />
+                                <div key={i} style={{ position: 'absolute', top: i * rowHeight, left: 0, right: 0, height: '1px', backgroundColor: i % (60 / cellDuration) === 0 ? '#f3f4f6' : '#f9fafb', zIndex: 1 }} />
                             ))}
 
                             {isSameDay(now, selectedDate) && (
@@ -581,14 +596,16 @@ export default function PartnerView() {
                                             return (
                                                 <div
                                                     key={i}
-                                                    title={formatTimeTooltip(mins)}
+                                                    className="time-cell-hover"
+                                                    data-time={formatTimeTooltip(mins).replace(' ', '').toLowerCase()}
+                                                    title=""
                                                     onClick={(e) => handleCellClick(e, emp.id, mins, '')}
                                                     style={{
                                                         height: rowHeight,
                                                         cursor: 'pointer',
                                                         backgroundColor: available ? '#ffffff' : '#fafafa',
                                                         backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.6) 3px, rgba(229, 231, 235, 0.6) 4px)',
-                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #e5e7eb' : '1px solid #f3f4f6',
+                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #f3f4f6' : '1px solid #f9fafb',
                                                     }}
                                                 />
                                             );
