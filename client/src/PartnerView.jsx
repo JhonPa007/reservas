@@ -553,7 +553,7 @@ export default function PartnerView() {
 
                 {/* Calendar Grid */}
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ paddingLeft: '45px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
+                    <div style={{ paddingLeft: '55px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
                         {visibleEmployees.map(emp => (
                             <div key={emp.id} style={{ flex: 1, minWidth: '150px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #f3f4f6' }}>
                                 <div onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
@@ -565,12 +565,21 @@ export default function PartnerView() {
                     </div>
 
                     <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex' }}>
-                        <div style={{ width: '45px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
-                            {Array.from({ length: DISPLAY_END_HOUR - DISPLAY_START_HOUR }).map((_, i) => (
-                                <div key={i} style={{ height: (60 / cellDuration) * rowHeight, position: 'relative' }}>
-                                    <span style={{ position: 'absolute', top: '-10px', right: '6px', fontSize: '0.65rem', fontWeight: 900, color: '#111827' }}>{format(setMinutes(setHours(new Date(), DISPLAY_START_HOUR + i), 0), 'h:mm a').toLowerCase()}</span>
-                                </div>
-                            ))}
+                        <div style={{ width: '55px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
+                            {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * 2 }).map((_, i) => {
+                                const hour = DISPLAY_START_HOUR + Math.floor(i / 2);
+                                const mins = i % 2 === 0 ? '00' : '30';
+                                const h12 = hour % 12 || 12;
+                                const ampm = hour >= 12 ? 'pm' : 'am';
+                                const timeStr = `${h12}:${mins} ${ampm}`;
+                                return (
+                                    <div key={i} style={{ height: (30 / cellDuration) * rowHeight, position: 'relative' }}>
+                                        <span style={{ position: 'absolute', top: '-10px', right: '6px', fontSize: '0.75rem', fontWeight: 900, color: '#111827' }}>
+                                            {timeStr}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
