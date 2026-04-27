@@ -111,16 +111,18 @@ export default function PartnerView() {
                 setViewState('appointment');
                 setShowStatusMenu(false);
             }
-            if (showStaffFilter && staffFilterRef.current && !staffFilterRef.current.contains(e.target)) {
-                setShowStaffFilter(false);
-            }
-            if (empMenu && empMenuRef.current && !empMenuRef.current.contains(e.target)) {
-                setEmpMenu(null);
-            }
-            if (drawerOpen && drawerRef.current && !drawerRef.current.contains(e.target) && !e.target.closest('.no-close-drawer')) {
-                setDrawerOpen(null);
-                setViewState('appointment');
-                setShowStatusMenu(false);
+            if (e.type === 'mousedown') {
+                if (showStaffFilter && staffFilterRef.current && !staffFilterRef.current.contains(e.target)) {
+                    setShowStaffFilter(false);
+                }
+                if (empMenu && empMenuRef.current && !empMenuRef.current.contains(e.target)) {
+                    setEmpMenu(null);
+                }
+                if (drawerOpen && drawerRef.current && !drawerRef.current.contains(e.target) && !e.target.closest('.no-close-drawer')) {
+                    setDrawerOpen(null);
+                    setViewState('appointment');
+                    setShowStatusMenu(false);
+                }
             }
         }
         window.addEventListener('keydown', handleGlobalEvents);
@@ -705,7 +707,7 @@ export default function PartnerView() {
                                             <input placeholder="Buscar cliente..." value={clientSearchTerm} onChange={e => setClientSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                                         </div>
                                         <button onClick={() => setViewState('client_create')} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Nuevo cliente</span></button>
-                                        {clientes.filter(c => (c.razon_social_nombres + ' ' + c.apellidos).toLowerCase().includes(clientSearchTerm.toLowerCase())).slice(0, 5).map(c => (
+                                        {clientes.filter(c => ((c.razon_social_nombres || '') + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase()) || (c.telefono || '').includes(clientSearchTerm) || (c.email || '').toLowerCase().includes(clientSearchTerm.toLowerCase())).map(c => (
                                             <div key={c.id} onClick={() => handleSelectClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', cursor: 'pointer' }}>
                                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0]}</div>
                                                 <div><div style={{ fontWeight: 800 }}>{c.razon_social_nombres} {c.apellidos}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{c.telefono}</div></div>
