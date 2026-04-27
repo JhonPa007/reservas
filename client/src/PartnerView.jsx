@@ -571,12 +571,12 @@ export default function PartnerView() {
                                 const mins = i % 2 === 0 ? '00' : '30';
                                 const h12 = hour % 12 || 12;
                                 const ampm = hour >= 12 ? 'pm' : 'am';
-                                const timeStr = `${h12}:${mins} ${ampm}`;
                                 return (
                                     <div key={i} style={{ height: (30 / cellDuration) * rowHeight, position: 'relative' }}>
-                                        <span style={{ position: 'absolute', top: '-10px', right: '6px', fontSize: '0.75rem', fontWeight: 900, color: '#111827' }}>
-                                            {timeStr}
-                                        </span>
+                                        <div translate="no" style={{ position: 'absolute', top: '-14px', right: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.1' }}>
+                                            <span style={{ fontWeight: 900, fontSize: '0.85rem', color: '#111827' }}>{h12}:{mins}</span>
+                                            <span style={{ fontWeight: 500, fontSize: '0.75rem', color: '#4b5563' }}>{ampm}</span>
+                                        </div>
                                     </div>
                                 );
                             })}
