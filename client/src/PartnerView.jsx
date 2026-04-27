@@ -481,7 +481,7 @@ export default function PartnerView() {
                         >
                             {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                         </select>
-                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>R:{recurrentes.length}</span>
+                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>R:{recurrentes.length} DB:{reservas[0]?.db_info || '...'}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
                             <button onClick={() => {
                                 const prev = new Date(selectedDate);
