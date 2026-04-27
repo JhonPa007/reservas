@@ -371,9 +371,6 @@ export default function PartnerView() {
     };
 
     function isTimeAvailable(empId, mins) {
-        // TEST: Si el ID es Carlos Nuñez (12), forzamos blanco siempre para descartar fallos de dibujo
-        if (empId === 12 || String(empId) === "12") return true;
-
         try {
             const empIdStr = String(empId);
             const empHorarios = (horarios || []).filter(h => String(h.empleado_id) === empIdStr);
@@ -485,9 +482,19 @@ export default function PartnerView() {
                             {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                         </select>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
-                            <button onClick={() => setSelectedDate(addDays(selectedDate, -1))} className="btn-icon"><ChevronLeft size={18} /></button>
-                            <span style={{ fontWeight: 800, fontSize: '0.85rem', padding: '0 0.5rem' }}>{format(selectedDate, "EEE, d MMM", { locale: es })}</span>
-                            <button onClick={() => setSelectedDate(addDays(selectedDate, 1))} className="btn-icon"><ChevronRight size={18} /></button>
+                            <button onClick={() => {
+                                const prev = new Date(selectedDate);
+                                prev.setDate(prev.getDate() - 1);
+                                setSelectedDate(prev);
+                            }} className="btn-icon"><ChevronLeft size={18} /></button>
+                            <span style={{ fontWeight: 800, fontSize: '0.9rem', padding: '0 0.75rem', minWidth: '130px', textAlign: 'center', textTransform: 'capitalize' }}>
+                                {format(selectedDate, "eeee, d 'de' MMMM", { locale: es })}
+                            </span>
+                            <button onClick={() => {
+                                const next = new Date(selectedDate);
+                                next.setDate(next.getDate() + 1);
+                                setSelectedDate(next);
+                            }} className="btn-icon"><ChevronRight size={18} /></button>
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>

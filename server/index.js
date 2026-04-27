@@ -245,6 +245,15 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
       [dayOfWeek]
     );
 
+    // DEBUG LOGS
+    console.log(`[DEBUG] Fecha: ${fecha}, JS Day: ${dayOfWeek}`);
+    console.log(`[DEBUG] Recurrentes encontrados: ${resRecurrentes.rows.length}`);
+    const summary = {};
+    resRecurrentes.rows.forEach(r => {
+      summary[r.empleado_id] = (summary[r.empleado_id] || 0) + 1;
+    });
+    console.log(`[DEBUG] Resumen por empleado:`, JSON.stringify(summary));
+
     res.json({
       reservas: resReservas.rows,
       horarios: resHorarios.rows,
