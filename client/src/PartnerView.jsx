@@ -471,7 +471,11 @@ export default function PartnerView() {
         <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
             <style>
                 {`
-                .time-cell-hover { position: relative; }
+                .time-cell-hover { position: relative; transition: background-color 0.1s; }
+                .time-cell-hover:hover {
+                    background-color: #f3e8ff !important;
+                    background-image: none !important;
+                }
                 .time-cell-hover:hover::after {
                     content: attr(data-time);
                     position: absolute;
@@ -479,8 +483,8 @@ export default function PartnerView() {
                     left: 50%;
                     transform: translate(-50%, -50%);
                     font-size: 0.75rem;
-                    font-weight: 700;
-                    color: #9ca3af;
+                    font-weight: 800;
+                    color: #7e22ce;
                     pointer-events: none;
                 }
                 `}
@@ -549,7 +553,7 @@ export default function PartnerView() {
 
                 {/* Calendar Grid */}
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ paddingLeft: '60px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
+                    <div style={{ paddingLeft: '45px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
                         {visibleEmployees.map(emp => (
                             <div key={emp.id} style={{ flex: 1, minWidth: '150px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #f3f4f6' }}>
                                 <div onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
@@ -561,10 +565,10 @@ export default function PartnerView() {
                     </div>
 
                     <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex' }}>
-                        <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
+                        <div style={{ width: '45px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
                             {Array.from({ length: DISPLAY_END_HOUR - DISPLAY_START_HOUR }).map((_, i) => (
                                 <div key={i} style={{ height: (60 / cellDuration) * rowHeight, position: 'relative' }}>
-                                    <span style={{ position: 'absolute', top: '-10px', right: '8px', fontSize: '0.7rem', fontWeight: 900, color: '#111827' }}>{format(setHours(new Date(), DISPLAY_START_HOUR + i), 'h:mm a').toLowerCase()}</span>
+                                    <span style={{ position: 'absolute', top: '-10px', right: '6px', fontSize: '0.65rem', fontWeight: 900, color: '#111827' }}>{format(setMinutes(setHours(new Date(), DISPLAY_START_HOUR + i), 0), 'h:mm a').toLowerCase()}</span>
                                 </div>
                             ))}
                         </div>
