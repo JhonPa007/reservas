@@ -252,7 +252,14 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
     resRecurrentes.rows.forEach(r => {
       summary[r.empleado_id] = (summary[r.empleado_id] || 0) + 1;
     });
-    console.log(`[DEBUG] Resumen por empleado:`, JSON.stringify(summary));
+
+    const fs = require('fs');
+    fs.writeFileSync('debug_api_last.json', JSON.stringify({
+      fecha,
+      dayOfWeek,
+      recurrentes: resRecurrentes.rows,
+      summary
+    }, null, 2));
 
     res.json({
       reservas: resReservas.rows,
