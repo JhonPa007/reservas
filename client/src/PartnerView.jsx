@@ -371,6 +371,9 @@ export default function PartnerView() {
     };
 
     function isTimeAvailable(empId, mins) {
+        // TEST: Si el ID es Carlos Nuñez (12), forzamos blanco siempre para descartar fallos de dibujo
+        if (empId === 12 || String(empId) === "12") return true;
+
         try {
             const empIdStr = String(empId);
             const empHorarios = (horarios || []).filter(h => String(h.empleado_id) === empIdStr);
