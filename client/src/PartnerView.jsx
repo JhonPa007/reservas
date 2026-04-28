@@ -655,11 +655,14 @@ export default function PartnerView() {
 
                                             return (
                                                 <div key={res.id} draggable onDragStart={e => handleDragStart(e, res)} onClick={() => !isResizingInProgress && setDrawerOpen(res)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', zIndex: isResizing ? 50 : 15, padding: '4px 8px', cursor: 'grab', overflow: 'hidden' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span translate="no" style={{ fontSize: '0.65rem', fontWeight: 900, color: theme.text }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos?.charAt(0) || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</span>
-                                                        {res.estado === 'CONFIRMADA' && <CheckCircle size={10} color={theme.border} />}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
+                                                            {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
+                                                            <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
+                                                        </span>
+                                                        {res.estado === 'CONFIRMADA' && <CheckCircle size={10} color={theme.border} style={{ flexShrink: 0, marginLeft: '4px' }} />}
                                                     </div>
-                                                    <div style={{ fontSize: '0.6rem', color: theme.text, fontWeight: 600 }}>{res.servicio_nombre}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
                                                     <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize' }} />
                                                 </div>
                                             );
