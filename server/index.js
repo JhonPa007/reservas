@@ -57,7 +57,7 @@ app.get('/api/servicios', async (req, res) => {
 // Obtener clientes para el buscador del partner
 app.get('/api/clientes', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, razon_social_nombres, apellidos, telefono, email, fecha_nacimiento, fecha_registro FROM clientes ORDER BY razon_social_nombres');
+    const result = await pool.query(`SELECT c.id, c.razon_social_nombres, c.apellidos, c.telefono, c.email, c.fecha_nacimiento, c.fecha_registro, (SELECT COUNT(*) FROM reservas r WHERE r.cliente_id = c.id AND r.estado = 'INASISTENCIA') as total_inasistencias FROM clientes c ORDER BY c.razon_social_nombres`);
     res.json(result.rows);
   } catch (err) {
     console.error(err);

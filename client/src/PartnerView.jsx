@@ -656,21 +656,65 @@ export default function PartnerView() {
                                             const isBlockedState = res.estado === 'INASISTENCIA' || res.estado === 'CANCELADA';
 
                                             return (
-                                                <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onClick={() => !isResizingInProgress && setDrawerOpen(res)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', zIndex: isResizing ? 50 : 15, padding: '4px 8px', cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'hidden' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
-                                                            {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
-                                                            <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
-                                                        </span>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
-                                                            {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
-                                                            {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
-                                                            {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
-                                                            {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} />}
+                                                <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onClick={() => !isResizingInProgress && setDrawerOpen(res)} onMouseEnter={() => !isResizingInProgress && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
+                                                    <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
+                                                                {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
+                                                                <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
+                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
+                                                                {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
+                                                                {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
+                                                                {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
+                                                                {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} />}
+                                                            </div>
                                                         </div>
+                                                        <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
                                                     </div>
-                                                    <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
-                                                    {!isBlockedState && <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize' }} />}
+                                                    {!isBlockedState && <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize', zIndex: 10 }} />}
+
+                                                    {hoverRes === res.id && res.tipo !== 'BLOQUEO' && (
+                                                        <div style={{ position: 'absolute', top: 0, left: '102%', width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
+                                                            <div style={{ backgroundColor: res.estado === 'INASISTENCIA' ? '#ce163b' : '#2563eb', color: 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{format(safeDate(res.fecha_hora_inicio), 'h:mma')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mma')}</span>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{res.estado.charAt(0) + res.estado.slice(1).toLowerCase()}</span>
+                                                                    {res.estado === 'INASISTENCIA' && <EyeOff size={16} color="white" />}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ padding: '16px' }}>
+                                                                <div style={{ display: 'flex', gap: '12px' }}>
+                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: '#eef2ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                                                                        {res.cliente_nombre ? res.cliente_nombre.charAt(0).toUpperCase() : 'C'}
+                                                                    </div>
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <div style={{ fontSize: '1.05rem', color: '#111827', fontWeight: 500 }}>{res.cliente_nombre} {res.cliente_apellidos || ''}</div>
+                                                                        <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '2px' }}>{res.cliente_telefono || '+ Sin número'}</div>
+
+                                                                        {(Number(clientes.find(c => c.id === res.cliente_id)?.total_inasistencias) || 0) > 0 && (
+                                                                            <div style={{ display: 'inline-block', marginTop: '8px', padding: '4px 10px', borderRadius: '12px', backgroundColor: '#fee2e2', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                                                {clientes.find(c => c.id === res.cliente_id)?.total_inasistencias} inasistencia{(Number(clientes.find(c => c.id === res.cliente_id)?.total_inasistencias) > 1) ? 's' : ''}
+                                                                            </div>
+                                                                        )}
+                                                                        <div style={{ display: 'inline-block', marginTop: '8px', marginLeft: (Number(clientes.find(c => c.id === res.cliente_id)?.total_inasistencias) || 0) > 0 ? '6px' : '0px', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#374151', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer' }}>+ Añadir etiqueta</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                    <div>
+                                                                        <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 500 }}>{res.servicio_nombre || 'Servicio'}</div>
+                                                                        <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                            {res.preferencia_empleado ? <Heart size={12} color="#ef4444" fill="#ef4444" /> : <Clock size={12} />}
+                                                                            {res.duracion_minutos || 40} min • {emp.nombre}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>
+                                                                        {res.costo_total ? `${res.costo_total} PEN` : ''}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
