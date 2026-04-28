@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Sidebar from './Sidebar';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil, ThumbsUp, Cloud, Heart, EyeOff } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil, ThumbsUp, Cloud, Heart, EyeOff, Tag } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -651,6 +651,7 @@ export default function PartnerView() {
                                             const theme = res.tipo === 'BLOQUEO' ? { bg: '#f3f4f6', text: '#9ca3af', border: '#e5e7eb' } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+                                                'COMPLETADA': { bg: '#e2e8f0', border: '#cbd5e1', text: '#334155' },
                                                 'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
@@ -666,6 +667,7 @@ export default function PartnerView() {
                                                                 <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
                                                             </span>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
+                                                                {res.estado === 'COMPLETADA' && <Tag size={12} color={theme.text} fill={theme.text} />}
                                                                 {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
                                                                 {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
                                                                 {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
@@ -678,16 +680,17 @@ export default function PartnerView() {
 
                                                     {hoverRes === res.id && res.tipo !== 'BLOQUEO' && (
                                                         <div style={{ position: 'absolute', top: 0, ...(isRightSide ? { right: '102%' } : { left: '102%' }), width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
-                                                            <div style={{ backgroundColor: res.estado === 'INASISTENCIA' ? '#ce163b' : '#2563eb', color: 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <div style={{ backgroundColor: res.estado === 'INASISTENCIA' ? '#ce163b' : (res.estado === 'COMPLETADA' ? '#e2e8f0' : '#2563eb'), color: res.estado === 'COMPLETADA' ? '#111827' : 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                 <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{format(safeDate(res.fecha_hora_inicio), 'h:mma')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mma')}</span>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{res.estado.charAt(0) + res.estado.slice(1).toLowerCase()}</span>
                                                                     {res.estado === 'INASISTENCIA' && <EyeOff size={16} color="white" />}
+                                                                    {res.estado === 'COMPLETADA' && <Tag size={16} color="#111827" fill="#111827" />}
                                                                 </div>
                                                             </div>
                                                             <div style={{ padding: '16px' }}>
                                                                 <div style={{ display: 'flex', gap: '12px' }}>
-                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: '#eef2ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: res.estado === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: res.estado === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
                                                                         {res.cliente_nombre ? res.cliente_nombre.charAt(0).toUpperCase() : 'C'}
                                                                     </div>
                                                                     <div style={{ flex: 1 }}>
@@ -711,9 +714,18 @@ export default function PartnerView() {
                                                                         </div>
                                                                     </div>
                                                                     <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>
-                                                                        {res.costo_total ? `${res.costo_total} PEN` : ''}
+                                                                        {res.precio_cobrado || res.precio ? `${res.precio_cobrado || res.precio} PEN` : ''}
                                                                     </div>
                                                                 </div>
+                                                                {res.estado === 'COMPLETADA' && (
+                                                                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                        <div>
+                                                                            <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 500 }}>Venta</div>
+                                                                            <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '2px' }}>{res.precio_cobrado || res.precio || 0} PEN Pagado {res.notas_internas && res.notas_internas.toLowerCase().includes('yape') ? ' - Yape' : (res.notas_internas && res.notas_internas.toLowerCase().includes('plin') ? ' - Plin' : ' - Efectivo')}</div>
+                                                                        </div>
+                                                                        <Tag size={20} color="#9ca3af" />
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     )}
@@ -804,7 +816,7 @@ export default function PartnerView() {
                                             </button>
                                             {showStatusMenu && (
                                                 <div style={{ position: 'absolute', top: '110%', right: 0, width: '200px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', zIndex: 200 }}>
-                                                    {['RESERVADA', 'CONFIRMADA', 'INASISTENCIA', 'CANCELAR'].map(s => (
+                                                    {['RESERVADA', 'CONFIRMADA', 'COMPLETADA', 'INASISTENCIA', 'CANCELAR'].map(s => (
                                                         <div key={s} onClick={async () => {
                                                             if (s === 'CANCELAR') {
                                                                 if (window.confirm('¿Borrar?')) { await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' }); setDrawerOpen(null); refreshData(); }
