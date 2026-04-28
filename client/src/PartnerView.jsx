@@ -294,35 +294,48 @@ export default function PartnerView() {
     const handleSaveAppointment = async () => {
         if (!drawerOpen) return;
         const isNew = drawerOpen.id === 'new';
-        const method = isNew ? 'POST' : 'PATCH';
-        const url = isNew ? `${API_BASE}/reservas` : `${API_BASE}/reservas/${drawerOpen.id}`;
-
-        const payload = {
-            cliente_id: drawerOpen.cliente_id,
-            empleado_id: drawerOpen.empleado_id,
-            servicio_id: drawerOpen.servicio_id,
-            sucursal_id: sucursal.id,
-            fecha_hora_inicio: drawerOpen.fecha_hora_inicio,
-            fecha_hora_fin: drawerOpen.fecha_hora_fin || format(addMinutes(safeDate(drawerOpen.fecha_hora_inicio), drawerOpen.servicio_duracion || 60), 'yyyy-MM-dd HH:mm:ss'),
-            notas_cliente: drawerOpen.notas_cliente || '',
-            notas_internas: drawerOpen.notas_internas || '',
-            precio_cobrado: drawerOpen.servicio_precio || 0,
-            estado: drawerOpen.estado || 'RESERVADA',
-            origen: isNew ? 'PARTNER' : drawerOpen.origen
-        };
+        let start = new Date(safeDate(drawerOpen.fecha_hora_inicio));
+        const servicios = drawerOpen.servicios_agregados?.length > 0
+            ? drawerOpen.servicios_agregados
+            : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
 
         try {
-            const resp = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (resp.ok) {
-                setDrawerOpen(null);
-                refreshData();
-                setToast(isNew ? "Cita creada" : "Cita actualizada");
-                setTimeout(() => setToast(null), 3000);
+            for (let i = 0; i < servicios.length; i++) {
+                const s = servicios[i];
+                const dur = parseInt(s.duracion_minutos || 40);
+                const pDateStart = format(start, 'yyyy-MM-dd HH:mm:ss');
+                const pDateEnd = format(addMinutes(start, dur), 'yyyy-MM-dd HH:mm:ss');
+
+                const payload = {
+                    cliente_id: drawerOpen.cliente_id,
+                    empleado_id: drawerOpen.empleado_id,
+                    servicio_id: s.id,
+                    sucursal_id: sucursal.id,
+                    fecha_hora_inicio: pDateStart,
+                    fecha_hora_fin: pDateEnd,
+                    notas_cliente: drawerOpen.notas_cliente || '',
+                    notas_internas: drawerOpen.notas_internas || '',
+                    precio_cobrado: s.precio || 0,
+                    estado: drawerOpen.estado || 'RESERVADA',
+                    origen: isNew ? 'PARTNER' : drawerOpen.origen
+                };
+
+                const method = (!isNew && i === 0) ? 'PATCH' : 'POST';
+                const url = (!isNew && i === 0) ? `${API_BASE}/reservas/${drawerOpen.id}` : `${API_BASE}/reservas`;
+
+                await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                start = addMinutes(start, dur);
             }
+
+            setDrawerOpen(null);
+            refreshData();
+            setToast("Cita guardada correctamente");
+            setTimeout(() => setToast(null), 3000);
         } catch (err) { console.error(err); }
     };
 
@@ -672,6 +685,10 @@ export default function PartnerView() {
                                         <input placeholder="Apellidos" value={viewState === 'client_edit' ? clientEditData.apellidos : newClientData.apellidos} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, apellidos: e.target.value }) : setNewClientData({ ...newClientData, apellidos: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                                         <input placeholder="Teléfono" value={viewState === 'client_edit' ? clientEditData.telefono : newClientData.telefono} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, telefono: e.target.value }) : setNewClientData({ ...newClientData, telefono: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                                         <input placeholder="Email" value={viewState === 'client_edit' ? clientEditData.email : newClientData.email} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, email: e.target.value }) : setNewClientData({ ...newClientData, email: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                            <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, paddingLeft: '0.25rem' }}>Fecha de Nacimiento</span>
+                                            <input type="date" value={viewState === 'client_edit' ? (clientEditData.fecha_nacimiento || '') : (newClientData.fecha_nacimiento || '')} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, fecha_nacimiento: e.target.value }) : setNewClientData({ ...newClientData, fecha_nacimiento: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#111827' }} />
+                                        </div>
                                         <button onClick={async () => {
                                             const data = viewState === 'client_edit' ? clientEditData : newClientData;
                                             const res = await fetch(`${API_BASE}/clientes${viewState === 'client_edit' ? `/${drawerOpen.cliente_id}` : ''}`, { method: viewState === 'client_edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -776,7 +793,12 @@ export default function PartnerView() {
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><h4 style={{ margin: 0, fontWeight: 900 }}>Servicios</h4> <X size={20} onClick={() => setViewState('appointment')} /></div>
                                             <input placeholder="Buscar servicio..." value={serviceSearchTerm} onChange={e => setServiceSearchTerm(e.target.value)} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                                             {servicios.filter(s => s.nombre.toLowerCase().includes(serviceSearchTerm.toLowerCase())).map(s => (
-                                                <div key={s.id} onClick={() => { setDrawerOpen({ ...drawerOpen, servicio_id: s.id, servicio_nombre: s.nombre, servicio_precio: s.precio, servicio_duracion: s.duracion_minutos || 40 }); setViewState('appointment'); }} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+                                                <div key={s.id} onClick={() => {
+                                                    const sList = drawerOpen.servicios_agregados?.length > 0 ? [...drawerOpen.servicios_agregados] : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                                    sList.push({ id: s.id, nombre: s.nombre, precio: s.precio, duracion_minutos: s.duracion_minutos || 40 });
+                                                    setDrawerOpen({ ...drawerOpen, servicios_agregados: sList, servicio_id: sList[0].id, servicio_nombre: sList[0].nombre, servicio_precio: sList[0].precio, servicio_duracion: sList[0].duracion_minutos });
+                                                    setViewState('appointment');
+                                                }} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
                                                     <div><div style={{ fontWeight: 800 }}>{s.nombre}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{s.duracion_minutos} min</div></div>
                                                     <div style={{ fontWeight: 800 }}>{s.precio} PEN</div>
                                                 </div>
@@ -785,32 +807,76 @@ export default function PartnerView() {
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                             <div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}><h4 style={{ margin: 0, fontWeight: 700 }}>Servicio</h4></div>
-                                                {drawerOpen.servicio_id ? (
-                                                    <div style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}><span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{drawerOpen.servicio_nombre}</span> <span style={{ fontWeight: 700 }}>{drawerOpen.servicio_precio} PEN</span></div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.85rem' }}>
-                                                            <span>{formatAMPM(drawerOpen.fecha_hora_inicio)}</span> • <span>{drawerOpen.servicio_duracion} min</span> •
-                                                            <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: getAvatarColor(drawerOpen.empleado_id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px' }}>{(empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'U')[0]}</div>
-                                                                {empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir servicio</button>
-                                                )}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}><h4 style={{ margin: 0, fontWeight: 700 }}>Servicios en la cita</h4></div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    {(() => {
+                                                        const sList = drawerOpen.servicios_agregados?.length > 0
+                                                            ? drawerOpen.servicios_agregados
+                                                            : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+
+                                                        let currentStart = new Date(safeDate(drawerOpen.fecha_hora_inicio));
+
+                                                        if (sList.length === 0) {
+                                                            return <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir servicio principal</button>;
+                                                        }
+
+                                                        return (
+                                                            <>
+                                                                {sList.map((serv, idx) => {
+                                                                    const serviceStart = idx === 0 ? currentStart : addMinutes(currentStart, sList.slice(0, idx).reduce((sum, s) => sum + parseInt(s.duracion_minutos || 0), 0));
+                                                                    return (
+                                                                        <div key={idx} style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                                                <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{serv.nombre}</span>
+                                                                                <span style={{ fontWeight: 700 }}>{serv.precio || 0} PEN</span>
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.85rem' }}>
+                                                                                    <span>{formatAMPM(serviceStart)}</span> • <span>{serv.duracion_minutos || 0} min</span> •
+                                                                                    <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: getAvatarColor(drawerOpen.empleado_id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px' }}>{(empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'U')[0]}</div>
+                                                                                        {empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <X size={16} color="#ef4444" style={{ cursor: 'pointer' }} onClick={() => {
+                                                                                    const newList = sList.filter((_, i) => i !== idx);
+                                                                                    if (newList.length > 0) {
+                                                                                        setDrawerOpen({ ...drawerOpen, servicios_agregados: newList, servicio_id: newList[0].id, servicio_nombre: newList[0].nombre, servicio_precio: newList[0].precio, servicio_duracion: newList[0].duracion_minutos });
+                                                                                    } else {
+                                                                                        setDrawerOpen({ ...drawerOpen, servicios_agregados: [], servicio_id: null, servicio_nombre: null, servicio_precio: null, servicio_duracion: null });
+                                                                                    }
+                                                                                }} />
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir otro servicio</button>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 <div style={{ padding: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                        <div><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Total</div><div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{drawerOpen.servicio_precio || 0} PEN</div></div>
-                                        <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#6b7280' }}>{drawerOpen.servicio_duracion || 0} min</div>
-                                    </div>
-                                    <button onClick={handleSaveAppointment} disabled={!drawerOpen.servicio_id} style={{ width: '100%', padding: '1rem', backgroundColor: !drawerOpen.servicio_id ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar cita</button>
+                                    {(() => {
+                                        const sList = drawerOpen.servicios_agregados?.length > 0
+                                            ? drawerOpen.servicios_agregados
+                                            : (drawerOpen.servicio_id ? [{ precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                        const tPrecio = sList.reduce((acc, s) => acc + parseFloat(s.precio || 0), 0);
+                                        const tDur = sList.reduce((acc, s) => acc + parseInt(s.duracion_minutos || 0), 0);
+                                        return (
+                                            <>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                                    <div><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Total a cobrar</div><div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{tPrecio} PEN</div></div>
+                                                    <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#6b7280' }}>{tDur} mins en total</div>
+                                                </div>
+                                                <button onClick={handleSaveAppointment} disabled={sList.length === 0} style={{ width: '100%', padding: '1rem', backgroundColor: sList.length === 0 ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar cita conjunta</button>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>

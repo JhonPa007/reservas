@@ -105,11 +105,11 @@ app.post('/api/clientes', async (req, res) => {
 // Actualizar datos de cliente
 app.patch('/api/clientes/:id', async (req, res) => {
   const { id } = req.params;
-  const { razon_social_nombres, apellidos, telefono, email } = req.body;
+  const { razon_social_nombres, apellidos, telefono, email, fecha_nacimiento } = req.body;
   try {
     const result = await pool.query(
-      'UPDATE clientes SET razon_social_nombres = $1, apellidos = $2, telefono = $3, email = $4 WHERE id = $5 RETURNING *',
-      [razon_social_nombres, apellidos, telefono, email, id]
+      'UPDATE clientes SET razon_social_nombres = $1, apellidos = $2, telefono = $3, email = $4, fecha_nacimiento = $5 WHERE id = $6 RETURNING *',
+      [razon_social_nombres, apellidos, telefono, email, fecha_nacimiento || null, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
     res.json(result.rows[0]);
