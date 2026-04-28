@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Sidebar from './Sidebar';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil, ThumbsUp, Cloud, Heart } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -648,7 +648,7 @@ export default function PartnerView() {
 
                                             const theme = res.tipo === 'BLOQUEO' ? { bg: '#f3f4f6', text: '#9ca3af', border: '#e5e7eb' } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-                                                'CONFIRMADA': { bg: '#f0fdf4', border: '#10b981', text: '#166534' },
+                                                'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'INASISTENCIA': { bg: '#f8fafc', border: '#9ca3af', text: '#475569' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
@@ -660,7 +660,11 @@ export default function PartnerView() {
                                                             {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
                                                             <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
                                                         </span>
-                                                        {res.estado === 'CONFIRMADA' && <CheckCircle size={10} color={theme.border} style={{ flexShrink: 0, marginLeft: '4px' }} />}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
+                                                            {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
+                                                            {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
+                                                            {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} />}
+                                                        </div>
                                                     </div>
                                                     <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
                                                     <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize' }} />
@@ -755,6 +759,11 @@ export default function PartnerView() {
                                                         <div key={s} onClick={async () => {
                                                             if (s === 'CANCELAR') {
                                                                 if (window.confirm('¿Borrar?')) { await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' }); setDrawerOpen(null); refreshData(); }
+                                                            } else if (s === 'INASISTENCIA') {
+                                                                if (window.confirm('¿Marcar como inasistencia?')) {
+                                                                    setDrawerOpen({ ...drawerOpen, estado: s });
+                                                                    if (drawerOpen.id !== 'new') await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
+                                                                }
                                                             } else {
                                                                 setDrawerOpen({ ...drawerOpen, estado: s });
                                                                 if (drawerOpen.id !== 'new') await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
