@@ -614,7 +614,7 @@ export default function PartnerView() {
                                 return (
                                     <div key={emp.id} onDragOver={e => e.preventDefault()} onDrop={e => {
                                         const bcr = e.currentTarget.getBoundingClientRect();
-                                        const y = e.clientY - bcr.top + e.currentTarget.parentElement.parentElement.scrollTop;
+                                        const y = e.clientY - bcr.top;
                                         const mins = Math.round((y / rowHeight) * cellDuration / 15) * 15 + (DISPLAY_START_HOUR * 60);
                                         handleDrop(e, emp.id, mins);
                                     }} style={{ flex: 1, minWidth: '150px', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
