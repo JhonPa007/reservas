@@ -608,9 +608,11 @@ export default function PartnerView() {
                                 </div>
                             )}
 
-                            {visibleEmployees.map(emp => {
+                            {visibleEmployees.map((emp, empIndex) => {
                                 const empReservas = reservas.filter(r => r.empleado_id === emp.id);
                                 const overlapInfo = processOverlaps(empReservas);
+                                const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
+
                                 return (
                                     <div key={emp.id} onDragOver={e => e.preventDefault()} onDrop={e => {
                                         const bcr = e.currentTarget.getBoundingClientRect();
@@ -675,7 +677,7 @@ export default function PartnerView() {
                                                     {!isBlockedState && <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize', zIndex: 10 }} />}
 
                                                     {hoverRes === res.id && res.tipo !== 'BLOQUEO' && (
-                                                        <div style={{ position: 'absolute', top: 0, left: '102%', width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
+                                                        <div style={{ position: 'absolute', top: 0, ...(isRightSide ? { right: '102%' } : { left: '102%' }), width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
                                                             <div style={{ backgroundColor: res.estado === 'INASISTENCIA' ? '#ce163b' : '#2563eb', color: 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                 <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{format(safeDate(res.fecha_hora_inicio), 'h:mma')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mma')}</span>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -953,76 +955,78 @@ export default function PartnerView() {
             </div>
 
             {/* VIEW: CLIENT PROFILE (3 PANELS) */}
-            {viewState === 'profile' && (
-                <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {
+                viewState === 'profile' && (
+                    <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-                    {/* Profile Sidebar Menu */}
-                    <div style={{ width: '220px', backgroundColor: '#f9fafb', borderRight: '1px solid #e5e7eb', padding: '1.5rem 0' }}>
-                        {['Resumen', 'Citas', 'Ventas', 'Datos del cliente', 'Artículos', 'Documentos', 'Billetera'].map(tab => (
-                            <div
-                                key={tab}
-                                onClick={() => setProfileTab(tab.toLowerCase())}
-                                style={{
-                                    padding: '0.75rem 1.5rem', fontSize: '0.85rem', fontWeight: profileTab === tab.toLowerCase() ? 800 : 500,
-                                    color: profileTab === tab.toLowerCase() ? '#000' : '#4b5563', cursor: 'pointer',
-                                    backgroundColor: profileTab === tab.toLowerCase() ? '#fff' : 'transparent',
-                                    borderRight: profileTab === tab.toLowerCase() ? '3px solid #000' : 'none'
-                                }}
-                            >
-                                {tab}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Profile Content - Resumen */}
-                    <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-                        <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '2rem' }}>Resumen</h1>
-
-                        {/* Top Row Stats */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                    <span style={{ fontWeight: 900, fontSize: '1rem' }}>Billetera</span>
-                                    <span style={{ color: '#2563eb', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer' }}>Ver Billetera</span>
-                                </div>
-                                <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.85rem' }}>Saldo</div>
-                                <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>0 PEN</div>
-                            </div>
-
-                            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem' }}>
-                                <div style={{ fontWeight: 900, fontSize: '1rem', marginBottom: '1.5rem' }}>Resumen</div>
-                                <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.85rem' }}>Total de ventas</div>
-                                <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>250 PEN</div>
-                            </div>
-                        </div>
-
-                        {/* Bottom Grid Stats */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                            {[
-                                { label: 'Citas', val: '17' },
-                                { label: 'Valoración', val: '-' },
-                                { label: 'Cancelada', val: '3' },
-                                { label: 'Inasistencia', val: '0' }
-                            ].map((stat, idx) => (
-                                <div key={idx} style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.25rem', position: 'relative' }}>
-                                    <Info size={14} style={{ position: 'absolute', top: '1rem', right: '1rem', color: '#d1d5db' }} />
-                                    <div style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.5rem', color: '#111' }}>{stat.label}</div>
-                                    <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>{stat.val}</div>
+                        {/* Profile Sidebar Menu */}
+                        <div style={{ width: '220px', backgroundColor: '#f9fafb', borderRight: '1px solid #e5e7eb', padding: '1.5rem 0' }}>
+                            {['Resumen', 'Citas', 'Ventas', 'Datos del cliente', 'Artículos', 'Documentos', 'Billetera'].map(tab => (
+                                <div
+                                    key={tab}
+                                    onClick={() => setProfileTab(tab.toLowerCase())}
+                                    style={{
+                                        padding: '0.75rem 1.5rem', fontSize: '0.85rem', fontWeight: profileTab === tab.toLowerCase() ? 800 : 500,
+                                        color: profileTab === tab.toLowerCase() ? '#000' : '#4b5563', cursor: 'pointer',
+                                        backgroundColor: profileTab === tab.toLowerCase() ? '#fff' : 'transparent',
+                                        borderRight: profileTab === tab.toLowerCase() ? '3px solid #000' : 'none'
+                                    }}
+                                >
+                                    {tab}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Personal Info Bar */}
-                        <div style={{ marginTop: '2.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
-                            <div style={{ display: 'flex', gap: '2rem', fontSize: '0.85rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><User size={16} /> Añadir pronombres</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><CalendarIcon size={16} /> Añadir fecha de nacimiento</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><Plus size={16} /> Creado en 10 ago 2025</div>
+                        {/* Profile Content - Resumen */}
+                        <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+                            <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '2rem' }}>Resumen</h1>
+
+                            {/* Top Row Stats */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <span style={{ fontWeight: 900, fontSize: '1rem' }}>Billetera</span>
+                                        <span style={{ color: '#2563eb', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer' }}>Ver Billetera</span>
+                                    </div>
+                                    <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.85rem' }}>Saldo</div>
+                                    <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>0 PEN</div>
+                                </div>
+
+                                <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem' }}>
+                                    <div style={{ fontWeight: 900, fontSize: '1rem', marginBottom: '1.5rem' }}>Resumen</div>
+                                    <div style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.85rem' }}>Total de ventas</div>
+                                    <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>250 PEN</div>
+                                </div>
+                            </div>
+
+                            {/* Bottom Grid Stats */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                {[
+                                    { label: 'Citas', val: '17' },
+                                    { label: 'Valoración', val: '-' },
+                                    { label: 'Cancelada', val: '3' },
+                                    { label: 'Inasistencia', val: '0' }
+                                ].map((stat, idx) => (
+                                    <div key={idx} style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.25rem', position: 'relative' }}>
+                                        <Info size={14} style={{ position: 'absolute', top: '1rem', right: '1rem', color: '#d1d5db' }} />
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.5rem', color: '#111' }}>{stat.label}</div>
+                                        <div style={{ fontWeight: 900, fontSize: '1.5rem' }}>{stat.val}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Personal Info Bar */}
+                            <div style={{ marginTop: '2.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
+                                <div style={{ display: 'flex', gap: '2rem', fontSize: '0.85rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><User size={16} /> Añadir pronombres</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><CalendarIcon size={16} /> Añadir fecha de nacimiento</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}><Plus size={16} /> Creado en 10 ago 2025</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <FloatingMenus
                 quickActionMenu={quickActionMenu}
@@ -1039,7 +1043,7 @@ export default function PartnerView() {
                 DISPLAY_START_HOUR={DISPLAY_START_HOUR}
             />
             <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
-        </div>
+        </div >
     );
 }
 
