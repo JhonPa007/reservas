@@ -762,11 +762,19 @@ export default function PartnerView() {
                                                             } else if (s === 'INASISTENCIA') {
                                                                 if (window.confirm('¿Marcar como inasistencia?')) {
                                                                     setDrawerOpen({ ...drawerOpen, estado: s });
-                                                                    if (drawerOpen.id !== 'new') await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
+                                                                    setReservas(prev => prev.map(r => r.id === drawerOpen.id ? { ...r, estado: s } : r));
+                                                                    if (drawerOpen.id !== 'new') {
+                                                                        await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
+                                                                        refreshData();
+                                                                    }
                                                                 }
                                                             } else {
                                                                 setDrawerOpen({ ...drawerOpen, estado: s });
-                                                                if (drawerOpen.id !== 'new') await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
+                                                                setReservas(prev => prev.map(r => r.id === drawerOpen.id ? { ...r, estado: s } : r));
+                                                                if (drawerOpen.id !== 'new') {
+                                                                    await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
+                                                                    refreshData();
+                                                                }
                                                             }
                                                             setShowStatusMenu(false);
                                                         }} style={{ padding: '0.75rem 1rem', color: s === 'CANCELAR' ? '#ef4444' : '#374151', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>{s}</div>
