@@ -710,7 +710,7 @@ export default function PartnerView() {
                                                     </div>
                                                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Mail size={16} /> <span style={{ fontWeight: 600 }}>{c.email || 'Sin correo'}</span></div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><CalendarIcon size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_nacimiento || 'Sin fecha de nacimiento'}</span></div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><CalendarIcon size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_nacimiento ? format(new Date(String(c.fecha_nacimiento).substring(0, 10) + 'T12:00:00'), 'd MMM yyyy', { locale: es }) : 'Sin fecha de nacimiento'}</span></div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Clock size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_registro ? `Registrado: ${format(safeDate(c.fecha_registro), 'd MMM yyyy', { locale: es })}` : 'Registrado recientemente'}</span></div>
                                                     </div>
                                                 </>
