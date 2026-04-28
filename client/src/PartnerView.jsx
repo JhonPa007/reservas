@@ -653,8 +653,10 @@ export default function PartnerView() {
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
+                                            const isBlockedState = res.estado === 'INASISTENCIA' || res.estado === 'CANCELADA';
+
                                             return (
-                                                <div key={res.id} draggable onDragStart={e => handleDragStart(e, res)} onClick={() => !isResizingInProgress && setDrawerOpen(res)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', zIndex: isResizing ? 50 : 15, padding: '4px 8px', cursor: 'grab', overflow: 'hidden' }}>
+                                                <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onClick={() => !isResizingInProgress && setDrawerOpen(res)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', zIndex: isResizing ? 50 : 15, padding: '4px 8px', cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'hidden' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                         <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
                                                             {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
@@ -668,7 +670,7 @@ export default function PartnerView() {
                                                         </div>
                                                     </div>
                                                     <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
-                                                    <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize' }} />
+                                                    {!isBlockedState && <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize' }} />}
                                                 </div>
                                             );
                                         })}
