@@ -649,7 +649,7 @@ export default function PartnerView() {
                                             const theme = res.tipo === 'BLOQUEO' ? { bg: '#f3f4f6', text: '#9ca3af', border: '#e5e7eb' } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-                                                'INASISTENCIA': { bg: '#f8fafc', border: '#9ca3af', text: '#475569' },
+                                                'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
@@ -661,6 +661,7 @@ export default function PartnerView() {
                                                             <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
                                                         </span>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
+                                                            {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
                                                             {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
                                                             {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
                                                             {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} />}
@@ -761,7 +762,7 @@ export default function PartnerView() {
                                                                 if (window.confirm('¿Borrar?')) { await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' }); setDrawerOpen(null); refreshData(); }
                                                             } else if (s === 'INASISTENCIA') {
                                                                 if (window.confirm('¿Marcar como inasistencia?')) {
-                                                                    setDrawerOpen({ ...drawerOpen, estado: s });
+                                                                    if (drawerOpen.id !== 'new') setDrawerOpen(null); else setDrawerOpen({ ...drawerOpen, estado: s });
                                                                     setReservas(prev => prev.map(r => r.id === drawerOpen.id ? { ...r, estado: s } : r));
                                                                     if (drawerOpen.id !== 'new') {
                                                                         await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
@@ -769,7 +770,7 @@ export default function PartnerView() {
                                                                     }
                                                                 }
                                                             } else {
-                                                                setDrawerOpen({ ...drawerOpen, estado: s });
+                                                                if (drawerOpen.id !== 'new') setDrawerOpen(null); else setDrawerOpen({ ...drawerOpen, estado: s });
                                                                 setReservas(prev => prev.map(r => r.id === drawerOpen.id ? { ...r, estado: s } : r));
                                                                 if (drawerOpen.id !== 'new') {
                                                                     await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: s }) });
