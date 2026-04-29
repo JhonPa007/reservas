@@ -306,7 +306,8 @@ export default function PartnerView() {
                     tipo: 'BLOQUEO',
                     subtipo_bloqueo: drawerOpen.subtipo_bloqueo || 'Comida',
                     estado: 'RESERVADA',
-                    origen: isNew ? 'PARTNER' : drawerOpen.origen
+                    origen: isNew ? 'PARTNER' : drawerOpen.origen,
+                    reserva_online_permitida: !!drawerOpen.reserva_online_permitida
                 };
 
                 const method = isNew ? 'POST' : 'PATCH';
@@ -354,7 +355,8 @@ export default function PartnerView() {
                     precio_cobrado: s.precio || 0,
                     estado: drawerOpen.estado || 'RESERVADA',
                     origen: isNew ? 'PARTNER' : drawerOpen.origen,
-                    tipo: 'CITA'
+                    tipo: 'CITA',
+                    reserva_online_permitida: false
                 };
 
                 const method = (!isNew && i === 0) ? 'PATCH' : 'POST';
@@ -688,7 +690,12 @@ export default function PartnerView() {
                                             const h = getDurationHeight(isResizing ? resizingRes.currentDuration : duration);
                                             const { colIndex, totalCols } = overlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
-                                            const theme = res.tipo === 'BLOQUEO' ? { bg: '#f3f4f6', text: '#9ca3af', border: '#e5e7eb' } : {
+                                            const theme = res.tipo === 'BLOQUEO' ? { 
+                                                bg: '#f3f4f6', 
+                                                pattern: 'repeating-linear-gradient(45deg, #e5e7eb, #e5e7eb 2px, #d1d5db 2px, #d1d5db 4px)',
+                                                text: '#1f2937', 
+                                                border: '#9ca3af' 
+                                            } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'COMPLETADA': { bg: '#e2e8f0', border: '#cbd5e1', text: '#334155' },
@@ -710,7 +717,7 @@ export default function PartnerView() {
                                                         });
                                                     }
                                                 }} onMouseEnter={() => !isResizingInProgress && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
-                                                    <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
+                                                    <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
                                                                 {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
@@ -975,7 +982,12 @@ export default function PartnerView() {
                                             </div>
 
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
-                                                <input type="checkbox" style={{ width: '20px', height: '20px' }} />
+                                                <input 
+                                                    type="checkbox" 
+                                                    style={{ width: '20px', height: '20px' }} 
+                                                    checked={!!drawerOpen.reserva_online_permitida}
+                                                    onChange={e => setDrawerOpen({ ...drawerOpen, reserva_online_permitida: e.target.checked })}
+                                                />
                                                 <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Reserva online permitida durante el horario no disponible</label>
                                             </div>
                                         </div>
