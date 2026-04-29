@@ -132,18 +132,18 @@ app.get('/api/empleados/:sucursalId', async (req, res) => {
   }
 });
 
-// Crear una reserva
+// Crear una reserva o bloqueo
 app.post('/api/reservas', async (req, res) => {
-  const { cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, notas_cliente, notas_internas, precio_cobrado, origen } = req.body;
+  const { cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, notas_cliente, notas_internas, precio_cobrado, origen, tipo, subtipo_bloqueo } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO reservas (cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, estado, notas_cliente, notas_internas, precio_cobrado, origen) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-      [cliente_id || 1, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, 'RESERVADA', notas_cliente, notas_internas, precio_cobrado || 0, origen || 'PARTNER']
+      'INSERT INTO reservas (cliente_id, empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, estado, notas_cliente, notas_internas, precio_cobrado, origen, tipo, subtipo_bloqueo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
+      [cliente_id || (tipo === 'BLOQUEO' ? null : 1), empleado_id, servicio_id, sucursal_id, fecha_hora_inicio, fecha_hora_fin, 'RESERVADA', notas_cliente, notas_internas, precio_cobrado || 0, origen || 'PARTNER', tipo || 'CITA', subtipo_bloqueo]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al crear la reserva' });
+    res.status(500).json({ error: 'Error al crear el registro' });
   }
 });
 
