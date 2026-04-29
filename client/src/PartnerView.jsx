@@ -792,133 +792,145 @@ export default function PartnerView() {
                 {/* Drawer */}
                 {drawerOpen && (
                     <div onClick={() => setDrawerOpen(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-                        <div ref={drawerRef} onClick={e => e.stopPropagation()} style={{ width: drawerOpen.tipo === 'BLOQUEO' ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
-                            {/* Left: Client Data */}
-                            {drawerOpen.tipo !== 'BLOQUEO' && (
-                                <div style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto' }}>
-                                    {viewState === 'client_edit' || viewState === 'client_create' ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, textAlign: 'left', padding: 0 }}>← Volver</button>
-                                            <h4 style={{ margin: 0, fontWeight: 900 }}>{viewState === 'client_edit' ? 'Editar cliente' : 'Nuevo cliente'}</h4>
-                                            <input placeholder="Nombre" value={viewState === 'client_edit' ? clientEditData.razon_social_nombres : newClientData.razon_social_nombres} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, razon_social_nombres: e.target.value }) : setNewClientData({ ...newClientData, razon_social_nombres: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                            <input placeholder="Apellidos" value={viewState === 'client_edit' ? clientEditData.apellidos : newClientData.apellidos} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, apellidos: e.target.value }) : setNewClientData({ ...newClientData, apellidos: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                            <input placeholder="Teléfono" value={viewState === 'client_edit' ? clientEditData.telefono : newClientData.telefono} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, telefono: e.target.value }) : setNewClientData({ ...newClientData, telefono: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                            <input placeholder="Email" value={viewState === 'client_edit' ? clientEditData.email : newClientData.email} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, email: e.target.value }) : setNewClientData({ ...newClientData, email: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                                <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, paddingLeft: '0.25rem' }}>Fecha de Nacimiento</span>
-                                                <input type="date" value={viewState === 'client_edit' ? (clientEditData.fecha_nacimiento || '') : (newClientData.fecha_nacimiento || '')} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, fecha_nacimiento: e.target.value }) : setNewClientData({ ...newClientData, fecha_nacimiento: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#111827' }} />
-                                            </div>
-                                            <button onClick={async () => {
-                                                const data = viewState === 'client_edit' ? clientEditData : newClientData;
-                                                const res = await fetch(`${API_BASE}/clientes${viewState === 'client_edit' ? `/${drawerOpen.cliente_id}` : ''}`, { method: viewState === 'client_edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-                                                if (res.ok) { refreshData(); setViewState('appointment'); }
-                                            }} style={{ padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '30px', fontWeight: 800 }}>Guardar</button>
-                                        </div>
-                                    ) : drawerOpen.cliente_id ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                            {(() => {
-                                                const c = clientes.find(cli => cli.id === drawerOpen.cliente_id) || {};
-                                                return (
-                                                    <>
-                                                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: '#2563eb' }}>{c.razon_social_nombres?.[0] || 'C'}</div>
-                                                        <h2 translate="no" style={{ fontWeight: 900, margin: '1rem 0 0.25rem 0' }}>{c.razon_social_nombres} {c.apellidos}</h2>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', marginBottom: '1.5rem' }}><Phone size={14} /> {c.telefono} <Pencil size={12} style={{ cursor: 'pointer' }} onClick={() => { setClientEditData(c); setViewState('client_edit'); }} /></div>
-                                                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '2rem' }}>
-                                                            <button onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null })} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Cambiar</button>
-                                                            <button onClick={() => setViewState('profile')} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Perfil</button>
-                                                        </div>
-                                                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Mail size={16} /> <span style={{ fontWeight: 600 }}>{c.email || 'Sin correo'}</span></div>
-                                                            <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><CalendarIcon size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_nacimiento ? format(new Date(String(c.fecha_nacimiento).substring(0, 10) + 'T12:00:00'), "dd 'de' MMMM yyyy", { locale: es }).replace(/de (\w)/, (_, letter) => `de ${letter.toUpperCase()}`) : 'Sin fecha de nacimiento'}</span></div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Clock size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_registro ? `Registrado: ${format(safeDate(c.fecha_registro), 'd MMM yyyy', { locale: es })}` : 'Registrado recientemente'}</span></div>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-                                                <input placeholder="Buscar cliente..." value={clientSearchTerm} onChange={e => setClientSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                            </div>
-                                            <button onClick={() => setViewState('client_create')} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Nuevo cliente</span></button>
-                                            {clientes.filter(c => ((c.razon_social_nombres || '') + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase()) || (c.telefono || '').includes(clientSearchTerm) || (c.email || '').toLowerCase().includes(clientSearchTerm.toLowerCase())).slice(0, 20).map(c => (
-                                                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', cursor: 'pointer' }}>
-                                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0]}</div>
-                                                    <div><div style={{ fontWeight: 800 }}>{c.razon_social_nombres} {c.apellidos}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{c.telefono}</div></div>
+                        <div ref={drawerRef} onClick={e => e.stopPropagation()} style={{ width: drawerOpen.tipo === 'BLOQUEO' ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
+                            
+                            {/* HEADER DEDICADO */}
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <button onClick={() => setDrawerOpen(null)} style={{ border: 'none', background: '#f3f4f6', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                        <X size={18} />
+                                    </button>
+                                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>
+                                        {drawerOpen.tipo === 'BLOQUEO' ? 'Añadir horario no disponible' : 'Nueva cita'}
+                                    </h2>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button style={{ border: 'none', background: 'none', padding: '8px', cursor: 'pointer' }}><MoreHorizontal size={20} /></button>
+                                </div>
+                            </div>
+
+                            <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                                {/* Left: Client Data (Solo para Citas) */}
+                                {drawerOpen.tipo !== 'BLOQUEO' && (
+                                    <div style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto' }}>
+                                        {viewState === 'client_edit' || viewState === 'client_create' ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, textAlign: 'left', padding: 0 }}>← Volver</button>
+                                                <h4 style={{ margin: 0, fontWeight: 900 }}>{viewState === 'client_edit' ? 'Editar cliente' : 'Nuevo cliente'}</h4>
+                                                <input placeholder="Nombre" value={viewState === 'client_edit' ? clientEditData.razon_social_nombres : newClientData.razon_social_nombres} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, razon_social_nombres: e.target.value }) : setNewClientData({ ...newClientData, razon_social_nombres: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                <input placeholder="Apellidos" value={viewState === 'client_edit' ? clientEditData.apellidos : newClientData.apellidos} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, apellidos: e.target.value }) : setNewClientData({ ...newClientData, apellidos: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                <input placeholder="Teléfono" value={viewState === 'client_edit' ? clientEditData.telefono : newClientData.telefono} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, telefono: e.target.value }) : setNewClientData({ ...newClientData, telefono: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                <input placeholder="Email" value={viewState === 'client_edit' ? clientEditData.email : newClientData.email} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, email: e.target.value }) : setNewClientData({ ...newClientData, email: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                                    <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, paddingLeft: '0.25rem' }}>Fecha de Nacimiento</span>
+                                                    <input type="date" value={viewState === 'client_edit' ? (clientEditData.fecha_nacimiento || '') : (newClientData.fecha_nacimiento || '')} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, fecha_nacimiento: e.target.value }) : setNewClientData({ ...newClientData, fecha_nacimiento: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#111827' }} />
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Right: Appointment/Block Data */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ backgroundColor: '#2563eb', padding: '1rem 2rem', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                        <div
-                                            onClick={() => setDrawerOpen({ ...drawerOpen, tipo: 'CITA' })}
-                                            style={{ cursor: 'pointer', fontWeight: 800, fontSize: '0.9rem', borderBottom: (drawerOpen.tipo || 'CITA') === 'CITA' ? '2px solid white' : 'none', paddingBottom: '2px', opacity: (drawerOpen.tipo || 'CITA') === 'CITA' ? 1 : 0.7 }}
-                                        >
-                                            Cita
-                                        </div>
-                                        <div
-                                            onClick={() => setDrawerOpen({ ...drawerOpen, tipo: 'BLOQUEO', subtipo_bloqueo: drawerOpen.subtipo_bloqueo || 'Comida' })}
-                                            style={{ cursor: 'pointer', fontWeight: 800, fontSize: '0.9rem', borderBottom: drawerOpen.tipo === 'BLOQUEO' ? '2px solid white' : 'none', paddingBottom: '2px', opacity: drawerOpen.tipo === 'BLOQUEO' ? 1 : 0.7 }}
-                                        >
-                                            Tiempo no disponible
-                                        </div>
+                                                <button onClick={async () => {
+                                                    const data = viewState === 'client_edit' ? clientEditData : newClientData;
+                                                    const res = await fetch(`${API_BASE}/clientes${viewState === 'client_edit' ? `/${drawerOpen.cliente_id}` : ''}`, { method: viewState === 'client_edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                                                    if (res.ok) { refreshData(); setViewState('appointment'); }
+                                                }} style={{ padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '30px', fontWeight: 800 }}>Guardar</button>
+                                            </div>
+                                        ) : drawerOpen.cliente_id ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                {(() => {
+                                                    const c = clientes.find(cli => cli.id === drawerOpen.cliente_id) || {};
+                                                    return (
+                                                        <>
+                                                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: '#2563eb' }}>{c.razon_social_nombres?.[0] || 'C'}</div>
+                                                            <h2 translate="no" style={{ fontWeight: 900, margin: '1rem 0 0.25rem 0' }}>{c.razon_social_nombres} {c.apellidos}</h2>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', marginBottom: '1.5rem' }}><Phone size={14} /> {c.telefono} <Pencil size={12} style={{ cursor: 'pointer' }} onClick={() => { setClientEditData(c); setViewState('client_edit'); }} /></div>
+                                                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '2rem' }}>
+                                                                <button onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null })} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Cambiar</button>
+                                                                <button onClick={() => setViewState('profile')} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Perfil</button>
+                                                            </div>
+                                                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Mail size={16} /> <span style={{ fontWeight: 600 }}>{c.email || 'Sin correo'}</span></div>
+                                                                <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><CalendarIcon size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_nacimiento ? format(new Date(String(c.fecha_nacimiento).substring(0, 10) + 'T12:00:00'), "dd 'de' MMMM yyyy", { locale: es }).replace(/de (\w)/, (_, letter) => `de ${letter.toUpperCase()}`) : 'Sin fecha de nacimiento'}</span></div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Clock size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_registro ? `Registrado: ${format(safeDate(c.fecha_registro), 'd MMM yyyy', { locale: es })}` : 'Registrado recientemente'}</span></div>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                                                    <input placeholder="Buscar cliente..." value={clientSearchTerm} onChange={e => setClientSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                </div>
+                                                <button onClick={() => setViewState('client_create')} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Nuevo cliente</span></button>
+                                                {clientes.filter(c => ((c.razon_social_nombres || '') + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase()) || (c.telefono || '').includes(clientSearchTerm) || (c.email || '').toLowerCase().includes(clientSearchTerm.toLowerCase())).slice(0, 20).map(c => (
+                                                    <div key={c.id} onClick={() => handleSelectClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', cursor: 'pointer' }}>
+                                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0]}</div>
+                                                        <div><div style={{ fontWeight: 800 }}>{c.razon_social_nombres} {c.apellidos}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{c.telefono}</div></div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    <X size={24} style={{ cursor: 'pointer' }} onClick={() => setDrawerOpen(null)} />
-                                </div>
+                                )}
 
-                                {/* Sub-header for Date/Time */}
-                                <div style={{ backgroundColor: '#1e40af', padding: '0.75rem 2rem', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem' }}>
-                                    <div onClick={() => setViewState('date_picker')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontWeight: 700 }}>{format(safeDate(drawerOpen.fecha_hora_inicio), 'eeee d MMMM', { locale: es })}</span>
-                                        <ChevronDown size={14} />
-                                    </div>
-                                    <div style={{ fontWeight: 700 }}>
-                                        {format(safeDate(drawerOpen.fecha_hora_inicio), 'h:mm a')}
-                                    </div>
-                                </div>
-
-                                <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                                {/* Right Content: Appointment or Block Form */}
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
                                     {drawerOpen.tipo === 'BLOQUEO' ? (
-                                        /* FORMULARIO DE BLOQUEO */
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                        /* FORMULARIO DE BLOQUEO (ESTILO FRESHA) */
+                                        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '1rem' }}>Tipo de horario no disponible</label>
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.75rem' }}>Tipo de horario no disponible</label>
+                                                <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
                                                     {[
+                                                        { label: 'Personalizado', icon: <Plus size={20} /> },
                                                         { label: 'Comida', icon: <Clock size={20} /> },
-                                                        { label: 'Reunión', icon: <Users size={20} /> },
                                                         { label: 'Formación', icon: <Search size={20} /> },
+                                                        { label: 'Reunión', icon: <Users size={20} /> },
                                                         { label: 'Día Libre', icon: <CalendarIcon size={20} /> },
-                                                        { label: 'Vacaciones', icon: <Star size={20} /> },
-                                                        { label: 'Personalizado', icon: <Plus size={20} /> }
+                                                        { label: 'Vacaciones', icon: <Star size={20} /> }
                                                     ].map(sub => (
                                                         <div
                                                             key={sub.label}
                                                             onClick={() => setDrawerOpen({ ...drawerOpen, subtipo_bloqueo: sub.label })}
                                                             style={{
-                                                                padding: '1.25rem', borderRadius: '16px', border: (drawerOpen.subtipo_bloqueo === sub.label) ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                                                                minWidth: '100px', height: '100px', borderRadius: '12px', border: (drawerOpen.subtipo_bloqueo === sub.label) ? '2px solid #2563eb' : '1px solid #e5e7eb',
                                                                 backgroundColor: (drawerOpen.subtipo_bloqueo === sub.label) ? '#eff6ff' : '#fff',
-                                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
+                                                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', flexShrink: 0
                                                             }}
                                                         >
-                                                            <div style={{ color: (drawerOpen.subtipo_bloqueo === sub.label) ? '#2563eb' : '#6b7280' }}>{sub.icon}</div>
-                                                            <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{sub.label}</span>
+                                                            <div style={{ color: (drawerOpen.subtipo_bloqueo === sub.label) ? '#2563eb' : '#374151' }}>{sub.icon}</div>
+                                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, textAlign: 'center' }}>{sub.label}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
 
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Título (Opcional)</label>
+                                                <input 
+                                                    placeholder="por ejemplo, comida de negocios" 
+                                                    value={drawerOpen.subtipo_bloqueo !== 'Personalizado' ? '' : (drawerOpen.notas_internas || '')}
+                                                    onChange={e => setDrawerOpen({ ...drawerOpen, notas_internas: e.target.value })}
+                                                    style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.95rem' }} 
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Fecha</label>
+                                                <input 
+                                                    type="date"
+                                                    value={format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')}
+                                                    onChange={e => {
+                                                        const d = e.target.value;
+                                                        const startT = drawerOpen.startTime || '09:00';
+                                                        const endT = drawerOpen.endTime || '10:00';
+                                                        setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${startT}:00`, fecha_hora_fin: `${d} ${endT}:00` });
+                                                    }}
+                                                    style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.95rem' }} 
+                                                />
+                                            </div>
+
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                                 <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
                                                     <input
                                                         type="time"
                                                         value={drawerOpen.startTime || '09:00'}
@@ -927,11 +939,11 @@ export default function PartnerView() {
                                                             const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
                                                             setDrawerOpen({ ...drawerOpen, startTime: newT, fecha_hora_inicio: `${d} ${newT}:00` });
                                                         }}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 600 }}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
                                                     <input
                                                         type="time"
                                                         value={drawerOpen.endTime || '10:00'}
@@ -940,140 +952,157 @@ export default function PartnerView() {
                                                             const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
                                                             setDrawerOpen({ ...drawerOpen, endTime: newT, fecha_hora_fin: `${d} ${newT}:00` });
                                                         }}
-                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 700 }}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontWeight: 600 }}
                                                     />
                                                 </div>
                                             </div>
 
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', display: 'block', marginBottom: '0.5rem' }}>Descripción (Opcional)</label>
-                                                <textarea 
-                                                    placeholder="Añadir descripción o comentario" 
-                                                    value={drawerOpen.notas_internas || ''}
-                                                    onChange={e => setDrawerOpen({ ...drawerOpen, notas_internas: e.target.value })}
-                                                    style={{ width: '100%', height: '100px', padding: '1rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.9rem', resize: 'none' }} 
-                                                />
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Miembros del equipo</label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem', border: '1px solid #e5e7eb', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+                                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: getAvatarColor(drawerOpen.empleado_id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>{(empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'U')[0]}</div>
+                                                    <span style={{ fontWeight: 600 }}>{empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display}</span>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Frecuencia</label>
+                                                <select style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', backgroundColor: 'white' }}>
+                                                    <option>No se repite</option>
+                                                    <option>Diariamente</option>
+                                                    <option>Semanalmente</option>
+                                                </select>
+                                            </div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+                                                <input type="checkbox" style={{ width: '20px', height: '20px' }} />
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Reserva online permitida durante el horario no disponible</label>
                                             </div>
                                         </div>
                                     ) : (
                                         /* FORMULARIO DE CITA (Existing) */
-                                        viewState === 'date_picker' ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                <h4 style={{ margin: 0, fontWeight: 900 }}>Fecha y hora</h4>
-                                                <input type="date" value={format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')} onChange={e => {
-                                                    const d = e.target.value;
-                                                    const t = format(safeDate(drawerOpen.fecha_hora_inicio), 'HH:mm');
-                                                    setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
-                                                }} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                                                    {Array.from({ length: 40 }).map((_, i) => {
-                                                        const h = 8 + Math.floor(i / 4);
-                                                        const m = (i % 4) * 15;
-                                                        const t = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                                                        return <button key={t} onClick={() => {
-                                                            const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
-                                                            setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
+                                        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                                            {viewState === 'date_picker' ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    <h4 style={{ margin: 0, fontWeight: 900 }}>Fecha y hora</h4>
+                                                    <input type="date" value={format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')} onChange={e => {
+                                                        const d = e.target.value;
+                                                        const t = format(safeDate(drawerOpen.fecha_hora_inicio), 'HH:mm');
+                                                        setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
+                                                    }} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                                                        {Array.from({ length: 40 }).map((_, i) => {
+                                                            const h = 8 + Math.floor(i / 4);
+                                                            const m = (i % 4) * 15;
+                                                            const t = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                                                            return <button key={t} onClick={() => {
+                                                                const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
+                                                                setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
+                                                                setViewState('appointment');
+                                                            }} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #e5e7eb', fontWeight: 700 }}>{t}</button>;
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ) : viewState === 'service_selector' ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><h4 style={{ margin: 0, fontWeight: 900 }}>Servicios</h4> <X size={20} onClick={() => setViewState('appointment')} /></div>
+                                                    <input placeholder="Buscar servicio..." value={serviceSearchTerm} onChange={e => setServiceSearchTerm(e.target.value)} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
+                                                    {servicios.filter(s => s.nombre.toLowerCase().includes(serviceSearchTerm.toLowerCase())).map(s => (
+                                                        <div key={s.id} onClick={() => {
+                                                            const sList = drawerOpen.servicios_agregados?.length > 0 ? [...drawerOpen.servicios_agregados] : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                                            sList.push({ id: s.id, nombre: s.nombre, precio: s.precio, duracion_minutos: s.duracion_minutos || 40 });
+                                                            setDrawerOpen({ ...drawerOpen, servicios_agregados: sList, servicio_id: sList[0].id, servicio_nombre: sList[0].nombre, servicio_precio: sList[0].precio, servicio_duracion: sList[0].duracion_minutos });
                                                             setViewState('appointment');
-                                                        }} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #e5e7eb', fontWeight: 700 }}>{t}</button>;
-                                                    })}
+                                                        }} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+                                                            <div><div style={{ fontWeight: 800 }}>{s.nombre}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{s.duracion_minutos} min</div></div>
+                                                            <div style={{ fontWeight: 800 }}>{s.precio} PEN</div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            </div>
-                                        ) : viewState === 'service_selector' ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><h4 style={{ margin: 0, fontWeight: 900 }}>Servicios</h4> <X size={20} onClick={() => setViewState('appointment')} /></div>
-                                                <input placeholder="Buscar servicio..." value={serviceSearchTerm} onChange={e => setServiceSearchTerm(e.target.value)} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                                {servicios.filter(s => s.nombre.toLowerCase().includes(serviceSearchTerm.toLowerCase())).map(s => (
-                                                    <div key={s.id} onClick={() => {
-                                                        const sList = drawerOpen.servicios_agregados?.length > 0 ? [...drawerOpen.servicios_agregados] : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
-                                                        sList.push({ id: s.id, nombre: s.nombre, precio: s.precio, duracion_minutos: s.duracion_minutos || 40 });
-                                                        setDrawerOpen({ ...drawerOpen, servicios_agregados: sList, servicio_id: sList[0].id, servicio_nombre: sList[0].nombre, servicio_precio: sList[0].precio, servicio_duracion: sList[0].duracion_minutos });
-                                                        setViewState('appointment');
-                                                    }} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
-                                                        <div><div style={{ fontWeight: 800 }}>{s.nombre}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{s.duracion_minutos} min</div></div>
-                                                        <div style={{ fontWeight: 800 }}>{s.precio} PEN</div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                                <div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}><h4 style={{ margin: 0, fontWeight: 700 }}>Servicios en la cita</h4></div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                        {(() => {
-                                                            const sList = drawerOpen.servicios_agregados?.length > 0
-                                                                ? drawerOpen.servicios_agregados
-                                                                : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
+                                                    <div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}><h4 style={{ margin: 0, fontWeight: 700 }}>Servicios en la cita</h4></div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                            {(() => {
+                                                                const sList = drawerOpen.servicios_agregados?.length > 0
+                                                                    ? drawerOpen.servicios_agregados
+                                                                    : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
 
-                                                            let currentStart = new Date(safeDate(drawerOpen.fecha_hora_inicio));
+                                                                let currentStart = new Date(safeDate(drawerOpen.fecha_hora_inicio));
 
-                                                            if (sList.length === 0) {
-                                                                return <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir servicio principal</button>;
-                                                            }
+                                                                if (sList.length === 0) {
+                                                                    return <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir servicio principal</button>;
+                                                                }
 
-                                                            return (
-                                                                <>
-                                                                    {sList.map((serv, idx) => {
-                                                                        const serviceStart = idx === 0 ? currentStart : addMinutes(currentStart, sList.slice(0, idx).reduce((sum, s) => sum + parseInt(s.duracion_minutos || 0), 0));
-                                                                        return (
-                                                                            <div key={idx} style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                                                                    <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{serv.nombre}</span>
-                                                                                    <span style={{ fontWeight: 700 }}>{serv.precio || 0} PEN</span>
-                                                                                </div>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.85rem' }}>
-                                                                                        <span>{formatAMPM(serviceStart)}</span> • <span>{serv.duracion_minutos || 0} min</span> •
-                                                                                        <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                                            <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: getAvatarColor(drawerOpen.empleado_id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px' }}>{(empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'U')[0]}</div>
-                                                                                            {empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display}
-                                                                                        </div>
+                                                                return (
+                                                                    <>
+                                                                        {sList.map((serv, idx) => {
+                                                                            const serviceStart = idx === 0 ? currentStart : addMinutes(currentStart, sList.slice(0, idx).reduce((sum, s) => sum + parseInt(s.duracion_minutos || 0), 0));
+                                                                            return (
+                                                                                <div key={idx} style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                                                        <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{serv.nombre}</span>
+                                                                                        <span style={{ fontWeight: 700 }}>{serv.precio || 0} PEN</span>
                                                                                     </div>
-                                                                                    <X size={16} color="#ef4444" style={{ cursor: 'pointer' }} onClick={() => {
-                                                                                        const newList = sList.filter((_, i) => i !== idx);
-                                                                                        if (newList.length > 0) {
-                                                                                            setDrawerOpen({ ...drawerOpen, servicios_agregados: newList, servicio_id: newList[0].id, servicio_nombre: newList[0].nombre, servicio_precio: newList[0].precio, servicio_duracion: newList[0].duracion_minutos });
-                                                                                        } else {
-                                                                                            setDrawerOpen({ ...drawerOpen, servicios_agregados: [], servicio_id: null, servicio_nombre: null, servicio_precio: null, servicio_duracion: null });
-                                                                                        }
-                                                                                    }} />
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.85rem' }}>
+                                                                                            <span>{formatAMPM(serviceStart)}</span> • <span>{serv.duracion_minutos || 0} min</span> •
+                                                                                            <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: getAvatarColor(drawerOpen.empleado_id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px' }}>{(empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display || 'U')[0]}</div>
+                                                                                                {empleados.find(e => e.id === drawerOpen.empleado_id)?.nombre_display}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <X size={16} color="#ef4444" style={{ cursor: 'pointer' }} onClick={() => {
+                                                                                            const newList = sList.filter((_, i) => i !== idx);
+                                                                                            if (newList.length > 0) {
+                                                                                                setDrawerOpen({ ...drawerOpen, servicios_agregados: newList, servicio_id: newList[0].id, servicio_nombre: newList[0].nombre, servicio_precio: newList[0].precio, servicio_duracion: newList[0].duracion_minutos });
+                                                                                            } else {
+                                                                                                setDrawerOpen({ ...drawerOpen, servicios_agregados: [], servicio_id: null, servicio_nombre: null, servicio_precio: null, servicio_duracion: null });
+                                                                                            }
+                                                                                        }} />
+                                                                                    </div>
                                                                                 </div>
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                    <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir otro servicio</button>
-                                                                </>
-                                                            );
-                                                        })()}
+                                                                            );
+                                                                        })}
+                                                                        <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir otro servicio</button>
+                                                                    </>
+                                                                );
+                                                            })()}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )
+                                            )}
+                                        </div>
                                     )}
                                 </div>
+                            </div>
 
-                                <div style={{ padding: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                    {drawerOpen.tipo === 'BLOQUEO' ? (
-                                        <button onClick={handleSaveAppointment} style={{ width: '100%', padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar bloqueo</button>
-                                    ) : (
-                                        (() => {
-                                            const sList = drawerOpen.servicios_agregados?.length > 0
-                                                ? drawerOpen.servicios_agregados
-                                                : (drawerOpen.servicio_id ? [{ precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
-                                            const parseNum = val => parseFloat(String(val).replace(/[^0-9.-]+/g, "")) || 0;
-                                            const tPrecio = sList.reduce((acc, s) => acc + parseNum(s.precio), 0);
-                                            const tDur = sList.reduce((acc, s) => acc + parseNum(s.duracion_minutos), 0);
-                                            return (
-                                                <>
-                                                    <div translate="no" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                                        <div><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Total a cobrar</div><div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{tPrecio} PEN</div></div>
-                                                        <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#6b7280' }}>{tDur} min</div>
-                                                    </div>
-                                                    <button onClick={handleSaveAppointment} disabled={sList.length === 0} style={{ width: '100%', padding: '1rem', backgroundColor: sList.length === 0 ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar cita conjunta</button>
-                                                </>
-                                            );
-                                        })()
-                                    )}
-                                </div>
+                            {/* FOOTER ACCIÓN */}
+                            <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #f3f4f6', backgroundColor: 'white' }}>
+                                {drawerOpen.tipo === 'BLOQUEO' ? (
+                                    <button onClick={handleSaveAppointment} style={{ width: '100%', padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', transition: 'transform 0.1s active' }}>
+                                        Guardar
+                                    </button>
+                                ) : (
+                                    (() => {
+                                        const sList = drawerOpen.servicios_agregados?.length > 0
+                                            ? drawerOpen.servicios_agregados
+                                            : (drawerOpen.servicio_id ? [{ precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                        const parseNum = val => parseFloat(String(val).replace(/[^0-9.-]+/g, "")) || 0;
+                                        const tPrecio = sList.reduce((acc, s) => acc + parseNum(s.precio), 0);
+                                        const tDur = sList.reduce((acc, s) => acc + parseNum(s.duracion_minutos), 0);
+                                        return (
+                                            <>
+                                                <div translate="no" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                                    <div><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Total a cobrar</div><div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{tPrecio} PEN</div></div>
+                                                    <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#6b7280' }}>{tDur} min</div>
+                                                </div>
+                                                <button onClick={handleSaveAppointment} disabled={sList.length === 0} style={{ width: '100%', padding: '1rem', backgroundColor: sList.length === 0 ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar cita conjunta</button>
+                                            </>
+                                        );
+                                    })()
+                                )}
                             </div>
                         </div>
                     </div>
