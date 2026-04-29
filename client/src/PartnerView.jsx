@@ -651,7 +651,7 @@ export default function PartnerView() {
                             )}
 
                             {visibleEmployees.map((emp, empIndex) => {
-                                const empReservas = reservas.filter(r => r.empleado_id === emp.id);
+                                const empReservas = reservas.filter(r => String(r.empleado_id) === String(emp.id));
                                 const overlapInfo = processOverlaps(empReservas);
                                 const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
 
@@ -691,10 +691,10 @@ export default function PartnerView() {
                                             const { colIndex, totalCols } = overlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
                                             const theme = res.tipo === 'BLOQUEO' ? { 
-                                                bg: '#f3f4f6', 
-                                                pattern: 'repeating-linear-gradient(45deg, #e5e7eb, #e5e7eb 2px, #d1d5db 2px, #d1d5db 4px)',
-                                                text: '#1f2937', 
-                                                border: '#9ca3af' 
+                                                bg: '#9ca3af', 
+                                                pattern: 'repeating-linear-gradient(45deg, #9ca3af, #9ca3af 2px, #4b5563 2px, #4b5563 4px)',
+                                                text: '#ffffff', 
+                                                border: '#374151' 
                                             } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
@@ -717,7 +717,7 @@ export default function PartnerView() {
                                                         });
                                                     }
                                                 }} onMouseEnter={() => !isResizingInProgress && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
-                                                    <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
+                                                    <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
                                                                 {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
