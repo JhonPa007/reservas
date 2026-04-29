@@ -378,6 +378,24 @@ export default function PartnerView() {
         } catch (err) { console.error(err); }
     };
 
+    const handleDeleteReservation = async () => {
+        if (!drawerOpen || drawerOpen.id === 'new') return;
+        if (!window.confirm("¿Estás seguro de que deseas eliminar este registro?")) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setDrawerOpen(null);
+                refreshData();
+                setToast("Registro eliminado correctamente");
+                setTimeout(() => setToast(null), 3000);
+            }
+        } catch (err) {
+            console.error(err);
+            setToast("Error al eliminar");
+        }
+    };
+
     const handleSelectClient = (client) => {
         setDrawerOpen({
             ...drawerOpen,
@@ -808,10 +826,21 @@ export default function PartnerView() {
                                         <X size={18} />
                                     </button>
                                     <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>
-                                        {drawerOpen.tipo === 'BLOQUEO' ? 'Añadir horario no disponible' : 'Nueva cita'}
+                                        {drawerOpen.tipo === 'BLOQUEO' 
+                                            ? (drawerOpen.id === 'new' ? 'Añadir horario no disponible' : 'Editar horario no disponible') 
+                                            : (drawerOpen.id === 'new' ? 'Nueva cita' : 'Editar cita')}
                                     </h2>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    {drawerOpen.id !== 'new' && (
+                                        <button 
+                                            onClick={handleDeleteReservation}
+                                            style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    )}
                                     <button style={{ border: 'none', background: 'none', padding: '8px', cursor: 'pointer' }}><MoreHorizontal size={20} /></button>
                                 </div>
                             </div>
