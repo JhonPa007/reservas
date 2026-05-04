@@ -63,7 +63,7 @@ export default function PartnerView() {
 
     const [serviceSearchTerm, setServiceSearchTerm] = useState('');
     const [clientSearchTerm, setClientSearchTerm] = useState('');
-    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
+    const [newClientData, setNewClientData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '', fecha_nacimiento: '' });
     const [birthDayMonth, setBirthDayMonth] = useState(''); // "MM-DD"
     const [birthYear, setBirthYear] = useState(''); // "YYYY"
 
@@ -404,6 +404,7 @@ export default function PartnerView() {
             cliente_apellidos: client.apellidos,
             cliente_telefono: client.telefono
         });
+        setClientSearchTerm('');
         setViewState('appointment');
     };
 
@@ -739,7 +740,7 @@ export default function PartnerView() {
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
                                                                 {res.cliente_nombre && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
-                                                                <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : res.subtipo_bloqueo || 'Bloqueo'}</strong>
+                                                                <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : (res.tipo === 'CITA' ? 'Sin cita' : (res.subtipo_bloqueo || 'Bloqueo'))}</strong>
                                                             </span>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
                                                                 {res.estado === 'COMPLETADA' && <Tag size={12} color={theme.text} fill={theme.text} />}
@@ -862,28 +863,36 @@ export default function PartnerView() {
                                                     <input type="date" value={viewState === 'client_edit' ? (clientEditData.fecha_nacimiento || '') : (newClientData.fecha_nacimiento || '')} onChange={e => viewState === 'client_edit' ? setClientEditData({ ...clientEditData, fecha_nacimiento: e.target.value }) : setNewClientData({ ...newClientData, fecha_nacimiento: e.target.value })} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#111827' }} />
                                                 </div>
                                                 <button onClick={async () => {
+                                                    const isNew = viewState === 'client_create';
                                                     const data = viewState === 'client_edit' ? clientEditData : newClientData;
                                                     const res = await fetch(`${API_BASE}/clientes${viewState === 'client_edit' ? `/${drawerOpen.cliente_id}` : ''}`, { method: viewState === 'client_edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-                                                    if (res.ok) { refreshData(); setViewState('appointment'); }
+                                                    if (res.ok) { 
+                                                        refreshData(); 
+                                                        if (isNew) {
+                                                            setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', email: '', fecha_nacimiento: '' });
+                                                        }
+                                                        setViewState('appointment'); 
+                                                    }
                                                 }} style={{ padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '30px', fontWeight: 800 }}>Guardar</button>
                                             </div>
-                                        ) : drawerOpen.cliente_id ? (
+                                        ) : (drawerOpen.cliente_id || drawerOpen.cliente_nombre === 'Sin cita') ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                 {(() => {
-                                                    const c = clientes.find(cli => cli.id === drawerOpen.cliente_id) || {};
+                                                    const isSinCita = !drawerOpen.cliente_id && drawerOpen.cliente_nombre === 'Sin cita';
+                                                    const c = isSinCita ? { razon_social_nombres: 'Sin cita', apellidos: '', telefono: 'No registrado', email: 'No registrado' } : (clientes.find(cli => cli.id === drawerOpen.cliente_id) || {});
                                                     return (
                                                         <>
-                                                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: '#2563eb' }}>{c.razon_social_nombres?.[0] || 'C'}</div>
+                                                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: isSinCita ? '#6b7280' : '#2563eb' }}>{c.razon_social_nombres?.[0] || 'C'}</div>
                                                             <h2 translate="no" style={{ fontWeight: 900, margin: '1rem 0 0.25rem 0' }}>{c.razon_social_nombres} {c.apellidos}</h2>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', marginBottom: '1.5rem' }}><Phone size={14} /> {c.telefono} <Pencil size={12} style={{ cursor: 'pointer' }} onClick={() => { setClientEditData(c); setViewState('client_edit'); }} /></div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', marginBottom: '1.5rem' }}><Phone size={14} /> {c.telefono} {!isSinCita && <Pencil size={12} style={{ cursor: 'pointer' }} onClick={() => { setClientEditData(c); setViewState('client_edit'); }} />}</div>
                                                             <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '2rem' }}>
-                                                                <button onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null })} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Cambiar</button>
-                                                                <button onClick={() => setViewState('profile')} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Perfil</button>
+                                                                <button onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Cambiar</button>
+                                                                {!isSinCita && <button onClick={() => setViewState('profile')} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Perfil</button>}
                                                             </div>
                                                             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Mail size={16} /> <span style={{ fontWeight: 600 }}>{c.email || 'Sin correo'}</span></div>
                                                                 <div translate="no" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><CalendarIcon size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_nacimiento ? format(new Date(String(c.fecha_nacimiento).substring(0, 10) + 'T12:00:00'), "dd 'de' MMMM yyyy", { locale: es }).replace(/de (\w)/, (_, letter) => `de ${letter.toUpperCase()}`) : 'Sin fecha de nacimiento'}</span></div>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Clock size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_registro ? `Registrado: ${format(safeDate(c.fecha_registro), 'd MMM yyyy', { locale: es })}` : 'Registrado recientemente'}</span></div>
+                                                                {!isSinCita && <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}><Clock size={16} /> <span style={{ fontWeight: 600 }}>{c.fecha_registro ? `Registrado: ${format(safeDate(c.fecha_registro), 'd MMM yyyy', { locale: es })}` : 'Registrado recientemente'}</span></div>}
                                                             </div>
                                                         </>
                                                     );
@@ -895,10 +904,11 @@ export default function PartnerView() {
                                                     <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
                                                     <input placeholder="Buscar cliente..." value={clientSearchTerm} onChange={e => setClientSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                                                 </div>
-                                                <button onClick={() => setViewState('client_create')} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Nuevo cliente</span></button>
+                                                <button onClick={() => { setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', email: '', fecha_nacimiento: '' }); setClientSearchTerm(''); setViewState('client_create'); }} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Añadir un nuevo cliente</span></button>
+                                                <button onClick={() => { setClientSearchTerm(''); handleSelectClient({ id: null, razon_social_nombres: 'Sin cita', apellidos: '', telefono: '' }); }} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><User size={20} color="#6b7280" /> <span style={{ fontWeight: 800 }}>Sin cita</span></button>
                                                 {clientes.filter(c => ((c.razon_social_nombres || '') + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase()) || (c.telefono || '').includes(clientSearchTerm) || (c.email || '').toLowerCase().includes(clientSearchTerm.toLowerCase())).slice(0, 20).map(c => (
                                                     <div key={c.id} onClick={() => handleSelectClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', cursor: 'pointer' }}>
-                                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0]}</div>
+                                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0] || 'C'}</div>
                                                         <div><div style={{ fontWeight: 800 }}>{c.razon_social_nombres} {c.apellidos}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{c.telefono}</div></div>
                                                     </div>
                                                 ))}
