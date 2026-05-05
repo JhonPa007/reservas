@@ -119,6 +119,7 @@ export default function PartnerView() {
                     setEmpMenu(null);
                 }
                 if (drawerOpen && drawerRef.current && !drawerRef.current.contains(e.target) && !e.target.closest('.no-close-drawer')) {
+                    if (viewState === 'client_create' || viewState === 'client_edit') return;
                     setDrawerOpen(null);
                     setViewState('appointment');
                     setShowStatusMenu(false);
@@ -891,11 +892,14 @@ export default function PartnerView() {
                                                     const data = viewState === 'client_edit' ? clientEditData : newClientData;
                                                     const res = await fetch(`${API_BASE}/clientes${viewState === 'client_edit' ? `/${drawerOpen.cliente_id}` : ''}`, { method: viewState === 'client_edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                                                     if (res.ok) { 
+                                                        const result = await res.json();
                                                         refreshData(); 
                                                         if (isNew) {
                                                             setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', email: '', fecha_nacimiento: '' });
+                                                            handleSelectClient(result.cliente);
+                                                        } else {
+                                                            handleSelectClient(result);
                                                         }
-                                                        setViewState('appointment'); 
                                                     }
                                                 }} style={{ padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '30px', fontWeight: 800 }}>Guardar</button>
                                             </div>
