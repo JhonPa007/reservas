@@ -33,6 +33,103 @@ const toProperCase = (str) => {
     return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
 };
 
+
+const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, DISPLAY_START_HOUR }) => {
+    return (
+        <>
+            {quickActionMenu && (
+                <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setQuickActionMenu(null)} />
+                    <div style={{ position: 'fixed', left: quickActionMenu.x + 10, top: quickActionMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '240px', border: '1px solid #f3f4f6' }}>
+                        <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {quickActionMenu.timeStr}
+                            <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
+                        </div>
+                        {[
+                            {
+                                label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
+                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const newDate = new Date(selectedDate);
+                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'CITA' });
+                                    setViewState('appointment'); setQuickActionMenu(null);
+                                }
+                            },
+                            {
+                                label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
+                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const newDate = new Date(selectedDate);
+                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
+                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
+                                    setViewState('appointment'); setQuickActionMenu(null);
+                                }
+                            }
+                        ].map((opt, i) => (
+                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
+                                <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {empMenu && (
+                <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)} />
+                    <div ref={empMenuRef} style={{
+                        position: 'fixed',
+                        left: empMenu.x,
+                        top: empMenu.y + 10,
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                        padding: '12px',
+                        zIndex: 999,
+                        width: '280px',
+                        border: '1px solid #e5e7eb',
+                        animation: 'fadeIn 0.15s ease-out'
+                    }}>
+                        {/* Vistas Section */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                            {[
+                                { label: 'Vista de día', icon: <ExternalLink size={16} /> },
+                                { label: 'Vista de 3 días', icon: <Users size={16} /> },
+                                { label: 'Vista semanal', icon: <CalendarIcon size={16} /> },
+                                { label: 'Vista mensual', icon: <Settings size={16} /> }
+                            ].map((opt, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '8px 4px' }} />
+
+                        {/* Acciones Section */}
+                        <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {[
+                                { label: 'Añadir cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
+                                { label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
+                                { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
+                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => { } },
+                                { label: 'Ver miembro del equipo', icon: <User size={16} />, action: () => { } }
+                            ].map((opt, i) => (
+                                <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+        </>
+    );
+};
+
 export default function PartnerView() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [sucursal, setSucursal] = useState({ id: 1, nombre: 'JV Studio' });
@@ -1315,103 +1412,7 @@ export default function PartnerView() {
                 DISPLAY_START_HOUR={DISPLAY_START_HOUR}
             />
             <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
-                </div>
-            </div>
+        </div>
+    </div>
     );
 }
-
-const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, DISPLAY_START_HOUR }) => {
-    return (
-        <>
-            {quickActionMenu && (
-                <>
-                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setQuickActionMenu(null)} />
-                    <div style={{ position: 'fixed', left: quickActionMenu.x + 10, top: quickActionMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '240px', border: '1px solid #f3f4f6' }}>
-                        <div style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #f3f4f6', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {quickActionMenu.timeStr}
-                            <X size={14} style={{ cursor: 'pointer', color: '#9ca3af' }} onClick={() => setQuickActionMenu(null)} />
-                        </div>
-                        {[
-                            {
-                                label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
-                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
-                                    const newDate = new Date(selectedDate);
-                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
-                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'CITA' });
-                                    setViewState('appointment'); setQuickActionMenu(null);
-                                }
-                            },
-                            {
-                                label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
-                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
-                                    const newDate = new Date(selectedDate);
-                                    newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
-                                    setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
-                                    setViewState('appointment'); setQuickActionMenu(null);
-                                }
-                            }
-                        ].map((opt, i) => (
-                            <div key={i} onClick={opt.action} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', cursor: 'pointer', borderRadius: '8px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                <div style={{ color: '#6b7280' }}>{opt.icon}</div>
-                                <div style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 500 }}>{opt.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
-
-            {empMenu && (
-                <>
-                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setEmpMenu(null)} />
-                    <div ref={empMenuRef} style={{
-                        position: 'fixed',
-                        left: empMenu.x,
-                        top: empMenu.y + 10,
-                        backgroundColor: 'white',
-                        borderRadius: '16px',
-                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                        padding: '12px',
-                        zIndex: 999,
-                        width: '280px',
-                        border: '1px solid #e5e7eb',
-                        animation: 'fadeIn 0.15s ease-out'
-                    }}>
-                        {/* Vistas Section */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
-                            {[
-                                { label: 'Vista de día', icon: <ExternalLink size={16} /> },
-                                { label: 'Vista de 3 días', icon: <Users size={16} /> },
-                                { label: 'Vista semanal', icon: <CalendarIcon size={16} /> },
-                                { label: 'Vista mensual', icon: <Settings size={16} /> }
-                            ].map((opt, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
-                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '8px 4px' }} />
-
-                        {/* Acciones Section */}
-                        <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {[
-                                { label: 'Añadir cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
-                                { label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
-                                { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
-                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => { } },
-                                { label: 'Ver miembro del equipo', icon: <User size={16} />, action: () => { } }
-                            ].map((opt, i) => (
-                                <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
-                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </>
-            )}
-        </>
-    );
-};
