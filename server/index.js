@@ -153,7 +153,7 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
   try {
     const resReservas = await pool.query(
       `SELECT r.*, s.nombre as servicio_nombre, s.duracion_minutos, s.precio,
-              c.razon_social_nombres as cliente_nombre, c.apellidos as cliente_apellidos
+              c.razon_social_nombres as cliente_nombre, c.apellidos as cliente_apellidos, c.telefono as cliente_telefono
        FROM reservas r
        LEFT JOIN servicios s ON r.servicio_id = s.id
        LEFT JOIN clientes c ON r.cliente_id = c.id
