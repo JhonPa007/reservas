@@ -28,6 +28,11 @@ const getAvatarColor = (id) => {
     return colors[id % colors.length] || '#000000';
 };
 
+const toProperCase = (str) => {
+    if (!str) return '';
+    return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+};
+
 export default function PartnerView() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [sucursal, setSucursal] = useState({ id: 1, nombre: 'JV Studio' });
@@ -889,7 +894,12 @@ export default function PartnerView() {
                                                 </div>
                                                 <button onClick={async () => {
                                                     const isNew = viewState === 'client_create';
-                                                    const data = viewState === 'client_edit' ? clientEditData : newClientData;
+                                                    const rawData = viewState === 'client_edit' ? clientEditData : newClientData;
+                                                    const data = {
+                                                        ...rawData,
+                                                        razon_social_nombres: toProperCase(rawData.razon_social_nombres),
+                                                        apellidos: toProperCase(rawData.apellidos)
+                                                    };
                                                     const res = await fetch(`${API_BASE}/clientes${viewState === 'client_edit' ? `/${drawerOpen.cliente_id}` : ''}`, { method: viewState === 'client_edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                                                     if (res.ok) { 
                                                         const result = await res.json();
@@ -1177,7 +1187,7 @@ export default function PartnerView() {
                                                     <div><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Total a cobrar</div><div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{tPrecio} PEN</div></div>
                                                     <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#6b7280' }}>{tDur} min</div>
                                                 </div>
-                                                <button onClick={handleSaveAppointment} disabled={sList.length === 0} style={{ width: '100%', padding: '1rem', backgroundColor: sList.length === 0 ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar cita conjunta</button>
+                                                <button onClick={handleSaveAppointment} disabled={sList.length === 0} style={{ width: '100%', padding: '1rem', backgroundColor: sList.length === 0 ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar Cita</button>
                                             </>
                                         );
                                     })()
