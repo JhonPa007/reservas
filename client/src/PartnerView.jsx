@@ -195,6 +195,12 @@ export default function PartnerView() {
             return;
         }
         e.dataTransfer.setData('resId', res.id);
+
+        // Calibrar la imagen de arrastre para que el puntero coincida con la parte superior
+        const rect = e.currentTarget.getBoundingClientRect();
+        const xOffset = e.clientX - rect.left;
+        e.dataTransfer.setDragImage(e.currentTarget, xOffset, 10); // 10px de margen para que se vea el borde superior
+
         setHoverRes(null);
         setIsDragging(true);
     };
