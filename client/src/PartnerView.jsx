@@ -769,12 +769,12 @@ export default function PartnerView() {
                                             } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-                                                'COMPLETADA': { bg: '#f1f5f9', border: '#94a3b8', text: '#64748b' },
+                                                'COMPLETADA': { bg: '#e2e8f0', border: '#cbd5e1', text: '#334155' },
                                                 'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
-                                            const isBlockedState = res.estado === 'INASISTENCIA' || res.estado === 'CANCELADA' || res.estado === 'COMPLETADA';
+                                            const isBlockedState = res.estado === 'INASISTENCIA' || res.estado === 'CANCELADA';
 
                                             return (
                                                 <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onDragEnd={() => setIsDragging(false)} onClick={() => {
@@ -787,7 +787,7 @@ export default function PartnerView() {
                                                             endTime: format(end, 'HH:mm')
                                                         });
                                                     }
-                                                }} onMouseEnter={() => !isResizingInProgress && !isDragging && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'default' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
+                                                }} onMouseEnter={() => !isResizingInProgress && !isDragging && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
                                                     <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
