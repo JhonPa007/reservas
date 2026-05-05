@@ -916,8 +916,8 @@ export default function PartnerView() {
                                                             </div>
                                                             <div style={{ padding: '16px' }}>
                                                                 <div style={{ display: 'flex', gap: '12px' }}>
-                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: statusKey === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: statusKey === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
-                                                                        {res.cliente_nombre ? res.cliente_nombre.charAt(0).toUpperCase() : 'C'}
+                                                                    <div translate="no" style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: statusKey === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: statusKey === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                                                                        {res.cliente_nombre ? res.cliente_nombre.charAt(0).toUpperCase() : 'S'}
                                                                     </div>
                                                                     <div style={{ flex: 1 }}>
                                                                         <div style={{ fontSize: '1.05rem', color: '#111827', fontWeight: 500 }}>{res.cliente_nombre} {res.cliente_apellidos || ''}</div>
@@ -1044,7 +1044,9 @@ export default function PartnerView() {
                                                     const c = isSinCita ? { razon_social_nombres: 'Sin cita', apellidos: '', telefono: 'No registrado', email: 'No registrado' } : (clientes.find(cli => cli.id === drawerOpen.cliente_id) || {});
                                                     return (
                                                         <>
-                                                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: isSinCita ? '#6b7280' : '#2563eb' }}>{c.razon_social_nombres?.[0] || 'C'}</div>
+                                                             <div translate="no" style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: isSinCita ? '#6b7280' : '#2563eb' }}>{isSinCita ? 'S' : (c.razon_social_nombres?.[0] || 'C')}</div>
+
+
                                                             <h2 translate="no" style={{ fontWeight: 900, margin: '1rem 0 0.25rem 0' }}>{c.razon_social_nombres} {c.apellidos}</h2>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', marginBottom: '1.5rem' }}><Phone size={14} /> {c.telefono} {!isSinCita && <Pencil size={12} style={{ cursor: 'pointer' }} onClick={() => { setClientEditData(c); setViewState('client_edit'); }} />}</div>
                                                             <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '2rem' }}>
@@ -1070,7 +1072,9 @@ export default function PartnerView() {
                                                 <button onClick={() => { setClientSearchTerm(''); handleSelectClient({ id: null, razon_social_nombres: 'Sin cita', apellidos: '', telefono: '' }); }} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><User size={20} color="#6b7280" /> <span style={{ fontWeight: 800 }}>Sin cita</span></button>
                                                 {clientes.filter(c => ((c.razon_social_nombres || '') + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase()) || (c.telefono || '').includes(clientSearchTerm) || (c.email || '').toLowerCase().includes(clientSearchTerm.toLowerCase())).slice(0, 20).map(c => (
                                                     <div key={c.id} onClick={() => handleSelectClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', cursor: 'pointer' }}>
-                                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0] || 'C'}</div>
+                                                         <div translate="no" style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{c.razon_social_nombres?.[0] || 'C'}</div>
+
+
                                                         <div><div style={{ fontWeight: 800 }}>{c.razon_social_nombres} {c.apellidos}</div><div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{c.telefono}</div></div>
                                                     </div>
                                                 ))}
