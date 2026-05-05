@@ -761,6 +761,7 @@ export default function PartnerView() {
                                             const h = getDurationHeight(isResizing ? resizingRes.currentDuration : duration);
                                             const { colIndex, totalCols } = overlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
+                                            const statusKey = String(res.estado).toUpperCase();
                                             const theme = res.tipo === 'BLOQUEO' ? { 
                                                 bg: '#9ca3af', 
                                                 pattern: 'repeating-linear-gradient(45deg, #9ca3af, #9ca3af 2px, #4b5563 2px, #4b5563 4px)',
@@ -769,12 +770,12 @@ export default function PartnerView() {
                                             } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-                                                'COMPLETADA': { bg: '#e2e8f0', border: '#cbd5e1', text: '#334155' },
+                                                'COMPLETADA': { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
                                                 'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
-                                            }[res.estado] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
+                                            }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
-                                            const isBlockedState = res.estado === 'INASISTENCIA' || res.estado === 'CANCELADA';
+                                            const isBlockedState = ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(statusKey);
 
                                             return (
                                                 <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onDragEnd={() => setIsDragging(false)} onClick={() => {
@@ -795,7 +796,7 @@ export default function PartnerView() {
                                                                 <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : (res.tipo === 'CITA' ? 'Sin cita' : (res.subtipo_bloqueo || 'Bloqueo'))}</strong>
                                                             </span>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
-                                                                {res.estado === 'COMPLETADA' && <Tag size={12} color={theme.text} fill={theme.text} />}
+                                                                {statusKey === 'COMPLETADA' && <Tag size={12} color={theme.text} fill={theme.text} />}
                                                                 {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
                                                                 {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
                                                                 {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
@@ -808,17 +809,17 @@ export default function PartnerView() {
 
                                                     {hoverRes === res.id && res.tipo !== 'BLOQUEO' && (
                                                         <div style={{ position: 'absolute', ...(top > 600 ? { bottom: 0 } : { top: 0 }), ...(isRightSide ? { right: '102%' } : { left: '102%' }), width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
-                                                            <div style={{ backgroundColor: res.estado === 'INASISTENCIA' ? '#ce163b' : (res.estado === 'COMPLETADA' ? '#e2e8f0' : '#2563eb'), color: res.estado === 'COMPLETADA' ? '#111827' : 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <div style={{ backgroundColor: statusKey === 'INASISTENCIA' ? '#ce163b' : (statusKey === 'COMPLETADA' ? '#94a3b8' : '#2563eb'), color: statusKey === 'COMPLETADA' ? '#ffffff' : 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                 <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{format(safeDate(res.fecha_hora_inicio), 'h:mma')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mma')}</span>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{res.estado.charAt(0) + res.estado.slice(1).toLowerCase()}</span>
-                                                                    {res.estado === 'INASISTENCIA' && <EyeOff size={16} color="white" />}
-                                                                    {res.estado === 'COMPLETADA' && <Tag size={16} color="#111827" fill="#111827" />}
+                                                                    {statusKey === 'INASISTENCIA' && <EyeOff size={16} color="white" />}
+                                                                    {statusKey === 'COMPLETADA' && <Tag size={16} color="#ffffff" fill="#ffffff" />}
                                                                 </div>
                                                             </div>
                                                             <div style={{ padding: '16px' }}>
                                                                 <div style={{ display: 'flex', gap: '12px' }}>
-                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: res.estado === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: res.estado === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: statusKey === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: statusKey === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
                                                                         {res.cliente_nombre ? res.cliente_nombre.charAt(0).toUpperCase() : 'C'}
                                                                     </div>
                                                                     <div style={{ flex: 1 }}>
@@ -845,7 +846,7 @@ export default function PartnerView() {
                                                                         {res.precio_cobrado || res.precio ? `${res.precio_cobrado || res.precio} PEN` : ''}
                                                                     </div>
                                                                 </div>
-                                                                {res.estado === 'COMPLETADA' && (
+                                                                {statusKey === 'COMPLETADA' && (
                                                                     <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                         <div>
                                                                             <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 500 }}>Venta</div>
@@ -869,7 +870,10 @@ export default function PartnerView() {
 
                 {/* Drawer */}
                 {drawerOpen && (
-                    <div onClick={() => setDrawerOpen(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
+                    (() => {
+                        const isReadOnly = ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(String(drawerOpen.estado).toUpperCase());
+                        return (
+                            <div onClick={() => setDrawerOpen(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
                         <div ref={drawerRef} onClick={e => e.stopPropagation()} style={{ width: drawerOpen.tipo === 'BLOQUEO' ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
                             
                             {/* HEADER DEDICADO */}
@@ -888,8 +892,9 @@ export default function PartnerView() {
                                     {drawerOpen.id !== 'new' && (
                                         <button 
                                             onClick={handleDeleteReservation}
-                                            style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                            title="Eliminar"
+                                            disabled={isReadOnly}
+                                            style={{ border: 'none', background: isReadOnly ? '#f3f4f6' : '#fee2e2', color: isReadOnly ? '#9ca3af' : '#ef4444', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
+                                            title={isReadOnly ? "No se puede eliminar una cita finalizada" : "Eliminar"}
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -946,7 +951,7 @@ export default function PartnerView() {
                                                             <h2 translate="no" style={{ fontWeight: 900, margin: '1rem 0 0.25rem 0' }}>{c.razon_social_nombres} {c.apellidos}</h2>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', marginBottom: '1.5rem' }}><Phone size={14} /> {c.telefono} {!isSinCita && <Pencil size={12} style={{ cursor: 'pointer' }} onClick={() => { setClientEditData(c); setViewState('client_edit'); }} />}</div>
                                                             <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '2rem' }}>
-                                                                <button onClick={() => setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Cambiar</button>
+                                                                <button onClick={() => !isReadOnly && setDrawerOpen({ ...drawerOpen, cliente_id: null, cliente_nombre: null })} disabled={isReadOnly} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700, cursor: isReadOnly ? 'not-allowed' : 'pointer', opacity: isReadOnly ? 0.6 : 1 }}>Cambiar</button>
                                                                 {!isSinCita && <button onClick={() => setViewState('profile')} style={{ flex: 1, padding: '0.6rem', borderRadius: '24px', border: '1px solid #e5e7eb', fontWeight: 700 }}>Perfil</button>}
                                                             </div>
                                                             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1143,7 +1148,7 @@ export default function PartnerView() {
                                                                 let currentStart = new Date(safeDate(drawerOpen.fecha_hora_inicio));
 
                                                                 if (sList.length === 0) {
-                                                                    return <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir servicio principal</button>;
+                                                                    return <button onClick={() => !isReadOnly && setViewState('service_selector')} disabled={isReadOnly} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: isReadOnly ? '#9ca3af' : '#2563eb', fontWeight: 700, cursor: isReadOnly ? 'not-allowed' : 'default' }}>+ Añadir servicio principal</button>;
                                                                 }
 
                                                                 return (
@@ -1176,7 +1181,7 @@ export default function PartnerView() {
                                                                                 </div>
                                                                             );
                                                                         })}
-                                                                        <button onClick={() => setViewState('service_selector')} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: '#2563eb', fontWeight: 700 }}>+ Añadir otro servicio</button>
+                                                                        <button onClick={() => !isReadOnly && setViewState('service_selector')} disabled={isReadOnly} style={{ width: '100%', padding: '1rem', border: '1px dashed #d1d5db', borderRadius: '12px', color: isReadOnly ? '#9ca3af' : '#2563eb', fontWeight: 700, cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>+ Añadir otro servicio</button>
                                                                     </>
                                                                 );
                                                             })()}
@@ -1209,14 +1214,15 @@ export default function PartnerView() {
                                                     <div><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Total a cobrar</div><div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{tPrecio} PEN</div></div>
                                                     <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#6b7280' }}>{tDur} min</div>
                                                 </div>
-                                                <button onClick={handleSaveAppointment} disabled={sList.length === 0} style={{ width: '100%', padding: '1rem', backgroundColor: sList.length === 0 ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: 'pointer' }}>Guardar Cita</button>
+                                                <button onClick={handleSaveAppointment} disabled={sList.length === 0 || isReadOnly} style={{ width: '100%', padding: '1rem', backgroundColor: (sList.length === 0 || isReadOnly) ? '#e5e7eb' : '#2563eb', color: 'white', borderRadius: '30px', fontWeight: 900, cursor: (sList.length === 0 || isReadOnly) ? 'not-allowed' : 'pointer' }}>{isReadOnly ? 'Cita Finalizada' : 'Guardar Cita'}</button>
                                             </>
                                         );
                                     })()
                                 )}
                             </div>
-                        </div>
-                    </div>
+                            </div>
+                        );
+                    })()
                 )}
             </div>
 
