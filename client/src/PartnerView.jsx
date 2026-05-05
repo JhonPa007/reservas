@@ -818,8 +818,8 @@ export default function PartnerView() {
                                                             </div>
                                                             <div style={{ padding: '16px' }}>
                                                                 <div style={{ display: 'flex', gap: '12px' }}>
-                                                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: res.estado === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: res.estado === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
-                                                                        {res.cliente_nombre ? res.cliente_nombre.charAt(0).toUpperCase() : 'C'}
+                                                                    <div translate="no" style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: res.estado === 'COMPLETADA' ? '#f8fafc' : '#eef2ff', color: res.estado === 'COMPLETADA' ? '#64748b' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                                                                        {res.cliente_nombre ? res.cliente_nombre.trim().charAt(0).toUpperCase() : (res.tipo === 'CITA' ? 'S' : 'B')}
                                                                     </div>
                                                                     <div style={{ flex: 1 }}>
                                                                         <div style={{ fontSize: '1.05rem', color: '#111827', fontWeight: 500 }}>{res.cliente_nombre} {res.cliente_apellidos || ''}</div>
