@@ -61,6 +61,7 @@ export default function PartnerView() {
     const [hoverRes, setHoverRes] = useState(null);
     const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const [toast, setToast] = useState(null);
     const [showClientActions, setShowClientActions] = useState(false);
     const [clientEditData, setClientEditData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
@@ -194,9 +195,12 @@ export default function PartnerView() {
             return;
         }
         e.dataTransfer.setData('resId', res.id);
+        setHoverRes(null);
+        setIsDragging(true);
     };
 
     const handleDrop = async (e, empleadoId, mins) => {
+        setIsDragging(false);
         const resId = e.dataTransfer.getData('resId');
         const hour = Math.floor(mins / 60);
         const m = mins % 60;
@@ -767,7 +771,7 @@ export default function PartnerView() {
                                             const isBlockedState = res.estado === 'INASISTENCIA' || res.estado === 'CANCELADA';
 
                                             return (
-                                                <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onClick={() => {
+                                                <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onDragEnd={() => setIsDragging(false)} onClick={() => {
                                                     if (!isResizingInProgress) {
                                                         const start = safeDate(res.fecha_hora_inicio);
                                                         const end = res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(start, res.duracion_minutos || 40);
@@ -777,7 +781,7 @@ export default function PartnerView() {
                                                             endTime: format(end, 'HH:mm')
                                                         });
                                                     }
-                                                }} onMouseEnter={() => !isResizingInProgress && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
+                                                }} onMouseEnter={() => !isResizingInProgress && !isDragging && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
                                                     <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
