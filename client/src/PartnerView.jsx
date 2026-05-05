@@ -574,7 +574,7 @@ export default function PartnerView() {
     }, [empleados, reservas, staffFilterMode, visibleStaffIds]);
 
     return (
-        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
             <style>
                 {`
                 .time-cell-hover { position: relative; transition: background-color 0.1s; }
@@ -595,77 +595,86 @@ export default function PartnerView() {
                 }
                 `}
             </style>
-            <Sidebar />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                {/* Header */}
-                <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <img src="/logo_jv.jpg" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
-                            <span style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', whiteSpace: 'nowrap' }}>Reservas JV</span>
-                        </div>
-                        <select
-                            value={sucursal?.id || ''}
-                            onChange={(e) => setSucursal(sucursales.find(s => s.id === parseInt(e.target.value)))}
-                            style={{ border: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', outline: 'none' }}
-                        >
-                            {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                        </select>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
-                            <button onClick={() => {
-                                const prev = new Date(selectedDate);
-                                prev.setDate(prev.getDate() - 1);
-                                setSelectedDate(prev);
-                            }} className="btn-icon"><ChevronLeft size={18} /></button>
-                            <span style={{ fontWeight: 800, fontSize: '0.9rem', padding: '0 0.75rem', minWidth: '130px', textAlign: 'center', textTransform: 'capitalize' }}>
-                                {format(selectedDate, "eeee, d 'de' MMMM", { locale: es })}
-                            </span>
-                            <button onClick={() => {
-                                const next = new Date(selectedDate);
-                                next.setDate(next.getDate() + 1);
-                                setSelectedDate(next);
-                            }} className="btn-icon"><ChevronRight size={18} /></button>
-                        </div>
+            {/* Header */}
+            <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 110 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <img src="/logo_jv.jpg" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
+                        <span style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', whiteSpace: 'nowrap' }}>Reservas JV</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                        <div style={{ position: 'relative' }}>
-                            <button onClick={() => setShowStaffFilter(!showStaffFilter)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', outline: 'none' }}>
-                                <Users size={16} />
-                                <span>{staffFilterMode === 'with_appointments' ? 'Miembros con citas' : visibleStaffIds.length >= empleados.length ? 'Todo el equipo' : `${visibleStaffIds.length} miembros`}</span>
-                                <ChevronDown size={14} style={{ transform: showStaffFilter ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                            </button>
-                            {showStaffFilter && (
-                                <div ref={staffFilterRef} style={{ position: 'absolute', top: '110%', right: 0, width: '320px', backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '1rem' }}>
-                                    <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
-                                        <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-                                        <input placeholder="Buscar" value={staffSearchTerm} onChange={e => setStaffSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.2rem', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '0.85rem', outline: 'none' }} />
-                                    </div>
-                                    <div onClick={() => { setStaffFilterMode('with_appointments'); setShowStaffFilter(false); }} style={{ padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>Miembros con citas</div>
-                                    <div onClick={() => { setStaffFilterMode('all'); setVisibleStaffIds(empleados.map(e => e.id)); setShowStaffFilter(false); }} style={{ padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>Todo el equipo</div>
-                                    <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '0.5rem 0' }} />
-                                    <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                                        {empleados.filter(e => `${e.nombres} ${e.apellidos}`.toLowerCase().includes(staffSearchTerm.toLowerCase())).map(emp => (
-                                            <div key={emp.id} onClick={() => setVisibleStaffIds(prev => prev.includes(emp.id) ? prev.filter(id => id !== emp.id) : [...prev, emp.id])} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem', cursor: 'pointer' }}>
-                                                <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #e5e7eb', backgroundColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {visibleStaffIds.includes(emp.id) && <Check size={12} color="white" />}
-                                                </div>
-                                                <div translate="no" style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
-                                                <span translate="no" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                    <select
+                        value={sucursal?.id || ''}
+                        onChange={(e) => setSucursal(sucursales.find(s => s.id === parseInt(e.target.value)))}
+                        style={{ border: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', outline: 'none' }}
+                    >
+                        {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    </select>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
+                        <button onClick={() => {
+                            const prev = new Date(selectedDate);
+                            prev.setDate(prev.getDate() - 1);
+                            setSelectedDate(prev);
+                        }} className="btn-icon"><ChevronLeft size={18} /></button>
+                        <span style={{ fontWeight: 800, fontSize: '0.9rem', padding: '0 0.75rem', minWidth: '130px', textAlign: 'center', textTransform: 'capitalize' }}>
+                            {format(selectedDate, "eeee, d 'de' MMMM", { locale: es })}
+                        </span>
+                        <button onClick={() => {
+                            const next = new Date(selectedDate);
+                            next.setDate(next.getDate() + 1);
+                            setSelectedDate(next);
+                        }} className="btn-icon"><ChevronRight size={18} /></button>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div style={{ position: 'relative' }}>
+                        <button onClick={() => setShowStaffFilter(!showStaffFilter)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', outline: 'none' }}>
+                            <Users size={16} />
+                            <span>{staffFilterMode === 'with_appointments' ? 'Miembros con citas' : visibleStaffIds.length >= empleados.length ? 'Todo el equipo' : `${visibleStaffIds.length} miembros`}</span>
+                            <ChevronDown size={14} style={{ transform: showStaffFilter ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                        </button>
+                        {showStaffFilter && (
+                            <div ref={staffFilterRef} style={{ position: 'absolute', top: '110%', right: 0, width: '320px', backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 1000, padding: '1rem' }}>
+                                <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                                    <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                                    <input placeholder="Buscar miembro..." value={staffSearchTerm} onChange={e => setStaffSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.5rem 0.5rem 0.5rem 2rem', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.8rem', outline: 'none' }} />
                                 </div>
-                            )}
-                        </div>
-                        <button onClick={() => setShowConfig(!showConfig)} className="btn-secondary"><Settings size={18} /></button>
+                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                    <div onClick={() => setStaffFilterMode(staffFilterMode === 'all' ? 'with_appointments' : 'all')} style={{ padding: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', borderRadius: '8px', backgroundColor: '#f9fafb', marginBottom: '0.5rem' }}>
+                                        <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #2563eb', backgroundColor: staffFilterMode === 'with_appointments' ? '#2563eb' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {staffFilterMode === 'with_appointments' && <Check size={12} color="white" />}
+                                        </div>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Solo miembros con citas</span>
+                                    </div>
+                                    <div style={{ padding: '0.4rem', borderBottom: '1px solid #f3f4f6', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>MIEMBROS DEL EQUIPO</span>
+                                        <div onClick={() => setVisibleStaffIds(visibleStaffIds.length === empleados.length ? [] : empleados.map(e => e.id))} style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, cursor: 'pointer' }}>
+                                            {visibleStaffIds.length === empleados.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
+                                        </div>
+                                    </div>
+                                    {empleados.filter(e => (e.nombre_display || e.nombres).toLowerCase().includes(staffSearchTerm.toLowerCase())).map(emp => (
+                                        <div key={emp.id} onClick={() => setVisibleStaffIds(prev => prev.includes(emp.id) ? prev.filter(id => id !== emp.id) : [...prev, emp.id])} style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', borderRadius: '8px', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                            <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #2563eb', backgroundColor: visibleStaffIds.includes(emp.id) ? '#2563eb' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {visibleStaffIds.includes(emp.id) && <Check size={12} color="white" />}
+                                            </div>
+                                            <div translate="no" style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
+                                            <span translate="no" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{emp.nombre_display || `${emp.nombres} ${emp.apellidos}`}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </header>
+                    <button onClick={() => setShowConfig(!showConfig)} className="btn-secondary"><Settings size={18} /></button>
+                </div>
+            </header>
 
-                {/* Calendar Grid */}
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ paddingLeft: '55px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
-                        {visibleEmployees.map(emp => (
-                            <div key={emp.id} style={{ flex: 1, minWidth: '150px', padding: '1rem', textAlign: 'center', borderRight: '1px solid #f3f4f6' }}>
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                <Sidebar />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                    {/* Calendar Grid */}
+                    <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ paddingLeft: '55px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
+                            {visibleEmployees.map(emp => (
                                 <div onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
                                     <div translate="no" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
                                     <span translate="no" style={{ fontWeight: 900, fontSize: '0.75rem', color: '#111827' }}>{emp.nombre_display || emp.nombres}</span>
@@ -1291,7 +1300,9 @@ export default function PartnerView() {
                 DISPLAY_START_HOUR={DISPLAY_START_HOUR}
             />
             <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
-        </div >
+                </div>
+            </div>
+        </div>
     );
 }
 

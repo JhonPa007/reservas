@@ -22,12 +22,10 @@ export default function Sidebar() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '1rem 0',
+            padding: '1.5rem 0',
             flexShrink: 0,
             zIndex: 100
         }}>
-            <img src="/logo_jv.jpg" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', marginBottom: '2rem', objectFit: 'cover' }} />
-
             {menuItems.map((item, idx) => (
                 <div
                     key={idx}
