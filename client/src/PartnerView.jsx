@@ -1220,11 +1220,11 @@ export default function PartnerView() {
                                     })()
                                 )}
                             </div>
-                            </div>
-                        );
-                    })()
-                )}
-            </div>
+                        </div>
+                    </div>
+                );
+            })()
+        )}
 
             {/* VIEW: CLIENT PROFILE (3 PANELS) */}
             {
