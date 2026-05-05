@@ -599,7 +599,11 @@ export default function PartnerView() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                 {/* Header */}
                 <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <img src="/logo_jv.jpg" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
+                            <span style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', whiteSpace: 'nowrap' }}>Reservas JV</span>
+                        </div>
                         <select
                             value={sucursal?.id || ''}
                             onChange={(e) => setSucursal(sucursales.find(s => s.id === parseInt(e.target.value)))}

@@ -26,19 +26,7 @@ export default function Sidebar() {
             flexShrink: 0,
             zIndex: 100
         }}>
-            <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#000',
-                borderRadius: '8px',
-                marginBottom: '2rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 900,
-                fontSize: '0.8rem'
-            }}>JV</div>
+            <img src="/logo_jv.jpg" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', marginBottom: '2rem', objectFit: 'cover' }} />
 
             {menuItems.map((item, idx) => (
                 <div
