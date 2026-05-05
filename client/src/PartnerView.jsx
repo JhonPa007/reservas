@@ -408,6 +408,30 @@ export default function PartnerView() {
         setViewState('appointment');
     };
 
+    const handleOpenCreateClient = () => {
+        const term = clientSearchTerm.trim();
+        let nombres = '';
+        let apellidos = '';
+        let telefono = '';
+
+        if (/^\d+$/.test(term)) {
+            telefono = term;
+        } else if (term) {
+            const parts = term.split(/\s+/);
+            nombres = parts[0] || '';
+            apellidos = parts.slice(1).join(' ') || '';
+        }
+
+        setNewClientData({
+            razon_social_nombres: nombres,
+            apellidos: apellidos,
+            telefono: telefono,
+            email: '',
+            fecha_nacimiento: ''
+        });
+        setViewState('client_create');
+    };
+
     const handleAddAppointment = (empId) => {
         const d = new Date();
         d.setMinutes(Math.round(d.getMinutes() / 15) * 15);
@@ -904,7 +928,7 @@ export default function PartnerView() {
                                                     <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
                                                     <input placeholder="Buscar cliente..." value={clientSearchTerm} onChange={e => setClientSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                                                 </div>
-                                                <button onClick={() => { setNewClientData({ razon_social_nombres: '', apellidos: '', telefono: '', email: '', fecha_nacimiento: '' }); setClientSearchTerm(''); setViewState('client_create'); }} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Añadir un nuevo cliente</span></button>
+                                                <button onClick={handleOpenCreateClient} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><UserPlus size={20} color="#2563eb" /> <span style={{ fontWeight: 800 }}>Añadir un nuevo cliente</span></button>
                                                 <button onClick={() => { setClientSearchTerm(''); handleSelectClient({ id: null, razon_social_nombres: 'Sin cita', apellidos: '', telefono: '' }); }} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: 'none', background: 'none' }}><User size={20} color="#6b7280" /> <span style={{ fontWeight: 800 }}>Sin cita</span></button>
                                                 {clientes.filter(c => ((c.razon_social_nombres || '') + ' ' + (c.apellidos || '')).toLowerCase().includes(clientSearchTerm.toLowerCase()) || (c.telefono || '').includes(clientSearchTerm) || (c.email || '').toLowerCase().includes(clientSearchTerm.toLowerCase())).slice(0, 20).map(c => (
                                                     <div key={c.id} onClick={() => handleSelectClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', cursor: 'pointer' }}>
