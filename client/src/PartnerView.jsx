@@ -34,7 +34,7 @@ const toProperCase = (str) => {
 };
 
 
-const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, DISPLAY_START_HOUR }) => {
+const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, handleAddFreeDays, DISPLAY_START_HOUR }) => {
     return (
         <>
             {quickActionMenu && (
@@ -111,11 +111,11 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
                         <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {[
-                                { label: 'Añadir cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
-                                { label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
+                                { label: 'agregar cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
+                                { label: 'Agregar horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
                                 { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
-                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => handleAddFreeDays(empMenu.empId) },
-                                { label: 'Ver miembro del equipo', icon: <User size={16} />, action: () => { } }
+                                { label: 'agregar días libres', icon: <CalendarIcon size={16} />, action: () => handleAddFreeDays(empMenu.empId) },
+                                { label: 'Ver del equipo', icon: <User size={16} />, action: () => { } }
                             ].map((opt, i) => (
                                 <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
                                     <div style={{ color: '#4b5563' }}>{opt.icon}</div>
@@ -1020,7 +1020,7 @@ export default function PartnerView() {
                         const isReadOnly = ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(String(drawerOpen.estado).toUpperCase());
                         return (
                             <div onClick={() => setDrawerOpen(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-                        <div ref={drawerRef} onClick={e => e.stopPropagation()} style={{ width: drawerOpen.tipo === 'BLOQUEO' ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
+                        <div ref={drawerRef} onClick={e => e.stopPropagation()} style={{ width: (drawerOpen.tipo === 'BLOQUEO' || drawerOpen.tipo === 'AUSENCIA') ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
                             
                             {/* HEADER DEDICADO */}
                             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1053,7 +1053,7 @@ export default function PartnerView() {
 
                             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
                                 {/* Left: Client Data (Solo para Citas) */}
-                                {drawerOpen.tipo !== 'BLOQUEO' && (
+                                {drawerOpen.tipo === 'CITA' && (
                                     <div style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto' }}>
                                         {viewState === 'client_edit' || viewState === 'client_create' ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1632,6 +1632,7 @@ export default function PartnerView() {
                 handleAddAppointment={handleAddAppointment}
                 handleAddBlock={handleAddBlock}
                 handleEditShift={handleEditShift}
+                handleAddFreeDays={handleAddFreeDays}
                 DISPLAY_START_HOUR={DISPLAY_START_HOUR}
             />
             <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
