@@ -896,8 +896,8 @@ export default function PartnerView() {
                                                                 {statusKey === 'COMPLETADA' && <Tag size={12} color={theme.text} fill={theme.text} />}
                                                                 {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
                                                                 {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
-                                                                {['WEB', 'ONLINE', 'APP', 'CLIENTE'].includes((res.origen || '').toUpperCase()) && <Cloud size={12} color={theme.text} />}
-                                                                {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} />}
+                                                                {((res.origen || '').toUpperCase().match(/WEB|ONLINE|APP|CLIENTE/) || (res.notas_cliente && res.notas_cliente.toLowerCase().includes('reserva web'))) && <Cloud size={12} color={theme.text} title="Reserva online" />}
+                                                                {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} title={`${emp.nombre_display || emp.nombres} obligatorio`} />}
                                                             </div>
                                                         </div>
                                                         <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
