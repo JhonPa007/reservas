@@ -889,7 +889,7 @@ export default function PartnerView() {
                                                     <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
-                                                                {(res.cliente_nombre || res.tipo === 'CITA') && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
+                                                                {res.tipo !== 'BLOQUEO' && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
                                                                 <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : (res.tipo === 'CITA' ? 'Sin cita' : (res.subtipo_bloqueo || 'Bloqueo'))}</strong>
                                                             </span>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
@@ -897,7 +897,7 @@ export default function PartnerView() {
                                                                 {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
                                                                 {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
                                                                 {((res.origen || '').toUpperCase().match(/WEB|ONLINE|APP|CLIENTE/) || (res.notas_cliente && res.notas_cliente.toLowerCase().includes('reserva web'))) && <Cloud size={12} color={theme.text} title="Reserva online" />}
-                                                                {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} title={`${emp.nombre_display || emp.nombres} obligatorio`} />}
+                                                                {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} title="Colaborador preferido" />}
                                                             </div>
                                                         </div>
                                                         <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
@@ -1198,7 +1198,68 @@ export default function PartnerView() {
                                         </div>
                                     ) : (
                                         /* FORMULARIO DE CITA (Existing) */
-                                        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                            {drawerOpen.id !== 'new' && (
+                                                <div style={{ backgroundColor: '#2563eb', color: 'white', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div style={{ cursor: isReadOnly ? 'default' : 'pointer' }} onClick={() => !isReadOnly && setViewState('date_picker')}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 900 }}>
+                                                            {format(safeDate(drawerOpen.fecha_hora_inicio), "eee d MMM", { locale: es })} {!isReadOnly && <ChevronDown size={20} />}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, opacity: 0.9 }}>
+                                                            {formatAMPM(drawerOpen.fecha_hora_inicio)} • No se repite
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div style={{ position: 'relative' }}>
+                                                        <button 
+                                                            onClick={() => !isReadOnly && setShowStatusMenu(!showStatusMenu)}
+                                                            style={{ 
+                                                                backgroundColor: 'rgba(255,255,255,0.1)', 
+                                                                border: '1px solid rgba(255,255,255,0.3)', 
+                                                                borderRadius: '20px', 
+                                                                padding: '0.5rem 1rem', 
+                                                                color: 'white', 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                gap: '0.5rem', 
+                                                                fontWeight: 700, 
+                                                                cursor: isReadOnly ? 'default' : 'pointer' 
+                                                            }}
+                                                        >
+                                                            {drawerOpen.estado} {!isReadOnly && <ChevronDown size={14} />}
+                                                        </button>
+                                                        {showStatusMenu && (
+                                                            <div style={{ position: 'absolute', top: '110%', right: 0, width: '200px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', zIndex: 100, border: '1px solid #e5e7eb', padding: '0.5rem' }}>
+                                                                {['RESERVADA', 'CONFIRMADA', 'INASISTENCIA', 'COMPLETADA', 'CANCELADA'].map(status => (
+                                                                    <div 
+                                                                        key={status} 
+                                                                        onClick={async () => {
+                                                                            if (status === 'CANCELADA') {
+                                                                                handleDeleteReservation();
+                                                                            } else {
+                                                                                setDrawerOpen({ ...drawerOpen, estado: status });
+                                                                                await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, {
+                                                                                    method: 'PATCH',
+                                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                                    body: JSON.stringify({ estado: status })
+                                                                                });
+                                                                                refreshData();
+                                                                            }
+                                                                            setShowStatusMenu(false);
+                                                                        }}
+                                                                        style={{ padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: status === 'CANCELADA' ? '#ef4444' : '#374151' }}
+                                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                    >
+                                                                        {status === 'CANCELADA' ? 'Eliminar / Cancelar' : status.charAt(0) + status.slice(1).toLowerCase()}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
                                             {viewState === 'date_picker' ? (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                     <h4 style={{ margin: 0, fontWeight: 900 }}>Fecha y hora</h4>
@@ -1290,6 +1351,7 @@ export default function PartnerView() {
                                                     </div>
                                                 </div>
                                             )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
