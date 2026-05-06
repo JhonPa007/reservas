@@ -114,7 +114,7 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
                                 { label: 'Añadir cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
                                 { label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
                                 { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
-                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => { } },
+                                { label: 'Añadir días libres', icon: <CalendarIcon size={16} />, action: () => handleAddFreeDays(empMenu.empId) },
                                 { label: 'Ver miembro del equipo', icon: <User size={16} />, action: () => { } }
                             ].map((opt, i) => (
                                 <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
@@ -408,33 +408,56 @@ export default function PartnerView() {
         if (!drawerOpen) return;
         const isNew = drawerOpen.id === 'new';
 
-        // Si es un BLOQUEO, el proceso es más simple (un solo registro)
-        if (drawerOpen.tipo === 'BLOQUEO') {
+        // Si es un BLOQUEO o AUSENCIA, el proceso es más simple (un solo registro, o múltiples si repite)
+        if (drawerOpen.tipo === 'BLOQUEO' || drawerOpen.tipo === 'AUSENCIA') {
             try {
-                const payload = {
+                const basePayload = {
                     empleado_id: drawerOpen.empleado_id,
                     sucursal_id: sucursal.id,
-                    fecha_hora_inicio: drawerOpen.fecha_hora_inicio,
-                    fecha_hora_fin: drawerOpen.fecha_hora_fin || format(addMinutes(safeDate(drawerOpen.fecha_hora_inicio), 60), 'yyyy-MM-dd HH:mm:ss'),
-                    tipo: 'BLOQUEO',
+                    tipo: drawerOpen.tipo,
                     subtipo_bloqueo: drawerOpen.subtipo_bloqueo || 'Comida',
                     estado: 'RESERVADA',
                     origen: isNew ? 'PARTNER' : drawerOpen.origen,
-                    reserva_online_permitida: !!drawerOpen.reserva_online_permitida
+                    reserva_online_permitida: !!drawerOpen.reserva_online_permitida,
+                    notas_internas: drawerOpen.notas_internas || ''
                 };
 
                 const method = isNew ? 'POST' : 'PATCH';
                 const url = isNew ? `${API_BASE}/reservas` : `${API_BASE}/reservas/${drawerOpen.id}`;
 
+                // Primer registro
                 await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        ...basePayload,
+                        fecha_hora_inicio: drawerOpen.fecha_hora_inicio,
+                        fecha_hora_fin: drawerOpen.fecha_hora_fin || format(addMinutes(safeDate(drawerOpen.fecha_hora_inicio), 60), 'yyyy-MM-dd HH:mm:ss')
+                    })
                 });
+
+                // Si es nuevo y tiene repetición (Solo para AUSENCIA por ahora según UI)
+                if (isNew && drawerOpen.repetir && drawerOpen.repetir_hasta) {
+                    let current = addDays(safeDate(drawerOpen.fecha_hora_inicio), 1);
+                    const until = safeDate(drawerOpen.repetir_hasta);
+                    const duration = (safeDate(drawerOpen.fecha_hora_fin) - safeDate(drawerOpen.fecha_hora_inicio)) / 60000;
+
+                    while (current <= until) {
+                        const start = format(current, 'yyyy-MM-dd HH:mm:ss');
+                        const end = format(addMinutes(current, duration), 'yyyy-MM-dd HH:mm:ss');
+                        
+                        await fetch(`${API_BASE}/reservas`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...basePayload, fecha_hora_inicio: start, fecha_hora_fin: end })
+                        });
+                        current = addDays(current, 1);
+                    }
+                }
 
                 setDrawerOpen(null);
                 refreshData();
-                setToast("Horario bloqueado guardado");
+                setToast(drawerOpen.tipo === 'AUSENCIA' ? "Días libres guardados" : "Horario bloqueado guardado");
                 setTimeout(() => setToast(null), 3000);
                 return;
             } catch (err) {
@@ -578,6 +601,27 @@ export default function PartnerView() {
             endTime: format(endDate, 'HH:mm'),
             tipo: 'BLOQUEO',
             subtipo_bloqueo: 'Comida'
+        });
+        setViewState('appointment');
+        setEmpMenu(null);
+    };
+
+    const handleAddFreeDays = (empId) => {
+        const startDate = new Date(selectedDate);
+        startDate.setHours(9, 0, 0, 0);
+        const endDate = new Date(selectedDate);
+        endDate.setHours(21, 0, 0, 0);
+
+        setDrawerOpen({
+            id: 'new',
+            empleado_id: empId,
+            fecha_hora_inicio: format(startDate, 'yyyy-MM-dd HH:mm:ss'),
+            fecha_hora_fin: format(endDate, 'yyyy-MM-dd HH:mm:ss'),
+            startTime: format(startDate, 'HH:mm'),
+            endTime: format(endDate, 'HH:mm'),
+            tipo: 'AUSENCIA',
+            subtipo_bloqueo: 'Vacaciones anuales',
+            notas_internas: ''
         });
         setViewState('appointment');
         setEmpMenu(null);
@@ -864,6 +908,11 @@ export default function PartnerView() {
                                                 pattern: 'repeating-linear-gradient(45deg, #9ca3af, #9ca3af 2px, #4b5563 2px, #4b5563 4px)',
                                                 text: '#ffffff', 
                                                 border: '#374151' 
+                                            } : res.tipo === 'AUSENCIA' ? {
+                                                bg: '#fafafa',
+                                                pattern: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.8) 3px, rgba(229, 231, 235, 0.8) 4px)',
+                                                text: '#374151',
+                                                border: '#d1d5db'
                                             } : {
                                                 'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
                                                 'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
@@ -980,9 +1029,11 @@ export default function PartnerView() {
                                         <X size={18} />
                                     </button>
                                     <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>
-                                        {drawerOpen.tipo === 'BLOQUEO' 
-                                            ? (drawerOpen.id === 'new' ? 'Añadir horario no disponible' : 'Editar horario no disponible') 
-                                            : (drawerOpen.id === 'new' ? 'Nueva cita' : 'Editar cita')}
+                                        {drawerOpen.tipo === 'AUSENCIA'
+                                            ? (drawerOpen.id === 'new' ? 'Añadir días libres' : 'Editar días libres')
+                                            : drawerOpen.tipo === 'BLOQUEO' 
+                                                ? (drawerOpen.id === 'new' ? 'Añadir horario no disponible' : 'Editar horario no disponible') 
+                                                : (drawerOpen.id === 'new' ? 'Nueva cita' : 'Editar cita')}
                                     </h2>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -1085,7 +1136,113 @@ export default function PartnerView() {
 
                                 {/* Right Content: Appointment or Block Form */}
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-                                    {drawerOpen.tipo === 'BLOQUEO' ? (
+                                    {drawerOpen.tipo === 'AUSENCIA' ? (
+                                        /* FORMULARIO DE DÍAS LIBRES (ESTILO FRESHA) */
+                                        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Miembro del equipo</label>
+                                                    <select 
+                                                        value={drawerOpen.empleado_id} 
+                                                        onChange={e => setDrawerOpen({ ...drawerOpen, empleado_id: parseInt(e.target.value) })}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', backgroundColor: 'white' }}
+                                                    >
+                                                        {empleados.map(emp => <option key={emp.id} value={emp.id}>{emp.nombre_display || emp.nombres}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Tipo</label>
+                                                    <select 
+                                                        value={drawerOpen.subtipo_bloqueo} 
+                                                        onChange={e => setDrawerOpen({ ...drawerOpen, subtipo_bloqueo: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', backgroundColor: 'white' }}
+                                                    >
+                                                        <option>Vacaciones anuales</option>
+                                                        <option>Baja por enfermedad</option>
+                                                        <option>Formación</option>
+                                                        <option>Otros motivos de ausencia</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Fecha de inicio</label>
+                                                    <input 
+                                                        type="date"
+                                                        value={format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')}
+                                                        onChange={e => {
+                                                            const d = e.target.value;
+                                                            const startT = drawerOpen.startTime || '09:00';
+                                                            const endT = drawerOpen.endTime || '21:00';
+                                                            setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${startT}:00`, fecha_hora_fin: `${d} ${endT}:00` });
+                                                        }}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }} 
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Hora de inicio</label>
+                                                    <input
+                                                        type="time"
+                                                        value={drawerOpen.startTime || '09:00'}
+                                                        onChange={(e) => {
+                                                            const newT = e.target.value;
+                                                            const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
+                                                            setDrawerOpen({ ...drawerOpen, startTime: newT, fecha_hora_inicio: `${d} ${newT}:00` });
+                                                        }}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Hora de finalización</label>
+                                                    <input
+                                                        type="time"
+                                                        value={drawerOpen.endTime || '21:00'}
+                                                        onChange={(e) => {
+                                                            const newT = e.target.value;
+                                                            const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
+                                                            setDrawerOpen({ ...drawerOpen, endTime: newT, fecha_hora_fin: `${d} ${newT}:00` });
+                                                        }}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="repeat_check"
+                                                    style={{ width: '18px', height: '18px' }}
+                                                    checked={!!drawerOpen.repetir}
+                                                    onChange={e => setDrawerOpen({ ...drawerOpen, repetir: e.target.checked })}
+                                                />
+                                                <label htmlFor="repeat_check" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>Repetir</label>
+                                            </div>
+
+                                            {drawerOpen.repetir && (
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Repetir hasta</label>
+                                                    <input 
+                                                        type="date"
+                                                        value={drawerOpen.repetir_hasta || format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')}
+                                                        onChange={e => setDrawerOpen({ ...drawerOpen, repetir_hasta: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }} 
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Descripción</label>
+                                                <textarea 
+                                                    placeholder="Añadir descripción o comentario (opcional)" 
+                                                    rows={4}
+                                                    value={drawerOpen.notas_internas || ''}
+                                                    onChange={e => setDrawerOpen({ ...drawerOpen, notas_internas: e.target.value })}
+                                                    style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.95rem', resize: 'none' }} 
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : drawerOpen.tipo === 'BLOQUEO' ? (
                                         /* FORMULARIO DE BLOQUEO (ESTILO FRESHA) */
                                         <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                             <div>
@@ -1359,7 +1516,7 @@ export default function PartnerView() {
 
                             {/* FOOTER ACCIÓN */}
                             <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #f3f4f6', backgroundColor: 'white' }}>
-                                {drawerOpen.tipo === 'BLOQUEO' ? (
+                                {drawerOpen.tipo === 'BLOQUEO' || drawerOpen.tipo === 'AUSENCIA' ? (
                                     <button onClick={handleSaveAppointment} style={{ width: '100%', padding: '1rem', backgroundColor: '#000', color: 'white', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', transition: 'transform 0.1s active' }}>
                                         Guardar
                                     </button>
