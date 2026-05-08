@@ -1462,7 +1462,12 @@ export default function PartnerView() {
                                                             {(() => {
                                                                 const sList = drawerOpen.servicios_agregados?.length > 0
                                                                     ? drawerOpen.servicios_agregados
-                                                                    : (drawerOpen.servicio_id ? [{ id: drawerOpen.servicio_id, nombre: drawerOpen.servicio_nombre, precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                                                    : (drawerOpen.servicio_id ? [{ 
+                                                                        id: drawerOpen.servicio_id, 
+                                                                        nombre: drawerOpen.servicio_nombre, 
+                                                                        precio: (drawerOpen.precio_cobrado !== undefined && drawerOpen.precio_cobrado !== null && drawerOpen.precio_cobrado !== 0) ? drawerOpen.precio_cobrado : (drawerOpen.servicio_precio || drawerOpen.precio), 
+                                                                        duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos 
+                                                                    }] : []);
 
                                                                 let currentStart = new Date(safeDate(drawerOpen.fecha_hora_inicio));
 
@@ -1478,7 +1483,25 @@ export default function PartnerView() {
                                                                                 <div key={idx} style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
                                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                                                                         <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{serv.nombre}</span>
-                                                                                        <span style={{ fontWeight: 700 }}>{serv.precio || 0} PEN</span>
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                            <input 
+                                                                                                type="number" 
+                                                                                                value={serv.precio || 0} 
+                                                                                                onChange={(e) => {
+                                                                                                    const newVal = parseFloat(e.target.value) || 0;
+                                                                                                    const newList = [...sList];
+                                                                                                    newList[idx] = { ...newList[idx], precio: newVal };
+                                                                                                    setDrawerOpen({ 
+                                                                                                        ...drawerOpen, 
+                                                                                                        servicios_agregados: newList,
+                                                                                                        ...(idx === 0 ? { servicio_precio: newVal, precio_cobrado: newVal } : {})
+                                                                                                    });
+                                                                                                }}
+                                                                                                disabled={isReadOnly}
+                                                                                                style={{ width: '90px', textAlign: 'right', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '4px 8px', fontWeight: 700, fontSize: '1rem', outline: 'none', backgroundColor: isReadOnly ? '#f9fafb' : 'white' }}
+                                                                                            />
+                                                                                            <span style={{ fontWeight: 700 }}>PEN</span>
+                                                                                        </div>
                                                                                     </div>
                                                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.85rem' }}>
@@ -1524,7 +1547,7 @@ export default function PartnerView() {
                                     (() => {
                                         const sList = drawerOpen.servicios_agregados?.length > 0
                                             ? drawerOpen.servicios_agregados
-                                            : (drawerOpen.servicio_id ? [{ precio: drawerOpen.servicio_precio || drawerOpen.precio, duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
+                                            : (drawerOpen.servicio_id ? [{ precio: (drawerOpen.precio_cobrado !== undefined && drawerOpen.precio_cobrado !== null && drawerOpen.precio_cobrado !== 0) ? drawerOpen.precio_cobrado : (drawerOpen.servicio_precio || drawerOpen.precio), duracion_minutos: drawerOpen.servicio_duracion || drawerOpen.duracion_minutos }] : []);
                                         const parseNum = val => parseFloat(String(val).replace(/[^0-9.-]+/g, "")) || 0;
                                         const tPrecio = sList.reduce((acc, s) => acc + parseNum(s.precio), 0);
                                         const tDur = sList.reduce((acc, s) => acc + parseNum(s.duracion_minutos), 0);
