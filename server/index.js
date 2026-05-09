@@ -1,10 +1,13 @@
 const express = require('express');
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 require('dotenv').config();
+
+// Forzar a pg a retornar TIMESTAMP como string para evitar conversiones UTC automáticas
+types.setTypeParser(1114, val => val);
 
 const app = express();
 const port = process.env.PORT || 5000;
