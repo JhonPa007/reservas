@@ -192,6 +192,7 @@ export default function PartnerView() {
     const [showClientActions, setShowClientActions] = useState(false);
     const [clientEditData, setClientEditData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
     const [dbHealth, setDbHealth] = useState(null);
+    const preventClickRef = useRef(false);
 
     const [serviceSearchTerm, setServiceSearchTerm] = useState('');
     const [clientSearchTerm, setClientSearchTerm] = useState('');
@@ -372,6 +373,11 @@ export default function PartnerView() {
                 return;
             }
 
+            // Si hay movimiento significativo, marcamos para prevenir el clic al soltar
+            if (Math.abs(moveEvent.clientY - startY) > 5 || Math.abs(moveEvent.clientX - e.clientX) > 5) {
+                preventClickRef.current = true;
+            }
+
             setDragState(prev => {
                 if (!prev.resId) return prev;
                 
@@ -417,6 +423,11 @@ export default function PartnerView() {
             
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
+
+            // Si se movió, mantenemos preventClick un momento más para atrapar el evento onClick
+            if (preventClickRef.current) {
+                setTimeout(() => { preventClickRef.current = false; }, 100);
+            }
 
             setDragState(prev => {
                 if (!prev.resId || (!isDraggingGlobal && prev.type === 'move')) return prev;
@@ -1020,7 +1031,7 @@ export default function PartnerView() {
                                                     key={res.id} 
                                                     onPointerDown={e => handlePointerDown(e, res, 'move')} 
                                                     onClick={(e) => {
-                                                        if (isDraggingGlobal) return;
+                                                        if (isDraggingGlobal || preventClickRef.current) return;
                                                         const start = safeDate(res.fecha_hora_inicio);
                                                         const end = res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(start, res.duracion_minutos || 40);
                                                         setDrawerOpen({
@@ -1045,25 +1056,7 @@ export default function PartnerView() {
                                                         display: isDragged && dragState.currentEmpId && dragState.currentEmpId !== res.empleado_id ? 'none' : 'block'
                                                     }}
                                                 >
-                                                    {isDraggingGlobal && dragState.resId === res.id && dragState.type === 'move' && dragState.currentEmpId === emp.id && (
-                                                        <div style={{ 
-                                                            position: 'absolute', 
-                                                            top: dragState.currentTop, 
-                                                            left: 0, 
-                                                            width: '100%', 
-                                                            height: h, 
-                                                            zIndex: 1001,
-                                                            pointerEvents: 'none'
-                                                        }}>
-                                                            <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', opacity: 1, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', border: `2px solid ${theme.border}` }}>
-                                                                <div style={{ position: 'absolute', top: '-24px', left: '-4px', backgroundColor: '#111827', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1002 }}>{dragState.currentTime}</div>
-                                                                <div style={{ fontWeight: 800, fontSize: '0.75rem', color: theme.text }}>{res.cliente_nombre || 'Sin cita'}</div>
-                                                                <div style={{ fontSize: '0.7rem', color: theme.text }}>{res.servicio_nombre}</div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div style={{ backgroundColor: isDragged ? theme.bg : theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: isDragged || hoverRes === res.id ? '0 8px 15px rgba(0,0,0,0.1)' : 'none', border: isDragged ? `2px solid ${theme.border}` : 'none' }}>
+                                                    <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 8px 15px rgba(0,0,0,0.1)' : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
                                                                 {res.tipo !== 'BLOQUEO' && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
@@ -1071,11 +1064,44 @@ export default function PartnerView() {
                                                             </span>
                                                         </div>
                                                         <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
-                                                        
-                                                        {isDragged && dragState.type === 'move' && (
-                                                            <div style={{ position: 'absolute', top: 2, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', padding: '1px 4px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 700 }}>{dragState.currentTime}</div>
-                                                        )}
                                                     </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* Renderizado del FANTASMA (Solo se ve en la columna donde está el puntero) */}
+                                        {isDraggingGlobal && dragState.resId && dragState.type === 'move' && dragState.currentEmpId === emp.id && (
+                                            <div style={{ 
+                                                position: 'absolute', 
+                                                top: dragState.currentTop, 
+                                                left: 0, 
+                                                width: '100%', 
+                                                height: dragState.currentHeight, 
+                                                zIndex: 1001,
+                                                pointerEvents: 'none'
+                                            }}>
+                                                {(() => {
+                                                    const res = reservas.find(r => r.id === dragState.resId);
+                                                    if (!res) return null;
+                                                    const statusKey = String(res.estado).toUpperCase();
+                                                    const theme = res.tipo === 'BLOQUEO' ? { bg: '#9ca3af', border: '#374151', text: '#ffffff' } : {
+                                                        'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+                                                        'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+                                                        'COMPLETADA': { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
+                                                        'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
+                                                        'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
+                                                    }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
+
+                                                    return (
+                                                        <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', opacity: 0.8, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', border: `2px solid ${theme.border}` }}>
+                                                            <div style={{ position: 'absolute', top: '-24px', left: '-4px', backgroundColor: '#111827', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>{dragState.currentTime}</div>
+                                                            <div style={{ fontWeight: 800, fontSize: '0.75rem', color: theme.text }}>{res.cliente_nombre || 'Sin cita'}</div>
+                                                            <div style={{ fontSize: '0.7rem', color: theme.text }}>{res.servicio_nombre}</div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        )}
 
                                                     {!isBlockedState(res.estado) && (
                                                         <div 
