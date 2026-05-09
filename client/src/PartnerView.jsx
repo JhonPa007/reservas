@@ -953,7 +953,9 @@ export default function PartnerView() {
                         <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
                             {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => (
                                 <div key={i} style={{ position: 'absolute', top: i * rowHeight, left: 0, right: 0, height: '1px', backgroundColor: i % (60 / cellDuration) === 0 ? '#f3f4f6' : '#f9fafb', zIndex: 1 }} />
-                                         {isSameDay(now, selectedDate) && (
+                            ))}
+
+                            {isSameDay(now, selectedDate) && (
                                 <div style={{ position: 'absolute', top: timelineTop, left: 0, right: 0, height: '2px', backgroundColor: '#ef4444', zIndex: 20, pointerEvents: 'none' }}>
                                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', position: 'absolute', left: '-5px', top: '-4px' }} />
                                 </div>
