@@ -319,21 +319,7 @@ export default function PartnerView() {
         }
     };
 
-        };
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-    };
 
-    const handleDragStart = (e, res) => {
-        if (dragState.resId || e.target.closest('.resize-handle')) {
-            e.preventDefault();
-            return;
-        }
-    };
-
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-    };
 
     // --- NUEVA LÓGICA DE DRAG & RESIZE (POINTER EVENTS) ---
 
