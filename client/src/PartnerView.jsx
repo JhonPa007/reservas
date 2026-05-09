@@ -1079,7 +1079,7 @@ export default function PartnerView() {
                                                 height: dragState.currentHeight, 
                                                 zIndex: 1001,
                                                 pointerEvents: 'none'
-                                            }}>
+                                            }} >
                                                 {(() => {
                                                     const res = reservas.find(r => r.id === dragState.resId);
                                                     if (!res) return null;
