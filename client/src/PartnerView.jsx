@@ -1425,18 +1425,58 @@ export default function PartnerView() {
                                                         const t = format(safeDate(drawerOpen.fecha_hora_inicio), 'HH:mm');
                                                         setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
                                                     }} style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                                                        {Array.from({ length: 40 }).map((_, i) => {
-                                                            const h = 8 + Math.floor(i / 4);
-                                                            const m = (i % 4) * 15;
-                                                            const t = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                                                            return <button key={t} onClick={() => {
-                                                                const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
-                                                                setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
-                                                                setViewState('appointment');
-                                                            }} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #e5e7eb', fontWeight: 700 }}>{t}</button>;
-                                                        })}
-                                                    </div>
+                                                    <select 
+                                                        value={format(safeDate(drawerOpen.fecha_hora_inicio), 'HH:mm')} 
+                                                        onChange={e => {
+                                                            const d = format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd');
+                                                            const t = e.target.value;
+                                                            setDrawerOpen({ ...drawerOpen, fecha_hora_inicio: `${d} ${t}:00` });
+                                                            setViewState('appointment');
+                                                        }} 
+                                                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', backgroundColor: 'white', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
+                                                    >
+                                                        {(() => {
+                                                            const options = [];
+                                                            const selDate = safeDate(drawerOpen.fecha_hora_inicio);
+                                                            const isToday = isSameDay(selDate, new Date());
+                                                            const now = new Date();
+                                                            
+                                                            let startH = DISPLAY_START_HOUR;
+                                                            let startM = 0;
+                                                            
+                                                            if (isToday) {
+                                                                startH = now.getHours();
+                                                                startM = Math.floor(now.getMinutes() / 5) * 5;
+                                                                if (startH < DISPLAY_START_HOUR) {
+                                                                    startH = DISPLAY_START_HOUR;
+                                                                    startM = 0;
+                                                                }
+                                                            }
+
+                                                            const currentT = format(selDate, 'HH:mm');
+                                                            const [curH, curM] = currentT.split(':').map(Number);
+                                                            
+                                                            if (curH < startH || (curH === startH && curM < startM)) {
+                                                                startH = curH;
+                                                                startM = Math.floor(curM / 5) * 5;
+                                                            }
+
+                                                            for (let h = startH; h <= DISPLAY_END_HOUR; h++) {
+                                                                for (let m = (h === startH ? startM : 0); m < 60; m += 5) {
+                                                                    if (h === DISPLAY_END_HOUR && m > 0) break;
+                                                                    const t = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                                                                    options.push(t);
+                                                                }
+                                                            }
+                                                            
+                                                            if (!options.includes(currentT)) {
+                                                                options.push(currentT);
+                                                                options.sort();
+                                                            }
+
+                                                            return options.map(t => <option key={t} value={t}>{t}</option>);
+                                                        })()}
+                                                    </select>
                                                 </div>
                                             ) : viewState === 'service_selector' ? (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
