@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -105,13 +106,28 @@ app.post('/api/auth/login', async (req, res) => {
     
     let isValid = false;
     if (user.password.startsWith('scrypt:')) {
-      // Implementación simplificada o bypass para demo si el usuario lo requiere
-      // Por ahora, si es scrypt, no podemos validarlo fácilmente con bcrypt
-      // PERO, si la pass es 'admin123' (ejemplo), lo ideal es que el usuario la actualice.
-      console.log('Detectado hash scrypt, validación fallará con bcrypt standard');
-      // MODO DEMO: Si la pass enviada es igual a la almacenada (muy inseguro, solo para facilitar transición si no hay bcrypt)
-      // O simplemente fallar y pedir actualización.
-      isValid = (password === user.password); // Solo para testing si son iguales
+      try {
+        // Formato: scrypt:N:r:p$salt$hash
+        const parts = user.password.split(':');
+        const n = parseInt(parts[1]);
+        const r = parseInt(parts[2]);
+        const remaining = parts[3].split('$');
+        const p = parseInt(remaining[0]);
+        const salt = remaining[1];
+        const hash = remaining[2];
+
+        // Aumentamos maxmem porque scrypt con N=32768 requiere más de lo predeterminado
+        const derived = crypto.scryptSync(password, salt, 64, { 
+          N: n, 
+          r: r, 
+          p: p, 
+          maxmem: 128 * 1024 * 1024 
+        });
+        isValid = derived.toString('hex') === hash;
+      } catch (err) {
+        console.error('Error verificando hash scrypt:', err);
+        isValid = false;
+      }
     } else {
       isValid = await bcrypt.compare(password, user.password);
     }
