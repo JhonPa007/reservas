@@ -17,7 +17,7 @@ export default function Sidebar() {
     ].filter(item => hasPermission(item.permission));
 
     return (
-        <div style={{
+        <div className="sidebar" style={{
             width: '64px',
             backgroundColor: 'white',
             borderRight: '1px solid #e5e7eb',
@@ -31,6 +31,7 @@ export default function Sidebar() {
             {menuItems.map((item, idx) => (
                 <div
                     key={idx}
+                    className="sidebar-item"
                     onClick={() => navigate(item.path)}
                     title={item.label}
                     style={{

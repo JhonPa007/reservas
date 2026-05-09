@@ -768,11 +768,11 @@ export default function PartnerView() {
                 `}
             </style>
             {/* Header */}
-            <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 110 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <header className="header-responsive" style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 110 }}>
+                <div className="header-top-row" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <img src="/logo_jv.jpg" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
-                        <span style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', whiteSpace: 'nowrap' }}>Reservas JV</span>
+                        <span className="mobile-hide" style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', whiteSpace: 'nowrap' }}>Reservas JV</span>
                     </div>
                     <select
                         value={sucursal?.id || ''}
@@ -781,23 +781,25 @@ export default function PartnerView() {
                     >
                         {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                     </select>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
-                        <button onClick={() => {
-                            const prev = new Date(selectedDate);
-                            prev.setDate(prev.getDate() - 1);
-                            setSelectedDate(prev);
-                        }} className="btn-icon"><ChevronLeft size={18} /></button>
-                        <span style={{ fontWeight: 800, fontSize: '0.9rem', padding: '0 0.75rem', minWidth: '130px', textAlign: 'center', textTransform: 'capitalize' }}>
-                            {format(selectedDate, "eeee, d 'de' MMMM", { locale: es })}
-                        </span>
-                        <button onClick={() => {
-                            const next = new Date(selectedDate);
-                            next.setDate(next.getDate() + 1);
-                            setSelectedDate(next);
-                        }} className="btn-icon"><ChevronRight size={18} /></button>
-                    </div>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                
+                <div className="header-date-selector" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '10px' }}>
+                    <button onClick={() => {
+                        const prev = new Date(selectedDate);
+                        prev.setDate(prev.getDate() - 1);
+                        setSelectedDate(prev);
+                    }} className="btn-icon"><ChevronLeft size={18} /></button>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', padding: '0 0.75rem', minWidth: '130px', textAlign: 'center', textTransform: 'capitalize' }}>
+                        {format(selectedDate, "eeee, d 'de' MMMM", { locale: es })}
+                    </span>
+                    <button onClick={() => {
+                        const next = new Date(selectedDate);
+                        next.setDate(next.getDate() + 1);
+                        setSelectedDate(next);
+                    }} className="btn-icon"><ChevronRight size={18} /></button>
+                </div>
+
+                <div className="mobile-hide" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>{user?.nombre_display || user?.nombres}</span>
                         <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>{user?.rol_nombre}</span>
@@ -851,12 +853,12 @@ export default function PartnerView() {
                 </div>
             </header>
 
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div className="mobile-flex-col" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 <Sidebar />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                     {/* Calendar Grid */}
-                    <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ paddingLeft: '55px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10 }}>
+                    <div className="calendar-grid-container" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ paddingLeft: '55px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10, minWidth: `${55 + (visibleEmployees.length * 150)}px` }}>
                             {visibleEmployees.map(emp => (
                                 <div onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ flex: 1, minWidth: '150px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.75rem 0' }}>
                                     <div translate="no" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
@@ -865,7 +867,7 @@ export default function PartnerView() {
                         ))}
                     </div>
 
-                    <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', minWidth: `${55 + (visibleEmployees.length * 150)}px` }}>
                         <div style={{ width: '55px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
                             {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * 2 }).map((_, i) => {
                                 const hour = DISPLAY_START_HOUR + Math.floor(i / 2);
@@ -1052,7 +1054,7 @@ export default function PartnerView() {
                         const isReadOnly = ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(String(drawerOpen.estado).toUpperCase());
                         return (
                             <div onClick={() => setDrawerOpen(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-                        <div ref={drawerRef} onClick={e => e.stopPropagation()} style={{ width: (drawerOpen.tipo === 'BLOQUEO' || drawerOpen.tipo === 'AUSENCIA') ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
+                        <div ref={drawerRef} className="drawer-responsive" onClick={e => e.stopPropagation()} style={{ width: (drawerOpen.tipo === 'BLOQUEO' || drawerOpen.tipo === 'AUSENCIA') ? '500px' : '850px', backgroundColor: 'white', height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
                             
                             {/* HEADER DEDICADO */}
                             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1083,10 +1085,10 @@ export default function PartnerView() {
                                 </div>
                             </div>
 
-                            <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                            <div className="mobile-flex-col" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
                                 {/* Left: Client Data (Solo para Citas) */}
                                 {drawerOpen.tipo === 'CITA' && (
-                                    <div style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto' }}>
+                                    <div className="drawer-responsive" style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto' }}>
                                         {viewState === 'client_edit' || viewState === 'client_create' ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                 <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, textAlign: 'left', padding: 0 }}>← Volver</button>

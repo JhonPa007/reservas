@@ -282,6 +282,15 @@ const Login = () => {
           color: #64748b;
           font-size: 12px;
         }
+
+        @media (max-width: 480px) {
+          .login-card {
+            padding: 24px;
+          }
+          .login-header h1 {
+            font-size: 24px;
+          }
+        }
       ` }} />
     </div>
   );
