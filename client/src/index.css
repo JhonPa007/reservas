@@ -94,8 +94,21 @@ body {
 
   .mobile-flex-col {
     flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+
+  .mobile-flex-col > div {
+    flex: none !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   
+  .mobile-h-auto {
+    height: auto !important;
+    flex: none !important;
+    overflow: visible !important;
+  }
+
   .mobile-hide {
     display: none !important;
   }

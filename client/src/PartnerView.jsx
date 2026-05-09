@@ -1085,10 +1085,10 @@ export default function PartnerView() {
                                 </div>
                             </div>
 
-                            <div className="mobile-flex-col" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                            <div className="mobile-flex-col" style={{ flex: 1, display: 'flex', overflowY: 'auto' }}>
                                 {/* Left: Client Data (Solo para Citas) */}
                                 {drawerOpen.tipo === 'CITA' && (
-                                    <div className="drawer-responsive" style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto' }}>
+                                    <div className="drawer-responsive mobile-h-auto" style={{ width: '400px', borderRight: '1px solid #e5e7eb', padding: '1.5rem', overflowY: 'auto', flexShrink: 0 }}>
                                         {viewState === 'client_edit' || viewState === 'client_create' ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                 <button onClick={() => setViewState('appointment')} style={{ border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, textAlign: 'left', padding: 0 }}>← Volver</button>
@@ -1169,7 +1169,7 @@ export default function PartnerView() {
                                 )}
 
                                 {/* Right Content: Appointment or Block Form */}
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+                                <div className="mobile-h-auto" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'visible', minHeight: 'min-content' }}>
                                     {drawerOpen.tipo === 'AUSENCIA' ? (
                                         /* FORMULARIO DE DÍAS LIBRES (ESTILO FRESHA) */
                                         <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -1389,7 +1389,7 @@ export default function PartnerView() {
                                         </div>
                                     ) : (
                                         /* FORMULARIO DE CITA (Existing) */
-                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                        <div className="mobile-h-auto" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'visible', minHeight: 'min-content' }}>
                                             {drawerOpen.id !== 'new' && (
                                                 <div style={{ backgroundColor: '#2563eb', color: 'white', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <div style={{ cursor: isReadOnly ? 'default' : 'pointer' }} onClick={() => !isReadOnly && setViewState('date_picker')}>
@@ -1450,7 +1450,7 @@ export default function PartnerView() {
                                                     </div>
                                                 </div>
                                             )}
-                                            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                                             <div className="mobile-h-auto" style={{ flex: 1, padding: '1.5rem', overflowY: 'visible' }}>
                                             {viewState === 'date_picker' ? (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                     <h4 style={{ margin: 0, fontWeight: 900 }}>Fecha y hora</h4>
