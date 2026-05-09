@@ -15,13 +15,20 @@ function safeDate(dateStr) {
     if (!dateStr) return new Date();
     if (dateStr instanceof Date) return dateStr;
 
-    // Si la fecha viene de la DB con espacio (YYYY-MM-DD HH:mm:ss)
-    // No usamos 'T' para que el navegador la interprete como Hora Local siempre
     let s = String(dateStr);
+    
+    // Si es un formato ISO que incluye 'Z' o 'T' con desplazamiento, dejamos que el navegador lo maneje
+    if (s.includes('Z') || (s.includes('T') && (s.includes('+') || s.split('T')[1].includes('-')))) {
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d;
+    }
+
     if (s.includes('.')) s = s.split('.')[0];
     if (s.endsWith('Z')) s = s.slice(0, -1);
-
-    const d = new Date(s.replace('T', ' ')); // Reemplazamos T por espacio para forzar hora local
+    
+    // Formato DB: YYYY-MM-DD HH:mm:ss o con T
+    const cleanS = s.replace('T', ' ');
+    const d = new Date(cleanS);
     return isNaN(d.getTime()) ? new Date() : d;
 }
 
@@ -383,12 +390,13 @@ export default function PartnerView() {
 
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
+                    const displayTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
                     
                     return {
                         ...prev,
                         currentTop: snappedTop,
                         currentEmpId: newEmpId,
-                        currentTime: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+                        currentTime: displayTime
                     };
                 } else {
                     // Redimensionar
