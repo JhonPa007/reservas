@@ -954,12 +954,7 @@ export default function PartnerView() {
                                 const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
 
                                 return (
-                                    <div key={emp.id} data-emp-id={emp.id} onDragOver={e => e.preventDefault()} onDrop={e => {
-                                        const bcr = e.currentTarget.getBoundingClientRect();
-                                        const y = e.clientY - bcr.top;
-                                        const mins = Math.round((y / rowHeight) * cellDuration / 15) * 15 + (DISPLAY_START_HOUR * 60);
-                                        handleDrop(e, emp.id, mins);
-                                    }} style={{ flex: 1, minWidth: '150px', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
+                                    <div key={emp.id} data-emp-id={emp.id} style={{ flex: 1, minWidth: '150px', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
                                         {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
                                             const mins = (DISPLAY_START_HOUR * 60) + (i * cellDuration);
                                             const available = isTimeAvailable(emp.id, mins);
@@ -984,8 +979,11 @@ export default function PartnerView() {
                                         {empReservas.map(res => {
                                             const top = getTimeTop(res.fecha_hora_inicio);
                                             const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
-                                            const isResizing = resizingRes?.id === res.id;
-                                            const h = getDurationHeight(isResizing ? resizingRes.currentDuration : duration);
+                                            const isDragged = draggedResId === res.id;
+                                            const isResizing = isDragged && dragState.type === 'resize';
+                                            const isGhost = isDraggingGlobal && !isDragged;
+
+                                            const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
                                             const { colIndex, totalCols } = overlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
                                             const statusKey = String(res.estado).toUpperCase();
@@ -1007,8 +1005,7 @@ export default function PartnerView() {
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
-                                            const isDragged = draggedResId === res.id;
-                                            const isGhost = isDraggingGlobal && !isDragged;
+
 
                                             return (
                                                 <div 
@@ -1031,7 +1028,7 @@ export default function PartnerView() {
                                                         top: isDragged && dragState.type === 'move' ? dragState.currentTop : top, 
                                                         left: isDragged && dragState.type === 'move' ? 0 : `${(colIndex / totalCols) * 100}%`, 
                                                         width: isDragged && dragState.type === 'move' ? '100%' : `${(1 / totalCols) * 100}%`, 
-                                                        height: isDragged && dragState.type === 'resize' ? dragState.currentHeight : h, 
+                                                        height: h, 
                                                         zIndex: isDragged ? 1000 : (hoverRes === res.id ? 60 : 15), 
                                                         cursor: isBlockedState(res.estado) ? 'pointer' : 'grab', 
                                                         opacity: isGhost ? 0.3 : (isBlockedState(res.estado) ? 0.95 : 1), 
