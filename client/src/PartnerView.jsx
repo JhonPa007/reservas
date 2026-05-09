@@ -476,24 +476,16 @@ export default function PartnerView() {
     const isBlockedState = (status) => ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(String(status).toUpperCase());
 
     const handleCellClick = (e, empId, mins, timeStr) => {
-        if (!canManageReservas()) return;
-        const hour = Math.floor(mins / 60);
-        const m = mins % 60;
-        const newDate = new Date(selectedDate);
-        newDate.setHours(hour, m, 0, 0);
-
-        setDrawerOpen({
-            id: 'new',
-            empleado_id: empId,
-            fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'),
-            startTime: format(newDate, 'HH:mm'),
-            endTime: format(addMinutes(newDate, 60), 'HH:mm'),
-            cliente_id: null,
-            servicio_id: null,
-            estado: 'RESERVADA',
-            tipo: 'CITA'
+        if (!canManageReservas() || isDraggingGlobal || preventClickRef.current) return;
+        
+        const rect = e.currentTarget.getBoundingClientRect();
+        setQuickActionMenu({
+            empId,
+            mins,
+            timeStr: formatTimeTooltip(mins + (DISPLAY_START_HOUR * 60)).replace(' ', '').toLowerCase(),
+            x: rect.left,
+            y: rect.top
         });
-        setViewState('appointment');
     };
 
     const handleSaveAppointment = async () => {
@@ -692,7 +684,9 @@ export default function PartnerView() {
             startTime: format(startDate, 'HH:mm'),
             endTime: format(endDate, 'HH:mm'),
             tipo: 'BLOQUEO',
-            subtipo_bloqueo: 'Comida'
+            subtipo_bloqueo: 'Comida',
+            repetir: false,
+            repetir_hasta: format(startDate, 'yyyy-MM-dd')
         });
         setViewState('appointment');
         setEmpMenu(null);
@@ -959,9 +953,7 @@ export default function PartnerView() {
                         <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
                             {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => (
                                 <div key={i} style={{ position: 'absolute', top: i * rowHeight, left: 0, right: 0, height: '1px', backgroundColor: i % (60 / cellDuration) === 0 ? '#f3f4f6' : '#f9fafb', zIndex: 1 }} />
-                            ))}
-
-                            {isSameDay(now, selectedDate) && (
+                                         {isSameDay(now, selectedDate) && (
                                 <div style={{ position: 'absolute', top: timelineTop, left: 0, right: 0, height: '2px', backgroundColor: '#ef4444', zIndex: 20, pointerEvents: 'none' }}>
                                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', position: 'absolute', left: '-5px', top: '-4px' }} />
                                 </div>
@@ -973,17 +965,29 @@ export default function PartnerView() {
                                 const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
 
                                 return (
-                                    <div key={emp.id} data-emp-id={emp.id} style={{ flex: 1, minWidth: '150px', borderRight: '1px solid #f3f4f6', position: 'relative' }}>
+                                    <div 
+                                        key={emp.id} 
+                                        data-emp-id={emp.id} 
+                                        className="calendar-column"
+                                        style={{ 
+                                            flex: 1, 
+                                            minWidth: '200px', 
+                                            borderRight: '1px solid #f3f4f6', 
+                                            position: 'relative',
+                                            backgroundColor: '#fff'
+                                        }}
+                                    >
+                                        {/* Time Slots Grid (Visual Only) */}
                                         {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
-                                            const mins = (DISPLAY_START_HOUR * 60) + (i * cellDuration);
-                                            const available = isTimeAvailable(emp.id, mins);
+                                            const mins = i * cellDuration;
+                                            const absMins = mins + (DISPLAY_START_HOUR * 60);
+                                            const available = isTimeAvailable(emp.id, absMins);
                                             return (
                                                 <div
                                                     key={i}
                                                     className="time-cell-hover"
-                                                    data-time={formatTimeTooltip(mins).replace(' ', '').toLowerCase()}
-                                                    title=""
-                                                    onClick={(e) => handleCellClick(e, emp.id, mins, '')}
+                                                    data-time={formatTimeTooltip(absMins).replace(' ', '').toLowerCase()}
+                                                    onClick={(e) => handleCellClick(e, emp.id, absMins, '')}
                                                     style={{
                                                         height: rowHeight,
                                                         cursor: 'pointer',
@@ -995,6 +999,7 @@ export default function PartnerView() {
                                             );
                                         })}
 
+                                        {/* Reservations for this employee */}
                                         {empReservas.map(res => {
                                             const top = getTimeTop(res.fecha_hora_inicio);
                                             const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
@@ -1023,8 +1028,6 @@ export default function PartnerView() {
                                                 'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
-
-
 
                                             return (
                                                 <div 
@@ -1062,48 +1065,12 @@ export default function PartnerView() {
                                                                 {res.tipo !== 'BLOQUEO' && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
                                                                 <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : (res.tipo === 'CITA' ? 'Sin cita' : (res.subtipo_bloqueo || 'Bloqueo'))}</strong>
                                                             </span>
+                                                            {statusKey === 'COMPLETADA' && <Tag size={12} color={theme.text} style={{ flexShrink: 0 }} />}
                                                         </div>
                                                         <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
 
-                                        {/* Renderizado del FANTASMA (Solo se ve en la columna donde está el puntero) */}
-                                        {isDraggingGlobal && dragState.resId && dragState.type === 'move' && dragState.currentEmpId === emp.id && (
-                                            <div style={{ 
-                                                position: 'absolute', 
-                                                top: dragState.currentTop, 
-                                                left: 0, 
-                                                width: '100%', 
-                                                height: dragState.currentHeight, 
-                                                zIndex: 1001,
-                                                pointerEvents: 'none'
-                                            }} >
-                                                {(() => {
-                                                    const res = reservas.find(r => r.id === dragState.resId);
-                                                    if (!res) return null;
-                                                    const statusKey = String(res.estado).toUpperCase();
-                                                    const theme = res.tipo === 'BLOQUEO' ? { bg: '#9ca3af', border: '#374151', text: '#ffffff' } : {
-                                                        'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-                                                        'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-                                                        'COMPLETADA': { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
-                                                        'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
-                                                        'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
-                                                    }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
-
-                                                    return (
-                                                        <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', opacity: 0.8, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', border: `2px solid ${theme.border}` }}>
-                                                            <div style={{ position: 'absolute', top: '-24px', left: '-4px', backgroundColor: '#111827', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>{dragState.currentTime}</div>
-                                                            <div style={{ fontWeight: 800, fontSize: '0.75rem', color: theme.text }}>{res.cliente_nombre || 'Sin cita'}</div>
-                                                            <div style={{ fontSize: '0.7rem', color: theme.text }}>{res.servicio_nombre}</div>
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        )}
-
-                                                    {!isBlockedState(res.estado) && (
+                                                    {!isBlockedState(res.estado) && res.tipo === 'CITA' && (
                                                         <div 
                                                             onPointerDown={e => { e.stopPropagation(); handlePointerDown(e, res, 'resize'); }} 
                                                             className="resize-handle" 
@@ -1129,8 +1096,8 @@ export default function PartnerView() {
 
                                                     {hoverRes === res.id && res.tipo !== 'BLOQUEO' && (
                                                         <div style={{ position: 'absolute', ...(top > 600 ? { bottom: 0 } : { top: 0 }), ...(isRightSide ? { right: '102%' } : { left: '102%' }), width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
-                                                            <div style={{ backgroundColor: statusKey === 'INASISTENCIA' ? '#ce163b' : (statusKey === 'COMPLETADA' ? '#94a3b8' : '#2563eb'), color: statusKey === 'COMPLETADA' ? '#ffffff' : 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{format(safeDate(res.fecha_hora_inicio), 'h:mma')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mma')}</span>
+                                                            <div style={{ backgroundColor: statusKey === 'INASISTENCIA' ? '#ce163b' : (statusKey === 'COMPLETADA' ? '#94a3b8' : '#2563eb'), color: 'white', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm a')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm a')}</span>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{res.estado.charAt(0) + res.estado.slice(1).toLowerCase()}</span>
                                                                     {statusKey === 'INASISTENCIA' && <EyeOff size={16} color="white" />}
@@ -1145,13 +1112,11 @@ export default function PartnerView() {
                                                                     <div style={{ flex: 1 }}>
                                                                         <div style={{ fontSize: '1.05rem', color: '#111827', fontWeight: 500 }}>{res.cliente_nombre} {res.cliente_apellidos || ''}</div>
                                                                         <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '2px' }}>{res.cliente_telefono || '+ Sin número'}</div>
-
                                                                         {(Number(clientes.find(c => c.id === res.cliente_id)?.total_inasistencias) || 0) > 0 && (
                                                                             <div style={{ display: 'inline-block', marginTop: '8px', padding: '4px 10px', borderRadius: '12px', backgroundColor: '#fee2e2', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>
                                                                                 {clientes.find(c => c.id === res.cliente_id)?.total_inasistencias} inasistencia{(Number(clientes.find(c => c.id === res.cliente_id)?.total_inasistencias) > 1) ? 's' : ''}
                                                                             </div>
                                                                         )}
-                                                                        <div style={{ display: 'inline-block', marginTop: '8px', marginLeft: (Number(clientes.find(c => c.id === res.cliente_id)?.total_inasistencias) || 0) > 0 ? '6px' : '0px', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#374151', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer' }}>+ Añadir etiqueta</div>
                                                                     </div>
                                                                 </div>
                                                                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1159,7 +1124,7 @@ export default function PartnerView() {
                                                                         <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 500 }}>{res.servicio_nombre || 'Servicio'}</div>
                                                                         <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                                             {res.preferencia_empleado ? <Heart size={12} color="#ef4444" fill="#ef4444" /> : <Clock size={12} />}
-                                                                            {res.duracion_minutos || 40} min • {emp.nombre}
+                                                                            {res.duracion_minutos || 40} min • {emp.nombre_display || emp.nombres}
                                                                         </div>
                                                                     </div>
                                                                     <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>
@@ -1169,10 +1134,14 @@ export default function PartnerView() {
                                                                 {statusKey === 'COMPLETADA' && (
                                                                     <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                         <div>
-                                                                            <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 500 }}>Venta</div>
-                                                                            <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '2px' }}>{res.precio_cobrado || res.precio || 0} PEN Pagado {res.notas_internas && res.notas_internas.toLowerCase().includes('yape') ? ' - Yape' : (res.notas_internas && res.notas_internas.toLowerCase().includes('plin') ? ' - Plin' : ' - Efectivo')}</div>
+                                                                            <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                                Venta <Tag size={14} color="#2563eb" fill="#2563eb" />
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', fontWeight: 600 }}>
+                                                                                {res.precio_cobrado || res.precio || 0} PEN • {res.notas_internas && res.notas_internas.toLowerCase().includes('yape') ? 'Yape' : (res.notas_internas && res.notas_internas.toLowerCase().includes('plin') ? 'Plin' : (res.notas_internas && res.notas_internas.toLowerCase().includes('transferencia') ? 'Transferencia' : 'Efectivo'))}
+                                                                            </div>
                                                                         </div>
-                                                                        <Tag size={20} color="#9ca3af" />
+                                                                        <div style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, color: '#475569' }}>PAGADO</div>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1181,12 +1150,47 @@ export default function PartnerView() {
                                                 </div>
                                             );
                                         })}
+
+                                        {/* GLOBAL GHOST (For dragging preview) */}
+                                        {isDraggingGlobal && dragState.resId && dragState.type === 'move' && dragState.currentEmpId === emp.id && (
+                                            <div style={{ 
+                                                position: 'absolute', 
+                                                top: dragState.currentTop, 
+                                                left: 0, 
+                                                width: '100%', 
+                                                height: dragState.currentHeight, 
+                                                zIndex: 1001,
+                                                pointerEvents: 'none'
+                                            }}>
+                                                {(() => {
+                                                    const res = reservas.find(r => r.id === dragState.resId);
+                                                    if (!res) return null;
+                                                    const statusKey = String(res.estado).toUpperCase();
+                                                    const theme = res.tipo === 'BLOQUEO' ? { bg: '#9ca3af', border: '#374151', text: '#ffffff' } : {
+                                                        'RESERVADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+                                                        'CONFIRMADA': { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+                                                        'COMPLETADA': { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
+                                                        'INASISTENCIA': { bg: '#FF5E76', border: '#e11d48', text: '#111827' },
+                                                        'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
+                                                    }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
+
+                                                    return (
+                                                        <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', opacity: 0.8, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', border: `2px solid ${theme.border}` }}>
+                                                            <div style={{ position: 'absolute', top: '-24px', left: '-4px', backgroundColor: '#111827', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>{dragState.currentTime}</div>
+                                                            <div style={{ fontWeight: 800, fontSize: '0.75rem', color: theme.text }}>{res.cliente_nombre || 'Sin cita'}</div>
+                                                            <div style={{ fontSize: '0.7rem', color: theme.text }}>{res.servicio_nombre}</div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
                         </div>
-                </div>
                     </div>
+                </div>
+
 
                 {/* Drawer */}
                 {drawerOpen && (
@@ -1509,12 +1513,28 @@ export default function PartnerView() {
                                             </div>
 
                                             <div>
-                                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Frecuencia</label>
-                                                <select style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', backgroundColor: 'white' }}>
-                                                    <option>No se repite</option>
-                                                    <option>Diariamente</option>
-                                                    <option>Semanalmente</option>
-                                                </select>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        id="repeat_block_check"
+                                                        style={{ width: '18px', height: '18px' }}
+                                                        checked={!!drawerOpen.repetir}
+                                                        onChange={e => setDrawerOpen({ ...drawerOpen, repetir: e.target.checked })}
+                                                    />
+                                                    <label htmlFor="repeat_block_check" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>Repetir</label>
+                                                </div>
+
+                                                {drawerOpen.repetir && (
+                                                    <div>
+                                                        <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.5rem' }}>Repetir hasta</label>
+                                                        <input 
+                                                            type="date"
+                                                            value={drawerOpen.repetir_hasta || format(safeDate(drawerOpen.fecha_hora_inicio), 'yyyy-MM-dd')}
+                                                            onChange={e => setDrawerOpen({ ...drawerOpen, repetir_hasta: e.target.value })}
+                                                            style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none' }} 
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
