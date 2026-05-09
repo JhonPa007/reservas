@@ -165,10 +165,23 @@ export default function PartnerView() {
     const [showConfig, setShowConfig] = useState(false);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [hoverRes, setHoverRes] = useState(null);
-    const [resizingRes, setResizingRes] = useState(null); // {id, originalDuration, currentDuration}
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
     const [toast, setToast] = useState(null);
+    const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
+    const [draggedResId, setDraggedResId] = useState(null);
+    const [dragState, setDragState] = useState({
+        type: null, // 'move' or 'resize'
+        resId: null,
+        empId: null,
+        initialY: 0,
+        initialTop: 0,
+        initialDuration: 0,
+        currentTime: '',
+        currentEmpId: null,
+        currentTop: 0,
+        currentHeight: 0
+    });
+    const longPressTimer = useRef(null);
     const [showClientActions, setShowClientActions] = useState(false);
     const [clientEditData, setClientEditData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
     const [dbHealth, setDbHealth] = useState(null);
@@ -306,103 +319,156 @@ export default function PartnerView() {
         }
     };
 
+        };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    };
+
     const handleDragStart = (e, res) => {
-        if (resizingRes || e.target.closest('.resize-handle')) {
+        if (dragState.resId || e.target.closest('.resize-handle')) {
             e.preventDefault();
             return;
         }
-        e.dataTransfer.setData('resId', res.id);
-
-        // Calibrar la imagen de arrastre para que el puntero coincida con la parte superior
-        const rect = e.currentTarget.getBoundingClientRect();
-        const xOffset = e.clientX - rect.left;
-        e.dataTransfer.setDragImage(e.currentTarget, xOffset, 10); // 10px de margen para que se vea el borde superior
-
-        setHoverRes(null);
-        setIsDragging(true);
     };
-
-    const handleDrop = async (e, empleadoId, mins) => {
-        setIsDragging(false);
-        const resId = e.dataTransfer.getData('resId');
-        const hour = Math.floor(mins / 60);
-        const m = mins % 60;
-        const newDate = new Date(selectedDate);
-        newDate.setHours(hour, m, 0, 0);
-
-        const oldRes = reservas.find(r => String(r.id) === String(resId));
-        let duration = oldRes?.duracion_minutos || 40;
-        const nStart = format(newDate, 'yyyy-MM-dd HH:mm:ss');
-        const nEndStr = format(addMinutes(newDate, duration), 'yyyy-MM-dd HH:mm:ss');
-
-        setReservas(prev => prev.map(r => String(r.id) === String(resId) ? {
-            ...r,
-            empleado_id: empleadoId,
-            fecha_hora_inicio: nStart,
-            fecha_hora_fin: nEndStr
-        } : r));
-
-        try {
-            await authFetch(`${API_BASE}/reservas/${resId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ empleado_id: empleadoId, fecha_hora_inicio: nStart, fecha_hora_fin: nEndStr })
-            });
-            setTimeout(refreshData, 500);
-        } catch (err) {
-            console.error(err);
-            refreshData();
-        }
-    };
-
-    const handleResizeStart = (e, res) => {
-        e.stopPropagation();
-        const startY = e.clientY;
-        const start = safeDate(res.fecha_hora_inicio);
-        const end = res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(start, res.duracion_minutos || 40);
-        const startDuration = (end - start) / (1000 * 60);
-
-        let moved = false;
-
-        const onMouseMove = (moveEvent) => {
-            const deltaY = moveEvent.clientY - startY;
-            if (Math.abs(deltaY) > 2) moved = true;
-            // Snapping to 5 mins
-            const deltaMins = Math.round((deltaY / rowHeight) * cellDuration / 5) * 5;
-            const newDuration = Math.max(15, startDuration + deltaMins); // Minimum 15 mins
-            setResizingRes({ id: res.id, currentDuration: newDuration });
-            setIsResizingInProgress(true);
-        };
-
-        const onMouseUp = async (upEvent) => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
-
-            const deltaY = upEvent.clientY - startY;
-            const deltaMins = Math.round((deltaY / rowHeight) * cellDuration / 5) * 5;
-            const newDuration = Math.max(15, startDuration + deltaMins);
-            const newEndDate = addMinutes(safeDate(res.fecha_hora_inicio), newDuration);
-            const nEndStr = format(newEndDate, 'yyyy-MM-dd HH:mm:ss');
-
-            setResizingRes(null);
-            setTimeout(() => setIsResizingInProgress(false), 100);
-
-            if (!moved) return;
-
-            try {
-                setReservas(prev => prev.map(r => String(r.id) === String(res.id) ? { ...r, fecha_hora_fin: nEndStr, duracion_minutos: newDuration } : r));
-                await authFetch(`${API_BASE}/reservas/${res.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fecha_hora_fin: nEndStr, duracion_minutos: newDuration })
-                });
-                refreshData();
-            } catch (err) { console.error(err); refreshData(); }
-        };
 
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
     };
+
+    // --- NUEVA LÓGICA DE DRAG & RESIZE (POINTER EVENTS) ---
+
+    const handlePointerDown = (e, res, type) => {
+        if (isBlockedState(res.estado)) return;
+        
+        const isTouch = e.pointerType === 'touch';
+        const startY = e.clientY;
+        const startTop = getTimeTop(res.fecha_hora_inicio);
+        const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
+
+        const startDragging = () => {
+            setDraggedResId(res.id);
+            setIsDraggingGlobal(true);
+            setDragState({
+                type,
+                resId: res.id,
+                empId: res.empleado_id,
+                initialY: startY,
+                initialTop: startTop,
+                initialDuration: duration,
+                currentTop: startTop,
+                currentHeight: getDurationHeight(duration),
+                currentTime: format(safeDate(res.fecha_hora_inicio), 'HH:mm'),
+                currentEmpId: res.empleado_id
+            });
+            if (isTouch && window.navigator.vibrate) window.navigator.vibrate(50);
+        };
+
+        if (isTouch && type === 'move') {
+            // Long press para mover en móvil
+            longPressTimer.current = setTimeout(startDragging, 600);
+        } else {
+            startDragging();
+        }
+
+        const onPointerMove = (moveEvent) => {
+            if (longPressTimer.current) {
+                if (Math.abs(moveEvent.clientY - startY) > 10) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                }
+                return;
+            }
+
+            setDragState(prev => {
+                if (!prev.resId) return prev;
+                
+                const deltaY = moveEvent.clientY - startY;
+                
+                if (prev.type === 'move') {
+                    // Mover
+                    const newTop = prev.initialTop + deltaY;
+                    const mins = Math.max(DISPLAY_START_HOUR * 60, Math.min(DISPLAY_END_HOUR * 60, Math.round((newTop / rowHeight) * cellDuration / 5) * 5 + (DISPLAY_START_HOUR * 60)));
+                    const snappedTop = ((mins - (DISPLAY_START_HOUR * 60)) / cellDuration) * rowHeight;
+                    
+                    // Detectar empleado bajo el puntero
+                    const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY);
+                    const empDiv = elements.find(el => el.hasAttribute('data-emp-id'));
+                    const newEmpId = empDiv ? parseInt(empDiv.getAttribute('data-emp-id')) : prev.empId;
+
+                    const h = Math.floor(mins / 60);
+                    const m = mins % 60;
+                    
+                    return {
+                        ...prev,
+                        currentTop: snappedTop,
+                        currentEmpId: newEmpId,
+                        currentTime: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+                    };
+                } else {
+                    // Redimensionar
+                    const deltaMins = Math.round((deltaY / rowHeight) * cellDuration / 5) * 5;
+                    const newDuration = Math.max(15, prev.initialDuration + deltaMins);
+                    return {
+                        ...prev,
+                        currentHeight: getDurationHeight(newDuration),
+                        currentDuration: newDuration
+                    };
+                }
+            });
+        };
+
+        const onPointerUp = async (upEvent) => {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+            
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+
+            setDragState(prev => {
+                if (!prev.resId || (!isDraggingGlobal && prev.type === 'move')) return prev;
+                
+                const finalState = { ...prev };
+                
+                // Guardar cambios en el servidor
+                (async () => {
+                    try {
+                        const payload = {};
+                        if (finalState.type === 'move') {
+                            const [h, m] = finalState.currentTime.split(':').map(Number);
+                            const newStart = new Date(selectedDate);
+                            newStart.setHours(h, m, 0, 0);
+                            const newEnd = addMinutes(newStart, finalState.initialDuration);
+                            
+                            payload.fecha_hora_inicio = format(newStart, 'yyyy-MM-dd HH:mm:ss');
+                            payload.fecha_hora_fin = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
+                            payload.empleado_id = finalState.currentEmpId;
+                        } else {
+                            const newEnd = addMinutes(safeDate(res.fecha_hora_inicio), finalState.currentDuration);
+                            payload.fecha_hora_fin = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
+                            payload.duracion_minutos = finalState.currentDuration;
+                        }
+
+                        await authFetch(`${API_BASE}/reservas/${res.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        refreshData();
+                    } catch (err) { console.error(err); refreshData(); }
+                })();
+
+                return { type: null, resId: null };
+            });
+
+            setIsDraggingGlobal(false);
+            setDraggedResId(null);
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+    };
+
+    const isBlockedState = (status) => ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(String(status).toUpperCase());
 
     const handleCellClick = (e, empId, mins, timeStr) => {
         if (!canManageReservas()) return;
@@ -902,7 +968,7 @@ export default function PartnerView() {
                                 const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
 
                                 return (
-                                    <div key={emp.id} onDragOver={e => e.preventDefault()} onDrop={e => {
+                                    <div key={emp.id} data-emp-id={emp.id} onDragOver={e => e.preventDefault()} onDrop={e => {
                                         const bcr = e.currentTarget.getBoundingClientRect();
                                         const y = e.clientY - bcr.top;
                                         const mins = Math.round((y / rowHeight) * cellDuration / 15) * 15 + (DISPLAY_START_HOUR * 60);
@@ -955,11 +1021,15 @@ export default function PartnerView() {
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
-                                            const isBlockedState = ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(statusKey);
+                                            const isDragged = draggedResId === res.id;
+                                            const isGhost = isDraggingGlobal && !isDragged;
 
                                             return (
-                                                <div key={res.id} draggable={!isBlockedState} onDragStart={e => { if (!isBlockedState) handleDragStart(e, res); }} onDragEnd={() => setIsDragging(false)} onClick={() => {
-                                                    if (!isResizingInProgress) {
+                                                <div 
+                                                    key={res.id} 
+                                                    onPointerDown={e => handlePointerDown(e, res, 'move')} 
+                                                    onClick={(e) => {
+                                                        if (isDraggingGlobal) return;
                                                         const start = safeDate(res.fecha_hora_inicio);
                                                         const end = res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(start, res.duracion_minutos || 40);
                                                         setDrawerOpen({
@@ -967,25 +1037,78 @@ export default function PartnerView() {
                                                             startTime: format(start, 'HH:mm'),
                                                             endTime: format(end, 'HH:mm')
                                                         });
-                                                    }
-                                                }} onMouseEnter={() => !isResizingInProgress && !isDragging && !drawerOpen && setHoverRes(res.id)} onMouseLeave={() => setHoverRes(null)} style={{ position: 'absolute', top, left: `${(colIndex / totalCols) * 100}%`, width: `${(1 / totalCols) * 100}%`, height: h, zIndex: isResizing || hoverRes === res.id ? 60 : 15, cursor: isBlockedState ? 'pointer' : 'grab', opacity: isBlockedState ? 0.95 : 1, overflow: 'visible' }}>
-                                                    <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
+                                                    }} 
+                                                    onMouseEnter={() => !isDraggingGlobal && !drawerOpen && setHoverRes(res.id)} 
+                                                    onMouseLeave={() => setHoverRes(null)} 
+                                                    style={{ 
+                                                        position: 'absolute', 
+                                                        top: isDragged && dragState.type === 'move' ? dragState.currentTop : top, 
+                                                        left: isDragged && dragState.type === 'move' ? 0 : `${(colIndex / totalCols) * 100}%`, 
+                                                        width: isDragged && dragState.type === 'move' ? '100%' : `${(1 / totalCols) * 100}%`, 
+                                                        height: isDragged && dragState.type === 'resize' ? dragState.currentHeight : h, 
+                                                        zIndex: isDragged ? 1000 : (hoverRes === res.id ? 60 : 15), 
+                                                        cursor: isBlockedState(res.estado) ? 'pointer' : 'grab', 
+                                                        opacity: isGhost ? 0.3 : (isBlockedState(res.estado) ? 0.95 : 1), 
+                                                        overflow: 'visible',
+                                                        transition: isDraggingGlobal ? 'none' : 'all 0.1s ease-out',
+                                                        display: isDragged && dragState.currentEmpId && dragState.currentEmpId !== res.empleado_id ? 'none' : 'block'
+                                                    }}
+                                                >
+                                                    {isDraggingGlobal && dragState.resId === res.id && dragState.type === 'move' && dragState.currentEmpId === emp.id && (
+                                                        <div style={{ 
+                                                            position: 'absolute', 
+                                                            top: dragState.currentTop, 
+                                                            left: 0, 
+                                                            width: '100%', 
+                                                            height: h, 
+                                                            zIndex: 1001,
+                                                            pointerEvents: 'none'
+                                                        }}>
+                                                            <div style={{ backgroundColor: theme.bg, borderLeft: `4px solid ${theme.border}`, borderRadius: '6px', padding: '4px 8px', height: '100%', opacity: 1, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', border: `2px solid ${theme.border}` }}>
+                                                                <div style={{ position: 'absolute', top: '-24px', left: '-4px', backgroundColor: '#111827', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1002 }}>{dragState.currentTime}</div>
+                                                                <div style={{ fontWeight: 800, fontSize: '0.75rem', color: theme.text }}>{res.cliente_nombre || 'Sin cita'}</div>
+                                                                <div style={{ fontSize: '0.7rem', color: theme.text }}>{res.servicio_nombre}</div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div style={{ backgroundColor: isDragged ? theme.bg : theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: isDragged || hoverRes === res.id ? '0 8px 15px rgba(0,0,0,0.1)' : 'none', border: isDragged ? `2px solid ${theme.border}` : 'none' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <span translate="no" style={{ fontSize: '0.75rem', color: theme.text, lineHeight: '1.2' }}>
                                                                 {res.tipo !== 'BLOQUEO' && <span style={{ marginRight: '4px' }}>{format(safeDate(res.fecha_hora_inicio), 'h:mm')} - {format(res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(safeDate(res.fecha_hora_inicio), res.duracion_minutos || 40), 'h:mm')}</span>}
                                                                 <strong style={{ fontWeight: 800 }}>{res.cliente_nombre ? `${res.cliente_nombre} ${res.cliente_apellidos || ''}` : (res.tipo === 'CITA' ? 'Sin cita' : (res.subtipo_bloqueo || 'Bloqueo'))}</strong>
                                                             </span>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, marginLeft: '4px' }}>
-                                                                {statusKey === 'COMPLETADA' && <Tag size={12} color={theme.text} fill={theme.text} />}
-                                                                {res.estado === 'INASISTENCIA' && <EyeOff size={12} color={theme.text} />}
-                                                                {res.estado === 'CONFIRMADA' && <ThumbsUp size={12} color={theme.text} />}
-                                                                {((res.origen || '').toUpperCase().match(/WEB|ONLINE|APP|CLIENTE/) || (res.notas_cliente && res.notas_cliente.toLowerCase().includes('reserva web'))) && <Cloud size={12} color={theme.text} title="Reserva online" />}
-                                                                {res.preferencia_empleado && <Heart size={12} color={theme.text} fill={theme.text} title="Colaborador preferido" />}
-                                                            </div>
                                                         </div>
                                                         <div style={{ fontSize: '0.7rem', color: theme.text, marginTop: '2px' }}>{res.servicio_nombre}</div>
+                                                        
+                                                        {isDragged && dragState.type === 'move' && (
+                                                            <div style={{ position: 'absolute', top: 2, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', padding: '1px 4px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 700 }}>{dragState.currentTime}</div>
+                                                        )}
                                                     </div>
-                                                    {!isBlockedState && <div onMouseDown={e => handleResizeStart(e, res)} className="resize-handle" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', cursor: 'ns-resize', zIndex: 10 }} />}
+
+                                                    {!isBlockedState(res.estado) && (
+                                                        <div 
+                                                            onPointerDown={e => { e.stopPropagation(); handlePointerDown(e, res, 'resize'); }} 
+                                                            className="resize-handle" 
+                                                            style={{ 
+                                                                position: 'absolute', 
+                                                                bottom: -4, 
+                                                                left: '20%', 
+                                                                right: '20%', 
+                                                                height: '12px', 
+                                                                cursor: 'ns-resize', 
+                                                                zIndex: 10,
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '2px',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                        >
+                                                            <div style={{ width: '30px', height: '2px', backgroundColor: theme.border, borderRadius: '2px', opacity: 0.8 }} />
+                                                            <div style={{ width: '30px', height: '2px', backgroundColor: theme.border, borderRadius: '2px', opacity: 0.8 }} />
+                                                        </div>
+                                                    )}
 
                                                     {hoverRes === res.id && res.tipo !== 'BLOQUEO' && (
                                                         <div style={{ position: 'absolute', ...(top > 600 ? { bottom: 0 } : { top: 0 }), ...(isRightSide ? { right: '102%' } : { left: '102%' }), width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 100, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'default' }} onClick={e => e.stopPropagation()}>
