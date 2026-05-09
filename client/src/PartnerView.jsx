@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, MoreHorizontal, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil, ThumbsUp, Cloud, Heart, EyeOff, Tag } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, MoreHorizontal, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil, ThumbsUp, Cloud, Heart, EyeOff, Tag, LogOut } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useAuth } from './AuthContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5001/api' : window.location.origin + '/api');
 const DISPLAY_START_HOUR = 6;
@@ -34,10 +36,10 @@ const toProperCase = (str) => {
 };
 
 
-const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, handleAddFreeDays, DISPLAY_START_HOUR }) => {
+const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMenu, empMenuRef, selectedDate, setDrawerOpen, setViewState, handleAddAppointment, handleAddBlock, handleEditShift, handleAddFreeDays, DISPLAY_START_HOUR, canManageReservas }) => {
     return (
         <>
-            {quickActionMenu && (
+            {quickActionMenu && canManageReservas() && (
                 <>
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setQuickActionMenu(null)} />
                     <div style={{ position: 'fixed', left: quickActionMenu.x + 10, top: quickActionMenu.y + 10, backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '8px', zIndex: 999, width: '240px', border: '1px solid #f3f4f6' }}>
@@ -108,21 +110,25 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
                         <div style={{ height: '1px', backgroundColor: '#f3f4f6', margin: '8px 4px' }} />
 
                         {/* Acciones Section */}
-                        <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {[
-                                { label: 'agregar cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
-                                { label: 'Agregar horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
-                                { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
-                                { label: 'agregar días libres', icon: <CalendarIcon size={16} />, action: () => handleAddFreeDays(empMenu.empId) },
-                                { label: 'Ver del equipo', icon: <User size={16} />, action: () => { } }
-                            ].map((opt, i) => (
-                                <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                    <div style={{ color: '#4b5563' }}>{opt.icon}</div>
-                                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                        {canManageReservas() && (
+                            <>
+                                <div style={{ padding: '8px 14px 4px 14px', fontSize: '0.9rem', color: '#111827', fontWeight: 900 }}>Acciones</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    {[
+                                        { label: 'agregar cita', icon: <Plus size={16} />, action: () => handleAddAppointment(empMenu.empId) },
+                                        { label: 'Agregar horario no disponible', icon: <Clock size={16} />, action: () => handleAddBlock(empMenu.empId) },
+                                        { label: 'Editar turno', icon: <Settings size={16} />, action: () => handleEditShift(empMenu.empId) },
+                                        { label: 'agregar días libres', icon: <CalendarIcon size={16} />, action: () => handleAddFreeDays(empMenu.empId) },
+                                        { label: 'Ver del equipo', icon: <User size={16} />, action: () => { } }
+                                    ].map((opt, i) => (
+                                        <div key={i} onClick={() => { opt.action(); setEmpMenu(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                            <div style={{ color: '#4b5563' }}>{opt.icon}</div>
+                                            <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: 500 }}>{opt.label}</div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </>
+                        )}
                     </div>
                 </>
             )}
@@ -131,6 +137,9 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
 };
 
 export default function PartnerView() {
+    const { user, logout, canManageReservas, hasPermission } = useAuth();
+    const navigate = useNavigate(); // Necesito importar useNavigate si no está
+    const isReadOnly = !canManageReservas();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [sucursal, setSucursal] = useState({ id: 1, nombre: 'JV Studio' });
     const [sucursales, setSucursales] = useState([]);
@@ -237,17 +246,28 @@ export default function PartnerView() {
         };
     }, [showStaffFilter, empMenu, drawerOpen, quickActionMenu, showConfig]);
 
+    const authFetch = (url, options = {}) => {
+        const token = localStorage.getItem('token');
+        return fetch(url, {
+            ...options,
+            headers: {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`
+            }
+        });
+    };
+
     useEffect(() => {
-        fetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
+        authFetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
             setSucursales(data);
             if (data.length > 0) {
                 const studio = data.find(s => s.nombre === 'JV Studio') || data[0];
                 setSucursal(studio);
             }
         });
-        fetch(`${API_BASE}/servicios`).then(res => res.json()).then(setServicios);
-        fetch(`${API_BASE}/clientes`).then(res => res.json()).then(setClientes);
-        fetch(`${API_BASE}/health`).then(res => res.json()).then(setDbHealth).catch(console.error);
+        authFetch(`${API_BASE}/servicios`).then(res => res.json()).then(setServicios);
+        authFetch(`${API_BASE}/clientes`).then(res => res.json()).then(setClientes);
+        authFetch(`${API_BASE}/health`).then(res => res.json()).then(setDbHealth).catch(console.error);
         const timer = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
@@ -267,10 +287,10 @@ export default function PartnerView() {
         try {
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
             const [empRes, resRes, servRes, cliRes] = await Promise.all([
-                fetch(`${API_BASE}/empleados/${sucursal.id}`),
-                fetch(`${API_BASE}/reservas/sucursal/${sucursal.id}/${dateStr}`),
-                fetch(`${API_BASE}/servicios`),
-                fetch(`${API_BASE}/clientes`)
+                authFetch(`${API_BASE}/empleados/${sucursal.id}`),
+                authFetch(`${API_BASE}/reservas/sucursal/${sucursal.id}/${dateStr}`),
+                authFetch(`${API_BASE}/servicios`),
+                authFetch(`${API_BASE}/clientes`)
             ]);
             setEmpleados(await empRes.json());
             const resData = await resRes.json();
@@ -323,7 +343,7 @@ export default function PartnerView() {
         } : r));
 
         try {
-            await fetch(`${API_BASE}/reservas/${resId}`, {
+            await authFetch(`${API_BASE}/reservas/${resId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ empleado_id: empleadoId, fecha_hora_inicio: nStart, fecha_hora_fin: nEndStr })
@@ -371,7 +391,7 @@ export default function PartnerView() {
 
             try {
                 setReservas(prev => prev.map(r => String(r.id) === String(res.id) ? { ...r, fecha_hora_fin: nEndStr, duracion_minutos: newDuration } : r));
-                await fetch(`${API_BASE}/reservas/${res.id}`, {
+                await authFetch(`${API_BASE}/reservas/${res.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ fecha_hora_fin: nEndStr, duracion_minutos: newDuration })
@@ -385,6 +405,7 @@ export default function PartnerView() {
     };
 
     const handleCellClick = (e, empId, mins, timeStr) => {
+        if (!canManageReservas()) return;
         const hour = Math.floor(mins / 60);
         const m = mins % 60;
         const newDate = new Date(selectedDate);
@@ -426,7 +447,7 @@ export default function PartnerView() {
                 const url = isNew ? `${API_BASE}/reservas` : `${API_BASE}/reservas/${drawerOpen.id}`;
 
                 // Primer registro
-                await fetch(url, {
+                await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -446,7 +467,7 @@ export default function PartnerView() {
                         const start = format(current, 'yyyy-MM-dd HH:mm:ss');
                         const end = format(addMinutes(current, duration), 'yyyy-MM-dd HH:mm:ss');
                         
-                        await fetch(`${API_BASE}/reservas`, {
+                        await authFetch(`${API_BASE}/reservas`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ...basePayload, fecha_hora_inicio: start, fecha_hora_fin: end })
@@ -498,7 +519,7 @@ export default function PartnerView() {
                 const method = (!isNew && i === 0) ? 'PATCH' : 'POST';
                 const url = (!isNew && i === 0) ? `${API_BASE}/reservas/${drawerOpen.id}` : `${API_BASE}/reservas`;
 
-                await fetch(url, {
+                await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -519,7 +540,7 @@ export default function PartnerView() {
         if (!window.confirm("¿Estás seguro de que deseas eliminar este registro?")) return;
 
         try {
-            const res = await fetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
+            const res = await authFetch(`${API_BASE}/reservas/${drawerOpen.id}`, { method: 'DELETE' });
             if (res.ok) {
                 setDrawerOpen(null);
                 refreshData();
@@ -776,7 +797,18 @@ export default function PartnerView() {
                         }} className="btn-icon"><ChevronRight size={18} /></button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>{user?.nombre_display || user?.nombres}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>{user?.rol_nombre}</span>
+                    </div>
+                    <button 
+                        onClick={() => { logout(); navigate('/login'); }}
+                        style={{ padding: '0.5rem', borderRadius: '10px', border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#ef4444', cursor: 'pointer' }}
+                        title="Cerrar Sesión"
+                    >
+                        <LogOut size={18} />
+                    </button>
                     <div style={{ position: 'relative' }}>
                         <button onClick={() => setShowStaffFilter(!showStaffFilter)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid #e5e7eb', backgroundColor: '#fff', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', outline: 'none' }}>
                             <Users size={16} />
@@ -1697,6 +1729,7 @@ export default function PartnerView() {
                 handleEditShift={handleEditShift}
                 handleAddFreeDays={handleAddFreeDays}
                 DISPLAY_START_HOUR={DISPLAY_START_HOUR}
+                canManageReservas={canManageReservas}
             />
             <style dangerouslySetInnerHTML={{ __html: `.btn-icon:hover { background-color: #f3f4f6; } .btn-secondary:hover { background-color: #f9fafb; } .res-card:hover { filter: brightness(0.97); } .grid-cell:hover .cell-hover-time { display: flex !important; } @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }` }} />
         </div>
