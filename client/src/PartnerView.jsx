@@ -339,6 +339,9 @@ export default function PartnerView() {
         const startTop = getTimeTop(res.fecha_hora_inicio);
         const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
 
+        // Capturar el puntero para asegurar que recibimos eventos fuera del elemento
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
+
         const startDragging = () => {
             setDraggedResId(res.id);
             setIsDraggingGlobal(true);
@@ -424,49 +427,51 @@ export default function PartnerView() {
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
 
-            // Si se movió, mantenemos preventClick un momento más para atrapar el evento onClick
-            if (preventClickRef.current) {
-                setTimeout(() => { preventClickRef.current = false; }, 100);
-            }
-
+            // Obtener el estado actual del arrastre de forma segura
+            let finalState = null;
             setDragState(prev => {
-                if (!prev.resId || (!isDraggingGlobal && prev.type === 'move')) return prev;
-                
-                const finalState = { ...prev };
-                
-                // Guardar cambios en el servidor
-                (async () => {
-                    try {
-                        const payload = {};
-                        if (finalState.type === 'move') {
-                            const [h, m] = finalState.currentTime.split(':').map(Number);
-                            const newStart = new Date(selectedDate);
-                            newStart.setHours(h, m, 0, 0);
-                            const newEnd = addMinutes(newStart, finalState.initialDuration);
-                            
-                            payload.fecha_hora_inicio = format(newStart, 'yyyy-MM-dd HH:mm:ss');
-                            payload.fecha_hora_fin = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
-                            payload.empleado_id = finalState.currentEmpId;
-                        } else {
-                            const newEnd = addMinutes(safeDate(res.fecha_hora_inicio), finalState.currentDuration);
-                            payload.fecha_hora_fin = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
-                            payload.duracion_minutos = finalState.currentDuration;
-                        }
-
-                        await authFetch(`${API_BASE}/reservas/${res.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        refreshData();
-                    } catch (err) { console.error(err); refreshData(); }
-                })();
-
-                return { type: null, resId: null };
+                if (prev.resId) finalState = { ...prev };
+                return prev;
             });
 
+            if (finalState && finalState.resId) {
+                try {
+                    const payload = {};
+                    if (finalState.type === 'move') {
+                        const [h, m] = finalState.currentTime.split(':').map(Number);
+                        const newStart = new Date(selectedDate);
+                        newStart.setHours(h, m, 0, 0);
+                        const newEnd = addMinutes(newStart, finalState.initialDuration);
+                        
+                        payload.fecha_hora_inicio = format(newStart, 'yyyy-MM-dd HH:mm:ss');
+                        payload.fecha_hora_fin = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
+                        payload.empleado_id = finalState.currentEmpId;
+                    } else {
+                        const newEnd = addMinutes(safeDate(res.fecha_hora_inicio), finalState.currentDuration);
+                        payload.fecha_hora_fin = format(newEnd, 'yyyy-MM-dd HH:mm:ss');
+                        payload.duracion_minutos = finalState.currentDuration;
+                    }
+
+                    await authFetch(`${API_BASE}/reservas/${res.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    await refreshData();
+                } catch (err) { 
+                    console.error(err); 
+                    await refreshData(); 
+                }
+            }
+
+            // Limpiar estados al final para evitar saltos visuales
+            setDragState({ type: null, resId: null });
             setIsDraggingGlobal(false);
             setDraggedResId(null);
+
+            if (preventClickRef.current) {
+                setTimeout(() => { preventClickRef.current = false; }, 150);
+            }
         };
 
         window.addEventListener('pointermove', onPointerMove);
@@ -811,7 +816,7 @@ export default function PartnerView() {
     }, [empleados, reservas, staffFilterMode, visibleStaffIds]);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden', userSelect: isDraggingGlobal ? 'none' : 'auto' }}>
             <style>
                 {`
                 .time-cell-hover { position: relative; transition: background-color 0.1s; }
