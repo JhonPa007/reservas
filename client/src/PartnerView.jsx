@@ -177,7 +177,7 @@ export default function PartnerView() {
     const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
     const [draggedResId, setDraggedResId] = useState(null);
     const [dragState, setDragState] = useState({
-        type: null, // 'move' or 'resize'
+        type: null,
         resId: null,
         empId: null,
         initialY: 0,
@@ -188,6 +188,8 @@ export default function PartnerView() {
         currentTop: 0,
         currentHeight: 0
     });
+    const dragStateRef = useRef(dragState);
+    useEffect(() => { dragStateRef.current = dragState; }, [dragState]);
     const longPressTimer = useRef(null);
     const [showClientActions, setShowClientActions] = useState(false);
     const [clientEditData, setClientEditData] = useState({ razon_social_nombres: '', apellidos: '', telefono: '', email: '' });
@@ -427,12 +429,8 @@ export default function PartnerView() {
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
 
-            // Obtener el estado actual del arrastre de forma segura
-            let finalState = null;
-            setDragState(prev => {
-                if (prev.resId) finalState = { ...prev };
-                return prev;
-            });
+            // Usar el REF para obtener el estado final exacto
+            const finalState = dragStateRef.current;
 
             if (finalState && finalState.resId) {
                 try {
@@ -452,19 +450,30 @@ export default function PartnerView() {
                         payload.duracion_minutos = finalState.currentDuration;
                     }
 
-                    await authFetch(`${API_BASE}/reservas/${res.id}`, {
+                    const updateRes = await authFetch(`${API_BASE}/reservas/${res.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    await refreshData();
+                    
+                    if (updateRes.ok) {
+                        await refreshData();
+                    } else {
+                        console.error("Error al actualizar reserva");
+                        await refreshData();
+                    }
                 } catch (err) { 
                     console.error(err); 
                     await refreshData(); 
                 }
+            } else {
+                // Si no hubo arrastre real (fue solo un clic)
+                if (!preventClickRef.current) {
+                    // El clic normal lo manejará el onClick de la reserva
+                }
             }
 
-            // Limpiar estados al final para evitar saltos visuales
+            // Limpiar estados
             setDragState({ type: null, resId: null });
             setIsDraggingGlobal(false);
             setDraggedResId(null);

@@ -386,14 +386,17 @@ app.get('/api/reservas/sucursal/:sucursalId/:fecha', authenticateToken, checkRes
 app.patch('/api/reservas/:id', authenticateToken, checkReservaPermiso(true), async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
+  console.log('PATCH reserva:', id, updates);
   const fields = Object.keys(updates);
   const values = Object.values(updates);
   if (fields.length === 0) return res.status(400).json({ error: 'No hay campos para actualizar' });
   const setClause = fields.map((field, index) => `${field} = $${index + 1}`).join(', ');
   try {
     const result = await pool.query(`UPDATE reservas SET ${setClause} WHERE id = $${fields.length + 1} RETURNING *`, [...values, id]);
+    console.log('Reserva actualizada OK:', id);
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error PATCH reserva:', err.message);
     res.status(500).json({ error: 'Error al actualizar' });
   }
 });
