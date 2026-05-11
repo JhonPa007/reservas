@@ -209,6 +209,33 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/auth/debug', authenticateToken, async (req, res) => {
+  try {
+    const { id: userId, rol_id, rol_nombre: rolTokenNombre } = req.user;
+    
+    // Consultar DB para ver el estado actual real
+    const userRes = await pool.query('SELECT nombres, rol_id FROM empleados WHERE id = $1', [userId]);
+    const rolRes = await pool.query('SELECT nombre FROM roles WHERE id = $1', [rol_id]);
+    const permisosRes = await pool.query(`
+      SELECT p.nombre 
+      FROM rol_permisos rp 
+      JOIN permisos p ON rp.permiso_id = p.id 
+      WHERE rp.rol_id = $1
+    `, [rol_id]);
+
+    res.json({
+      token_data: req.user,
+      db_user: userRes.rows[0],
+      db_rol: rolRes.rows[0],
+      db_permisos: permisosRes.rows.map(p => p.nombre),
+      server_time: new Date().toISOString(),
+      node_version: process.version
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Obtener todas las sucursales activas
 app.get('/api/health', async (req, res) => {
   try {

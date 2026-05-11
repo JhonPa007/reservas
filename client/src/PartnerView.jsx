@@ -280,6 +280,44 @@ export default function PartnerView() {
         });
     };
 
+    // Herramienta de depuración global
+    useEffect(() => {
+        window.diagnosticarCarga = async () => {
+            console.log("%c--- INICIANDO DIAGNÓSTICO DE CARGA ---", "color: blue; font-weight: bold;");
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error("ERROR: No hay token en localStorage.");
+                return;
+            }
+            
+            try {
+                const health = await fetch(`${API_BASE}/health`).then(r => r.json());
+                console.log("Salud del Servidor:", health);
+                
+                const debug = await authFetch(`${API_BASE}/auth/debug`).then(r => r.json());
+                console.log("Depuración de Sesión:", debug);
+                
+                if (debug.error) {
+                    console.error("Error en sesión:", debug.error);
+                } else {
+                    const rol = debug.db_rol?.nombre?.toLowerCase() || '';
+                    console.log(`Rol detectado en DB: "${rol}"`);
+                    if (rol === 'administrador' || rol === 'cajero' || rol === 'admin') {
+                        console.log("%c✅ El rol tiene acceso total garantizado.", "color: green;");
+                    } else {
+                        console.warn("⚠️ El rol no es administrador/cajero. Verificando permisos específicos...");
+                        const tieneLectura = debug.db_permisos.includes('reservas_lectura');
+                        console.log(`¿Tiene permiso 'reservas_lectura'?: ${tieneLectura ? 'SÍ' : 'NO'}`);
+                    }
+                }
+                
+                console.log("%cSugerencia: Si ves errores de 'jwt expired', por favor cierra sesión y vuelve a entrar.", "font-style: italic;");
+            } catch (err) {
+                console.error("Error durante el diagnóstico:", err);
+            }
+        };
+    }, [API_BASE]);
+
     useEffect(() => {
         authFetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
             setSucursales(data);
