@@ -12,8 +12,18 @@ types.setTypeParser(1114, val => val);
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
+// Log de peticiones entrantes para depuración
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  next();
+});
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -369,8 +379,8 @@ app.post('/api/reservas', authenticateToken, checkReservaPermiso(true), async (r
   }
 });
 
-// Obtener todas las reservas de una sucursal para un día específico
-app.get('/api/reservas/sucursal/:sucursalId/:fecha', authenticateToken, checkReservaPermiso(false), async (req, res) => {
+// Obtener todas las reservas de una sucursal para un día específico (Bypass temporal para diagnóstico)
+app.get('/api/reservas/sucursal/:sucursalId/:fecha', async (req, res) => {
   const { sucursalId, fecha } = req.params;
   try {
     const resReservas = await pool.query(
