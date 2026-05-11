@@ -1,4 +1,5 @@
 const express = require('express');
+process.env.TZ = 'America/Lima';
 const { Pool, types } = require('pg');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
@@ -30,6 +31,11 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   }
+});
+
+// Configurar zona horaria en cada nueva conexión
+pool.on('connect', (client) => {
+  client.query("SET TIME ZONE 'America/Lima'");
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev';
