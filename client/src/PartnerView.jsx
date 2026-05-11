@@ -57,7 +57,7 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
                         {[
                             {
                                 label: 'Añadir cita', icon: <Plus size={16} />, action: () => {
-                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const absMins = quickActionMenu.absMins;
                                     const newDate = new Date(selectedDate);
                                     newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
                                     setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'CITA' });
@@ -66,7 +66,7 @@ const FloatingMenus = ({ quickActionMenu, setQuickActionMenu, empMenu, setEmpMen
                             },
                             {
                                 label: 'Añadir horario no disponible', icon: <Clock size={16} />, action: () => {
-                                    const absMins = quickActionMenu.mins + (DISPLAY_START_HOUR * 60);
+                                    const absMins = quickActionMenu.absMins;
                                     const newDate = new Date(selectedDate);
                                     newDate.setHours(Math.floor(absMins / 60), absMins % 60, 0, 0);
                                     setDrawerOpen({ id: 'new', empleado_id: quickActionMenu.empId, fecha_hora_inicio: format(newDate, 'yyyy-MM-dd HH:mm:ss'), startTime: format(newDate, 'HH:mm'), endTime: format(addMinutes(newDate, 60), 'HH:mm'), tipo: 'BLOQUEO', subtipo_bloqueo: 'Comida' });
@@ -527,14 +527,14 @@ export default function PartnerView() {
 
     const isBlockedState = (status) => ['COMPLETADA', 'INASISTENCIA', 'CANCELADA'].includes(String(status).toUpperCase());
 
-    const handleCellClick = (e, empId, mins, timeStr) => {
+    const handleCellClick = (e, empId, absMins, timeStr) => {
         if (!canManageReservas() || isDraggingGlobal || preventClickRef.current) return;
         
         const rect = e.currentTarget.getBoundingClientRect();
         setQuickActionMenu({
             empId,
-            mins,
-            timeStr: formatTimeTooltip(mins + (DISPLAY_START_HOUR * 60)).replace(' ', '').toLowerCase(),
+            absMins,
+            timeStr: formatTimeTooltip(absMins).replace(' ', '').toLowerCase(),
             x: rect.left,
             y: rect.top
         });

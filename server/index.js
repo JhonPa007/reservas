@@ -259,11 +259,15 @@ app.get('/api/health', async (req, res) => {
     const resRes = await pool.query('SELECT COUNT(*) FROM reservas');
     const resEmps = await pool.query('SELECT COUNT(*) FROM empleados');
     const resRoles = await pool.query('SELECT id, nombre FROM roles');
+    const dbTz = await pool.query('SHOW TIMEZONE');
     res.json({
       sucursales: resSucs.rows[0].count,
       reservas: resRes.rows[0].count,
       empleados: resEmps.rows[0].count,
       roles: resRoles.rows,
+      server_tz: process.env.TZ,
+      db_tz: dbTz.rows[0].timezone,
+      node_time: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' }),
       db_url_prefix: (process.env.DATABASE_URL || '').slice(0, 20)
     });
   } catch (err) {
