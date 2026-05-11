@@ -33,8 +33,8 @@ const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      console.warn('Error de JWT:', err.message);
-      return res.status(403).json({ error: 'Token inválido o expirado' });
+      console.error(`ERROR JWT (${err.name}): ${err.message}`);
+      return res.status(403).json({ error: `Sesión inválida: ${err.message}` });
     }
     req.user = user;
     next();
