@@ -562,7 +562,7 @@ export default function PartnerView() {
                 const url = isNew ? `${API_BASE}/reservas` : `${API_BASE}/reservas/${drawerOpen.id}`;
 
                 // Primer registro
-                await authFetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -571,6 +571,15 @@ export default function PartnerView() {
                         fecha_hora_fin: drawerOpen.fecha_hora_fin || format(addMinutes(safeDate(drawerOpen.fecha_hora_inicio), 60), 'yyyy-MM-dd HH:mm:ss')
                     })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    if (response.status === 403 || response.status === 401) {
+                        alert("Tu sesión ha expirado. Por favor, cierra sesión y vuelve a entrar.");
+                        return;
+                    }
+                    throw new Error(errorData.error || "Error al guardar");
+                }
 
                 // Si es nuevo y tiene repetición (Solo para AUSENCIA por ahora según UI)
                 if (isNew && drawerOpen.repetir && drawerOpen.repetir_hasta) {
@@ -582,11 +591,14 @@ export default function PartnerView() {
                         const start = format(current, 'yyyy-MM-dd HH:mm:ss');
                         const end = format(addMinutes(current, duration), 'yyyy-MM-dd HH:mm:ss');
                         
-                        await authFetch(`${API_BASE}/reservas`, {
+                        const repResponse = await authFetch(`${API_BASE}/reservas`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ...basePayload, fecha_hora_inicio: start, fecha_hora_fin: end })
                         });
+
+                        if (!repResponse.ok) console.warn("Fallo al guardar una de las repeticiones");
+                        
                         current = addDays(current, 1);
                     }
                 }
@@ -598,8 +610,9 @@ export default function PartnerView() {
                 return;
             } catch (err) {
                 console.error(err);
-                return;
+                alert("Error al guardar bloqueo/ausencia: " + err.message);
             }
+            return;
         }
 
         // Lógica original para CITAS
@@ -634,11 +647,20 @@ export default function PartnerView() {
                 const method = (!isNew && i === 0) ? 'PATCH' : 'POST';
                 const url = (!isNew && i === 0) ? `${API_BASE}/reservas/${drawerOpen.id}` : `${API_BASE}/reservas`;
 
-                await authFetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    if (response.status === 403 || response.status === 401) {
+                        alert("Tu sesión ha expirado. Por favor, cierra sesión y vuelve a entrar.");
+                        return;
+                    }
+                    throw new Error(errorData.error || "Error al guardar");
+                }
 
                 start = addMinutes(start, dur);
             }
@@ -647,7 +669,10 @@ export default function PartnerView() {
             refreshData();
             setToast("Cita guardada correctamente");
             setTimeout(() => setToast(null), 3000);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err); 
+            alert("Error al guardar la cita: " + err.message);
+        }
     };
 
     const handleDeleteReservation = async () => {
