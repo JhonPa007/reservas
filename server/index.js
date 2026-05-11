@@ -32,7 +32,10 @@ const authenticateToken = (req, res, next) => {
   if (!token) return res.status(401).json({ error: 'Token no proporcionado' });
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
+    if (err) {
+      console.warn('Error de JWT:', err.message);
+      return res.status(403).json({ error: 'Token inválido o expirado' });
+    }
     req.user = user;
     next();
   });
@@ -42,20 +45,29 @@ const authenticateToken = (req, res, next) => {
 const checkReservaPermiso = (requireWrite = false) => {
   return async (req, res, next) => {
     try {
-      const { id: userId, rol_id } = req.user;
+      const { id: userId, rol_id, rol_nombre: rolTokenNombre } = req.user;
       
-      // Obtener el nombre del rol
-      const rolRes = await pool.query('SELECT nombre FROM roles WHERE id = $1', [rol_id]);
-      if (rolRes.rows.length === 0) return res.status(403).json({ error: 'Rol no encontrado' });
+      let rolNombre = rolTokenNombre ? rolTokenNombre.trim().toLowerCase() : null;
+
+      // Si no viene en el token, lo buscamos en la DB (compatibilidad con tokens viejos)
+      if (!rolNombre) {
+        const rolRes = await pool.query('SELECT nombre FROM roles WHERE id = $1', [rol_id]);
+        if (rolRes.rows.length > 0) {
+          rolNombre = rolRes.rows[0].nombre.trim().toLowerCase();
+        }
+      }
+
+      console.log(`Usuario ${userId} (${rolNombre}) verificando ${requireWrite ? 'escritura' : 'lectura'}`);
       
-      const rolNombre = rolRes.rows[0].nombre.toLowerCase();
+      if (!rolNombre) {
+        return res.status(403).json({ error: 'Rol no identificado' });
+      }
       
       // Administrador y Cajero tienen acceso total
-      if (rolNombre === 'administrador' || rolNombre === 'cajero') {
+      if (rolNombre === 'administrador' || rolNombre === 'cajero' || rolNombre === 'admin') {
         return next();
       }
       
-      // Si requiere escritura y no es admin/cajero, denegar
       if (requireWrite) {
         return res.status(403).json({ error: 'No tiene permisos para modificar reservas' });
       }
@@ -143,7 +155,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, rol_id: user.rol_id, sucursal_id: user.sucursal_id },
+      { id: user.id, email: user.email, rol_id: user.rol_id, rol_nombre: user.rol_nombre, sucursal_id: user.sucursal_id },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
