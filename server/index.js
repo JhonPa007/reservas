@@ -215,10 +215,12 @@ app.get('/api/health', async (req, res) => {
     const resSucs = await pool.query('SELECT COUNT(*) FROM sucursales');
     const resRes = await pool.query('SELECT COUNT(*) FROM reservas');
     const resEmps = await pool.query('SELECT COUNT(*) FROM empleados');
+    const resRoles = await pool.query('SELECT id, nombre FROM roles');
     res.json({
       sucursales: resSucs.rows[0].count,
       reservas: resRes.rows[0].count,
       empleados: resEmps.rows[0].count,
+      roles: resRoles.rows,
       db_url_prefix: (process.env.DATABASE_URL || '').slice(0, 20)
     });
   } catch (err) {
