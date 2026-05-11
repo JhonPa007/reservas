@@ -421,43 +421,47 @@ export default function PartnerView() {
                 preventClickRef.current = true;
             }
 
-            setDragState(prev => {
-                if (!prev.resId) return prev;
-                
-                const deltaY = moveEvent.clientY - startY;
-                
-                if (prev.type === 'move') {
-                    // Mover
-                    const newTop = prev.initialTop + deltaY;
-                    const mins = Math.max(DISPLAY_START_HOUR * 60, Math.min(DISPLAY_END_HOUR * 60, Math.round((newTop / rowHeight) * cellDuration / 5) * 5 + (DISPLAY_START_HOUR * 60)));
-                    const snappedTop = ((mins - (DISPLAY_START_HOUR * 60)) / cellDuration) * rowHeight;
-                    
-                    // Detectar empleado bajo el puntero
-                    const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY);
-                    const empDiv = elements.find(el => el.hasAttribute('data-emp-id'));
-                    const newEmpId = empDiv ? parseInt(empDiv.getAttribute('data-emp-id')) : prev.empId;
+            const currentState = dragStateRef.current;
+            if (!currentState || !currentState.resId) return;
 
-                    const h = Math.floor(mins / 60);
-                    const m = mins % 60;
-                    const displayTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                    
-                    return {
-                        ...prev,
-                        currentTop: snappedTop,
-                        currentEmpId: newEmpId,
-                        currentTime: displayTime
-                    };
-                } else {
-                    // Redimensionar
-                    const deltaMins = Math.round((deltaY / rowHeight) * cellDuration / 5) * 5;
-                    const newDuration = Math.max(15, prev.initialDuration + deltaMins);
-                    return {
-                        ...prev,
-                        currentHeight: getDurationHeight(newDuration),
-                        currentDuration: newDuration
-                    };
-                }
-            });
+            const deltaY = moveEvent.clientY - startY;
+
+            if (currentState.type === 'move') {
+                const newTop = currentState.initialTop + deltaY;
+                const mins = Math.max(DISPLAY_START_HOUR * 60, Math.min(DISPLAY_END_HOUR * 60, Math.round((newTop / rowHeight) * cellDuration / 5) * 5 + (DISPLAY_START_HOUR * 60)));
+                const snappedTop = ((mins - (DISPLAY_START_HOUR * 60)) / cellDuration) * rowHeight;
+
+                // Detectar empleado bajo el puntero
+                const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY);
+                const empDiv = elements.find(el => el.hasAttribute && el.hasAttribute('data-emp-id'));
+                const newEmpId = empDiv ? parseInt(empDiv.getAttribute('data-emp-id')) : currentState.empId;
+
+                // Optimización: Solo actualizar el estado si los valores "ajustados" cambiaron
+                if (snappedTop === currentState.currentTop && newEmpId === currentState.currentEmpId) return;
+
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                const displayTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+                setDragState(prev => ({
+                    ...prev,
+                    currentTop: snappedTop,
+                    currentEmpId: newEmpId,
+                    currentTime: displayTime
+                }));
+            } else {
+                const deltaMins = Math.round((deltaY / rowHeight) * cellDuration / 5) * 5;
+                const newDuration = Math.max(15, currentState.initialDuration + deltaMins);
+
+                // Optimización: Solo actualizar el estado si la duración ajustada cambió
+                if (newDuration === currentState.currentDuration) return;
+
+                setDragState(prev => ({
+                    ...prev,
+                    currentHeight: getDurationHeight(newDuration),
+                    currentDuration: newDuration
+                }));
+            }
         };
 
         const onPointerUp = async (upEvent) => {
@@ -1038,56 +1042,66 @@ export default function PartnerView() {
                                 </div>
                             )}
 
-                            {visibleEmployees.map((emp, empIndex) => {
-                                const empReservas = reservas.filter(r => String(r.empleado_id) === String(emp.id));
-                                const overlapInfo = processOverlaps(empReservas);
-                                const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
+                            {/* Memoized overlap info for all visible employees */}
+                            {(() => {
+                                const allOverlapInfo = useMemo(() => {
+                                    const info = {};
+                                    visibleEmployees.forEach(emp => {
+                                        const empRes = reservas.filter(r => String(r.empleado_id) === String(emp.id));
+                                        Object.assign(info, processOverlaps(empRes));
+                                    });
+                                    return info;
+                                }, [reservas, visibleEmployees]);
 
-                                return (
-                                    <div 
-                                        key={emp.id} 
-                                        data-emp-id={emp.id} 
-                                        className="calendar-column"
-                                        style={{ 
-                                            flex: 1, 
-                                            minWidth: '200px', 
-                                            borderRight: '1px solid #f3f4f6', 
-                                            position: 'relative',
-                                            backgroundColor: '#fff'
-                                        }}
-                                    >
-                                        {/* Time Slots Grid (Visual Only) */}
-                                        {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
-                                            const mins = i * cellDuration;
-                                            const absMins = mins + (DISPLAY_START_HOUR * 60);
-                                            const available = isTimeAvailable(emp.id, absMins);
-                                            return (
-                                                <div
-                                                    key={i}
-                                                    className="time-cell-hover"
-                                                    data-time={formatTimeTooltip(absMins).replace(' ', '').toLowerCase()}
-                                                    onClick={(e) => handleCellClick(e, emp.id, absMins, '')}
-                                                    style={{
-                                                        height: rowHeight,
-                                                        cursor: 'pointer',
-                                                        backgroundColor: available ? '#ffffff' : '#fafafa',
-                                                        backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.6) 3px, rgba(229, 231, 235, 0.6) 4px)',
-                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #f3f4f6' : '1px solid #f9fafb',
-                                                    }}
-                                                />
-                                            );
-                                        })}
+                                return visibleEmployees.map((emp, empIndex) => {
+                                    const empReservas = reservas.filter(r => String(r.empleado_id) === String(emp.id));
+                                    const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
+                                    
+                                    return (
+                                        <div 
+                                            key={emp.id} 
+                                            data-emp-id={emp.id} 
+                                            className="calendar-column"
+                                            style={{ 
+                                                flex: 1, 
+                                                minWidth: '200px', 
+                                                borderRight: '1px solid #f3f4f6', 
+                                                position: 'relative',
+                                                backgroundColor: '#fff'
+                                            }}
+                                        >
+                                            {/* Time Slots Grid (Visual Only) */}
+                                            {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
+                                                const mins = i * cellDuration;
+                                                const absMins = mins + (DISPLAY_START_HOUR * 60);
+                                                const available = isTimeAvailable(emp.id, absMins);
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className="time-cell-hover"
+                                                        data-time={formatTimeTooltip(absMins).replace(' ', '').toLowerCase()}
+                                                        onClick={(e) => handleCellClick(e, emp.id, absMins, '')}
+                                                        style={{
+                                                            height: rowHeight,
+                                                            cursor: 'pointer',
+                                                            backgroundColor: available ? '#ffffff' : '#fafafa',
+                                                            backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.6) 3px, rgba(229, 231, 235, 0.6) 4px)',
+                                                            borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #f3f4f6' : '1px solid #f9fafb',
+                                                        }}
+                                                    />
+                                                );
+                                            })}
 
-                                        {/* Reservations for this employee */}
-                                        {empReservas.map(res => {
-                                            const top = getTimeTop(res.fecha_hora_inicio);
-                                            const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
-                                            const isDragged = draggedResId === res.id;
-                                            const isResizing = isDragged && dragState.type === 'resize';
-                                            const isGhost = isDraggingGlobal && !isDragged;
+                                            {/* Reservations for this employee */}
+                                            {empReservas.map(res => {
+                                                const top = getTimeTop(res.fecha_hora_inicio);
+                                                const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
+                                                const isDragged = draggedResId === res.id;
+                                                const isResizing = isDragged && dragState.type === 'resize';
+                                                const isGhost = isDraggingGlobal && !isDragged;
 
-                                            const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
-                                            const { colIndex, totalCols } = overlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
+                                                const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
+                                                const { colIndex, totalCols } = allOverlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
                                             const statusKey = String(res.estado).toUpperCase();
                                             const theme = res.tipo === 'BLOQUEO' ? { 
