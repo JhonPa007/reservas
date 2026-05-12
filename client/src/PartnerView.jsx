@@ -1281,7 +1281,7 @@ export default function PartnerView() {
                                         )}
                                     </div>
                                 );
-                            })}
+                            })() }
                         </div>
                     </div>
                 </div>
