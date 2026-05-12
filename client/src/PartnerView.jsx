@@ -434,10 +434,11 @@ export default function PartnerView() {
                 // Detectar empleado bajo el puntero
                 const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY);
                 const empDiv = elements.find(el => el.hasAttribute && el.hasAttribute('data-emp-id'));
-                const newEmpId = empDiv ? parseInt(empDiv.getAttribute('data-emp-id')) : currentState.empId;
+                const newEmpId = empDiv ? empDiv.getAttribute('data-emp-id') : currentState.empId;
 
                 // Optimización: Solo actualizar el estado si los valores "ajustados" cambiaron
-                if (snappedTop === currentState.currentTop && newEmpId === currentState.currentEmpId) return;
+                // Normalizamos a String para la comparación
+                if (snappedTop === currentState.currentTop && String(newEmpId) === String(currentState.currentEmpId)) return;
 
                 const h = Math.floor(mins / 60);
                 const m = mins % 60;
@@ -1004,17 +1005,17 @@ export default function PartnerView() {
                 <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                     {/* Calendar Grid */}
                     <div className="calendar-grid-container" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ paddingLeft: '55px', display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', zIndex: 10, minWidth: `${55 + (visibleEmployees.length * 150)}px` }}>
+                        <div style={{ display: 'flex', paddingLeft: '55px', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 10, overflowX: 'hidden' }}>
                             {visibleEmployees.map(emp => (
-                                <div onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ flex: 1, minWidth: '150px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.75rem 0' }}>
+                                <div key={emp.id} onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ flex: '0 0 200px', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.75rem 0' }}>
                                     <div translate="no" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
                                     <span translate="no" style={{ fontWeight: 900, fontSize: '0.75rem', color: '#111827' }}>{emp.nombre_display || emp.nombres}</span>
                                 </div>
                         ))}
                     </div>
 
-                    <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', minWidth: `${55 + (visibleEmployees.length * 150)}px` }}>
-                        <div style={{ width: '55px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5 }}>
+                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', position: 'relative', display: 'flex', minWidth: '100%' }}>
+                        <div style={{ width: '55px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5, position: 'sticky', left: 0 }}>
                             {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * 2 }).map((_, i) => {
                                 const hour = DISPLAY_START_HOUR + Math.floor(i / 2);
                                 const mins = i % 2 === 0 ? '00' : '30';
@@ -1063,7 +1064,8 @@ export default function PartnerView() {
                                             data-emp-id={emp.id} 
                                             className="calendar-column"
                                             style={{ 
-                                                flex: 1, 
+                                                flex: '0 0 200px', 
+                                                width: '200px', 
                                                 minWidth: '200px', 
                                                 borderRight: '1px solid #f3f4f6', 
                                                 position: 'relative',
