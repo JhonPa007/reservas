@@ -353,13 +353,19 @@ export default function PartnerView() {
                 authFetch(`${API_BASE}/servicios`),
                 authFetch(`${API_BASE}/clientes`)
             ]);
-            setEmpleados(await empRes.json());
-            const resData = await resRes.json();
+            const [empData, resData, servData, cliData] = await Promise.all([
+                empRes.json(),
+                resRes.json(),
+                servRes.json(),
+                cliRes.json()
+            ]);
+
+            setEmpleados(Array.isArray(empData) ? empData : []);
             setReservas(resData.reservas || []);
             setHorarios(resData.horarios || []);
             setRecurrentes(resData.recurrentes || []);
-            setServicios(await servRes.json());
-            setClientes(await cliRes.json());
+            setServicios(Array.isArray(servData) ? servData : []);
+            setClientes(Array.isArray(cliData) ? cliData : []);
             setLoading(false);
         } catch (err) {
             console.error(err);
@@ -882,20 +888,26 @@ export default function PartnerView() {
 
     const timelineTop = ((now.getHours() * 60 + now.getMinutes() - DISPLAY_START_HOUR * 60) / cellDuration) * rowHeight;
     const visibleEmployees = useMemo(() => {
-        if (!empleados || empleados.length === 0) return [];
+        const emps = Array.isArray(empleados) ? empleados : [];
+        if (emps.length === 0) return [];
+        
         if (staffFilterMode === 'with_appointments') {
-            return empleados.filter(emp => reservas.some(r => String(r.empleado_id) === String(emp.id)));
+            return emps.filter(emp => (Array.isArray(reservas) ? reservas : []).some(r => String(r.empleado_id) === String(emp.id)));
         }
-        // Si no hay ids visibles seleccionados, mostramos todos por defecto para evitar pantalla vacía
-        if (!visibleStaffIds || visibleStaffIds.length === 0) return empleados;
+        
+        const vIds = Array.isArray(visibleStaffIds) ? visibleStaffIds : [];
+        if (vIds.length === 0) return emps;
 
-        return empleados.filter(emp => visibleStaffIds.some(vId => String(vId) === String(emp.id)));
+        return emps.filter(emp => vIds.some(vId => String(vId) === String(emp.id)));
     }, [empleados, reservas, staffFilterMode, visibleStaffIds]);
 
     const allOverlapInfo = useMemo(() => {
         const info = {};
-        visibleEmployees.forEach(emp => {
-            const empRes = reservas.filter(r => String(r.empleado_id) === String(emp.id));
+        const emps = Array.isArray(visibleEmployees) ? visibleEmployees : [];
+        const resList = Array.isArray(reservas) ? reservas : [];
+        
+        emps.forEach(emp => {
+            const empRes = resList.filter(r => String(r.empleado_id) === String(emp.id));
             Object.assign(info, processOverlaps(empRes));
         });
         return info;
