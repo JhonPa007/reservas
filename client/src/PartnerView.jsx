@@ -892,6 +892,15 @@ export default function PartnerView() {
         return empleados.filter(emp => visibleStaffIds.some(vId => String(vId) === String(emp.id)));
     }, [empleados, reservas, staffFilterMode, visibleStaffIds]);
 
+    const allOverlapInfo = useMemo(() => {
+        const info = {};
+        visibleEmployees.forEach(emp => {
+            const empRes = reservas.filter(r => String(r.empleado_id) === String(emp.id));
+            Object.assign(info, processOverlaps(empRes));
+        });
+        return info;
+    }, [reservas, visibleEmployees]);
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden', userSelect: isDraggingGlobal ? 'none' : 'auto' }}>
             <style>
@@ -1043,67 +1052,56 @@ export default function PartnerView() {
                                 </div>
                             )}
 
-                            {/* Memoized overlap info for all visible employees */}
-                            {(() => {
-                                const allOverlapInfo = useMemo(() => {
-                                    const info = {};
-                                    visibleEmployees.forEach(emp => {
-                                        const empRes = reservas.filter(r => String(r.empleado_id) === String(emp.id));
-                                        Object.assign(info, processOverlaps(empRes));
-                                    });
-                                    return info;
-                                }, [reservas, visibleEmployees]);
+                            {visibleEmployees.map((emp, empIndex) => {
+                                const empReservas = reservas.filter(r => String(r.empleado_id) === String(emp.id));
+                                const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
+                                
+                                return (
+                                    <div 
+                                        key={emp.id} 
+                                        data-emp-id={emp.id} 
+                                        className="calendar-column"
+                                        style={{ 
+                                            flex: '0 0 200px', 
+                                            width: '200px', 
+                                            minWidth: '200px', 
+                                            borderRight: '1px solid #f3f4f6', 
+                                            position: 'relative',
+                                            backgroundColor: '#fff'
+                                        }}
+                                    >
+                                        {/* Time Slots Grid (Visual Only) */}
+                                        {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
+                                            const mins = i * cellDuration;
+                                            const absMins = mins + (DISPLAY_START_HOUR * 60);
+                                            const available = isTimeAvailable(emp.id, absMins);
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="time-cell-hover"
+                                                    data-time={formatTimeTooltip(absMins).replace(' ', '').toLowerCase()}
+                                                    onClick={(e) => handleCellClick(e, emp.id, absMins, '')}
+                                                    style={{
+                                                        height: rowHeight,
+                                                        cursor: 'pointer',
+                                                        backgroundColor: available ? '#ffffff' : '#fafafa',
+                                                        backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.6) 3px, rgba(229, 231, 235, 0.6) 4px)',
+                                                        borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #f3f4f6' : '1px solid #f9fafb',
+                                                    }}
+                                                />
+                                            );
+                                        })}
 
-                                return visibleEmployees.map((emp, empIndex) => {
-                                    const empReservas = reservas.filter(r => String(r.empleado_id) === String(emp.id));
-                                    const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
-                                    
-                                    return (
-                                        <div 
-                                            key={emp.id} 
-                                            data-emp-id={emp.id} 
-                                            className="calendar-column"
-                                            style={{ 
-                                                flex: '0 0 200px', 
-                                                width: '200px', 
-                                                minWidth: '200px', 
-                                                borderRight: '1px solid #f3f4f6', 
-                                                position: 'relative',
-                                                backgroundColor: '#fff'
-                                            }}
-                                        >
-                                            {/* Time Slots Grid (Visual Only) */}
-                                            {Array.from({ length: (DISPLAY_END_HOUR - DISPLAY_START_HOUR) * (60 / cellDuration) }).map((_, i) => {
-                                                const mins = i * cellDuration;
-                                                const absMins = mins + (DISPLAY_START_HOUR * 60);
-                                                const available = isTimeAvailable(emp.id, absMins);
-                                                return (
-                                                    <div
-                                                        key={i}
-                                                        className="time-cell-hover"
-                                                        data-time={formatTimeTooltip(absMins).replace(' ', '').toLowerCase()}
-                                                        onClick={(e) => handleCellClick(e, emp.id, absMins, '')}
-                                                        style={{
-                                                            height: rowHeight,
-                                                            cursor: 'pointer',
-                                                            backgroundColor: available ? '#ffffff' : '#fafafa',
-                                                            backgroundImage: available ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(229, 231, 235, 0.6) 3px, rgba(229, 231, 235, 0.6) 4px)',
-                                                            borderBottom: i % (60 / cellDuration) === (60 / cellDuration) - 1 ? '1px solid #f3f4f6' : '1px solid #f9fafb',
-                                                        }}
-                                                    />
-                                                );
-                                            })}
+                                        {/* Reservations for this employee */}
+                                        {empReservas.map(res => {
+                                            const top = getTimeTop(res.fecha_hora_inicio);
+                                            const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
+                                            const isDragged = draggedResId === res.id;
+                                            const isResizing = isDragged && dragState.type === 'resize';
+                                            const isGhost = isDraggingGlobal && !isDragged;
 
-                                            {/* Reservations for this employee */}
-                                            {empReservas.map(res => {
-                                                const top = getTimeTop(res.fecha_hora_inicio);
-                                                const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
-                                                const isDragged = draggedResId === res.id;
-                                                const isResizing = isDragged && dragState.type === 'resize';
-                                                const isGhost = isDraggingGlobal && !isDragged;
-
-                                                const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
-                                                const { colIndex, totalCols } = allOverlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
+                                            const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
+                                            const { colIndex, totalCols } = allOverlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
                                             const statusKey = String(res.estado).toUpperCase();
                                             const theme = res.tipo === 'BLOQUEO' ? { 
