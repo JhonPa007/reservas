@@ -320,14 +320,31 @@ export default function PartnerView() {
 
     useEffect(() => {
         authFetch(`${API_BASE}/sucursales`).then(res => res.json()).then(data => {
-            setSucursales(data);
-            if (data.length > 0) {
-                const studio = data.find(s => s.nombre === 'JV Studio') || data[0];
+            const list = Array.isArray(data) ? data : [];
+            setSucursales(list);
+            if (list.length > 0) {
+                const studio = list.find(s => s.nombre === 'JV Studio') || list[0];
                 setSucursal(studio);
             }
+        }).catch(err => {
+            console.error("Error cargando sucursales:", err);
+            setSucursales([]);
         });
-        authFetch(`${API_BASE}/servicios`).then(res => res.json()).then(setServicios);
-        authFetch(`${API_BASE}/clientes`).then(res => res.json()).then(setClientes);
+        
+        authFetch(`${API_BASE}/servicios`).then(res => res.json()).then(data => {
+            setServicios(Array.isArray(data) ? data : []);
+        }).catch(err => {
+            console.error("Error cargando servicios:", err);
+            setServicios([]);
+        });
+
+        authFetch(`${API_BASE}/clientes`).then(res => res.json()).then(data => {
+            setClientes(Array.isArray(data) ? data : []);
+        }).catch(err => {
+            console.error("Error cargando clientes:", err);
+            setClientes([]);
+        });
+
         authFetch(`${API_BASE}/health`).then(res => res.json()).then(setDbHealth).catch(console.error);
         const timer = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(timer);
@@ -361,14 +378,14 @@ export default function PartnerView() {
             ]);
 
             setEmpleados(Array.isArray(empData) ? empData : []);
-            setReservas(resData.reservas || []);
-            setHorarios(resData.horarios || []);
-            setRecurrentes(resData.recurrentes || []);
+            setReservas(resData?.reservas || []);
+            setHorarios(resData?.horarios || []);
+            setRecurrentes(resData?.recurrentes || []);
             setServicios(Array.isArray(servData) ? servData : []);
             setClientes(Array.isArray(cliData) ? cliData : []);
             setLoading(false);
         } catch (err) {
-            console.error(err);
+            console.error("Error en refreshData:", err);
             setLoading(false);
         }
     };
@@ -913,6 +930,19 @@ export default function PartnerView() {
         return info;
     }, [reservas, visibleEmployees]);
 
+    if (loading && sucursales.length === 0) {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', gap: '1.5rem' }}>
+                <img src="/logo_jv.jpg" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="loading-spinner" style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span style={{ fontWeight: 800, color: '#111827' }}>Cargando sistema de reservas...</span>
+                </div>
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+            </div>
+        );
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Inter', sans-serif", overflow: 'hidden', userSelect: isDraggingGlobal ? 'none' : 'auto' }}>
             <style>
@@ -1027,13 +1057,13 @@ export default function PartnerView() {
                     {/* Calendar Grid */}
                     <div className="calendar-grid-container" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', paddingLeft: '55px', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 10, overflowX: 'hidden' }}>
-                            {visibleEmployees.map(emp => (
+                            {(Array.isArray(visibleEmployees) ? visibleEmployees : []).map(emp => (
                                 <div key={emp.id} onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ flex: '0 0 200px', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.75rem 0' }}>
                                     <div translate="no" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
                                     <span translate="no" style={{ fontWeight: 900, fontSize: '0.75rem', color: '#111827' }}>{emp.nombre_display || emp.nombres}</span>
                                 </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
 
                     <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', position: 'relative', display: 'flex', minWidth: '100%' }}>
                         <div style={{ width: '55px', flexShrink: 0, borderRight: '1px solid #e5e7eb', backgroundColor: '#fff', zIndex: 5, position: 'sticky', left: 0 }}>
@@ -1064,7 +1094,7 @@ export default function PartnerView() {
                                 </div>
                             )}
 
-                            {visibleEmployees.map((emp, empIndex) => {
+                            {(Array.isArray(visibleEmployees) ? visibleEmployees : []).map((emp, empIndex) => {
                                 const empReservas = reservas.filter(r => String(r.empleado_id) === String(emp.id));
                                 const isRightSide = visibleEmployees.length > 1 && empIndex >= visibleEmployees.length / 2;
                                 
