@@ -395,6 +395,7 @@ export default function PartnerView() {
     // --- NUEVA LÓGICA DE DRAG & RESIZE (POINTER EVENTS) ---
 
     const handlePointerDown = (e, res, type) => {
+        if (!canManageReservas()) return;
         if (isBlockedState(res.estado)) return;
         
         const isTouch = e.pointerType === 'touch';
@@ -528,7 +529,14 @@ export default function PartnerView() {
                     if (updateRes.ok) {
                         await refreshData();
                     } else {
-                        console.error("Error al actualizar reserva");
+                        const errData = await updateRes.json().catch(() => ({}));
+                        console.error("Error al actualizar reserva:", errData.error || updateRes.statusText);
+                        
+                        if (updateRes.status === 401 || updateRes.status === 403) {
+                            alert(`Sesión inválida o sin permisos: ${errData.error || 'Por favor inicia sesión de nuevo.'}`);
+                        } else {
+                            alert(`No se pudo actualizar la reserva: ${errData.error || 'Error desconocido'}`);
+                        }
                         await refreshData();
                     }
                 } catch (err) { 

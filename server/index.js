@@ -63,29 +63,30 @@ const checkReservaPermiso = (requireWrite = false) => {
     try {
       const { id: userId, rol_id, rol_nombre: rolTokenNombre } = req.user;
       
-      let rolNombre = rolTokenNombre ? rolTokenNombre.trim().toLowerCase() : null;
+      let rolNombre = rolTokenNombre ? String(rolTokenNombre).trim().toLowerCase() : null;
 
       // Si no viene en el token, lo buscamos en la DB (compatibilidad con tokens viejos)
-      if (!rolNombre) {
+      if (!rolNombre && rol_id) {
         const rolRes = await pool.query('SELECT nombre FROM roles WHERE id = $1', [rol_id]);
         if (rolRes.rows.length > 0) {
           rolNombre = rolRes.rows[0].nombre.trim().toLowerCase();
         }
       }
 
-      console.log(`Usuario ${userId} (${rolNombre}) verificando ${requireWrite ? 'escritura' : 'lectura'}`);
+      console.log(`[AUTH] Usuario ${userId} (${rolNombre || 'Sin Rol'}) verificando ${requireWrite ? 'escritura' : 'lectura'}`);
       
       if (!rolNombre) {
-        return res.status(403).json({ error: 'Rol no identificado' });
+        return res.status(403).json({ error: 'Rol no identificado en el sistema' });
       }
       
-      // Administrador y Cajero tienen acceso total
-      if (rolNombre === 'administrador' || rolNombre === 'cajero' || rolNombre === 'admin') {
+      // Administrador, Cajero y Admin tienen acceso total
+      const rolesAdmin = ['administrador', 'cajero', 'admin', 'gerente'];
+      if (rolesAdmin.includes(rolNombre)) {
         return next();
       }
       
       if (requireWrite) {
-        return res.status(403).json({ error: 'No tiene permisos para modificar reservas' });
+        return res.status(403).json({ error: `El rol '${rolNombre}' no tiene permisos para modificar reservas` });
       }
       
       // Para lectura, verificar si tiene el permiso reservas_lectura
@@ -102,8 +103,8 @@ const checkReservaPermiso = (requireWrite = false) => {
       
       res.status(403).json({ error: 'No tiene permisos para ver reservas' });
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error al verificar permisos' });
+      console.error('ERROR en checkReservaPermiso:', err);
+      res.status(500).json({ error: 'Error interno al verificar permisos' });
     }
   };
 };
