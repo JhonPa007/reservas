@@ -1058,7 +1058,7 @@ export default function PartnerView() {
                     <div className="calendar-grid-container" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', paddingLeft: '55px', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 10, overflowX: 'hidden' }}>
                             {(Array.isArray(visibleEmployees) ? visibleEmployees : []).map(emp => (
-                                <div key={emp.id} onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ flex: '0 0 200px', width: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.75rem 0' }}>
+                                <div key={emp.id} onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setEmpMenu({ empId: emp.id, x: rect.left, y: rect.bottom }); }} style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.75rem 0' }}>
                                     <div translate="no" style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: getAvatarColor(emp.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900 }}>{(emp.nombre_display || emp.nombres || 'U').trim()[0].toUpperCase()}</div>
                                     <span translate="no" style={{ fontWeight: 900, fontSize: '0.75rem', color: '#111827' }}>{emp.nombre_display || emp.nombres}</span>
                                 </div>
@@ -1104,8 +1104,7 @@ export default function PartnerView() {
                                         data-emp-id={emp.id} 
                                         className="calendar-column"
                                         style={{ 
-                                            flex: '0 0 200px', 
-                                            width: '200px', 
+                                            flex: 1, 
                                             minWidth: '200px', 
                                             borderRight: '1px solid #f3f4f6', 
                                             position: 'relative',
