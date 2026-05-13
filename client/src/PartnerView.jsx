@@ -406,9 +406,7 @@ export default function PartnerView() {
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
 
         const startDragging = () => {
-            setDraggedResId(res.id);
-            setIsDraggingGlobal(true);
-            setDragState({
+            const newState = {
                 type,
                 resId: res.id,
                 empId: res.empleado_id,
@@ -417,9 +415,14 @@ export default function PartnerView() {
                 initialDuration: duration,
                 currentTop: startTop,
                 currentHeight: getDurationHeight(duration),
+                currentDuration: duration,
                 currentTime: format(safeDate(res.fecha_hora_inicio), 'HH:mm'),
                 currentEmpId: res.empleado_id
-            });
+            };
+            setDraggedResId(res.id);
+            setIsDraggingGlobal(true);
+            setDragState(newState);
+            dragStateRef.current = newState; // Actualización inmediata
             if (isTouch && window.navigator.vibrate) window.navigator.vibrate(50);
         };
 
@@ -1187,10 +1190,10 @@ export default function PartnerView() {
                                                         height: h, 
                                                         zIndex: isDragged ? 1000 : (hoverRes === res.id ? 60 : 15), 
                                                         cursor: isBlockedState(res.estado) ? 'pointer' : 'grab', 
-                                                        opacity: isGhost ? 0.3 : (isBlockedState(res.estado) ? 0.95 : 1), 
+                                                        opacity: (isDragged && dragState.currentEmpId && String(dragState.currentEmpId) !== String(res.empleado_id)) ? 0 : (isGhost ? 0.3 : (isBlockedState(res.estado) ? 0.95 : 1)), 
                                                         overflow: 'visible',
                                                         transition: isDraggingGlobal ? 'none' : 'all 0.1s ease-out',
-                                                        display: isDragged && dragState.currentEmpId && dragState.currentEmpId !== res.empleado_id ? 'none' : 'block'
+                                                        touchAction: 'none'
                                                     }}
                                                 >
                                                     <div style={{ backgroundColor: theme.bg, backgroundImage: theme.pattern || 'none', borderLeft: `4px solid ${theme.border}`, borderRadius: res.tipo === 'BLOQUEO' ? '0' : '6px', padding: res.tipo === 'BLOQUEO' ? '0 8px' : '4px 8px', height: '100%', overflow: 'hidden', boxShadow: hoverRes === res.id ? '0 8px 15px rgba(0,0,0,0.1)' : 'none' }}>
@@ -1220,7 +1223,8 @@ export default function PartnerView() {
                                                                 flexDirection: 'column',
                                                                 gap: '2px',
                                                                 alignItems: 'center',
-                                                                justifyContent: 'center'
+                                                                justifyContent: 'center',
+                                                                touchAction: 'none'
                                                             }}
                                                         >
                                                             <div style={{ width: '30px', height: '2px', backgroundColor: theme.border, borderRadius: '2px', opacity: 0.8 }} />
