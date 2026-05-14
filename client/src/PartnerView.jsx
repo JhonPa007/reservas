@@ -172,6 +172,8 @@ export default function PartnerView() {
     const [showConfig, setShowConfig] = useState(false);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [hoverRes, setHoverRes] = useState(null);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [pickerMonth, setPickerMonth] = useState(new Date());
     const [isResizingInProgress, setIsResizingInProgress] = useState(false);
     const [toast, setToast] = useState(null);
     const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
@@ -990,6 +992,91 @@ export default function PartnerView() {
                 }
                 `}
             </style>
+            {/* Date Picker Modal */}
+            {showDatePicker && (
+                <div 
+                    style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }}
+                    onClick={() => setShowDatePicker(false)}
+                >
+                    <div 
+                        onClick={e => e.stopPropagation()}
+                        style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '1.5rem', width: '350px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)', border: '1px solid #f3f4f6' }}
+                    >
+                        {/* Picker Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                            <button onClick={() => setPickerMonth(addMonths(pickerMonth, -1))} style={{ padding: '8px', borderRadius: '50%', border: 'none', backgroundColor: '#f9fafb', cursor: 'pointer' }}><ChevronLeft size={18} /></button>
+                            <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111827', textTransform: 'capitalize' }}>
+                                {format(pickerMonth, 'MMMM yyyy', { locale: es })}
+                            </span>
+                            <button onClick={() => setPickerMonth(addMonths(pickerMonth, 1))} style={{ padding: '8px', borderRadius: '50%', border: 'none', backgroundColor: '#f9fafb', cursor: 'pointer' }}><ChevronRight size={18} /></button>
+                        </div>
+
+                        {/* Week Days */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '8px' }}>
+                            {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((d, i) => (
+                                <div key={i} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#9ca3af', paddingBottom: '8px' }}>{d}</div>
+                            ))}
+                        </div>
+
+                        {/* Days Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                            {(() => {
+                                const start = startOfWeek(startOfMonth(pickerMonth));
+                                const end = endOfWeek(endOfMonth(pickerMonth));
+                                return eachDayOfInterval({ start, end }).map(day => {
+                                    const isCurrentMonth = isSameMonth(day, pickerMonth);
+                                    const isSelected = isSameDay(day, selectedDate);
+                                    const isToday = isSameDay(day, new Date());
+                                    
+                                    return (
+                                        <div 
+                                            key={day.toISOString()}
+                                            onClick={() => {
+                                                setSelectedDate(day);
+                                                setShowDatePicker(false);
+                                            }}
+                                            style={{ 
+                                                height: '40px', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center', 
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                                fontWeight: isSelected || isToday ? 800 : 500,
+                                                color: isSelected ? '#fff' : (isCurrentMonth ? '#111827' : '#d1d5db'),
+                                                backgroundColor: isSelected ? '#7c3aed' : 'transparent',
+                                                border: isToday && !isSelected ? '2px solid #7c3aed' : 'none',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => !isSelected && (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                                            onMouseLeave={(e) => !isSelected && (e.currentTarget.style.backgroundColor = 'transparent')}
+                                        >
+                                            {format(day, 'd')}
+                                        </div>
+                                    );
+                                });
+                            })()}
+                        </div>
+
+                        {/* Shortcuts */}
+                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button 
+                                onClick={() => { setSelectedDate(new Date()); setShowDatePicker(false); }}
+                                style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f3f4f6', border: 'none', cursor: 'pointer' }}
+                            >
+                                Hoy
+                            </button>
+                            <button 
+                                onClick={() => { setSelectedDate(addDays(new Date(), 7)); setShowDatePicker(false); }}
+                                style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f3f4f6', border: 'none', cursor: 'pointer' }}
+                            >
+                                En 1 semana
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <header className="header-responsive" style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 110 }}>
                 <div className="header-top-row" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -1012,7 +1099,21 @@ export default function PartnerView() {
                         prev.setDate(prev.getDate() - 1);
                         setSelectedDate(prev);
                     }} className="btn-icon"><ChevronLeft size={18} /></button>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem', padding: '0 0.75rem', minWidth: '130px', textAlign: 'center', textTransform: 'capitalize' }}>
+                    <span 
+                        onClick={() => {
+                            setPickerMonth(selectedDate);
+                            setShowDatePicker(true);
+                        }}
+                        style={{ 
+                            fontWeight: 800, 
+                            fontSize: '0.9rem', 
+                            padding: '0 0.75rem', 
+                            minWidth: '130px', 
+                            textAlign: 'center', 
+                            textTransform: 'capitalize',
+                            cursor: 'pointer' 
+                        }}
+                    >
                         {format(selectedDate, "eeee, d 'de' MMMM", { locale: es })}
                     </span>
                     <button onClick={() => {
