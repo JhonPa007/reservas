@@ -1145,13 +1145,19 @@ export default function PartnerView() {
                                         })}
 
                                         {/* Reservations for this employee */}
-                                        {empReservas.map(res => {
+                                        {reservas.filter(r => {
+                                            const isOriginallyHere = String(r.empleado_id) === String(emp.id);
+                                            const isBeingMovedHere = isDraggingGlobal && dragState.type === 'move' && String(dragState.resId) === String(r.id) && String(dragState.currentEmpId) === String(emp.id);
+                                            return isOriginallyHere || isBeingMovedHere;
+                                        }).map(res => {
                                             const top = getTimeTop(res.fecha_hora_inicio);
                                             const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
-                                            const isDragged = draggedResId === res.id;
-                                            const isResizing = isDragged && dragState.type === 'resize';
-                                            const isGhost = isDraggingGlobal && !isDragged;
-
+                                            
+                                            const isDraggedItem = draggedResId === res.id;
+                                            const isTargetColumn = isDraggingGlobal && String(dragState.currentEmpId) === String(emp.id);
+                                            const isOriginColumn = String(res.empleado_id) === String(emp.id);
+                                            
+                                            const isResizing = isDraggedItem && dragState.type === 'resize';
                                             const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
                                             const { colIndex, totalCols } = allOverlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
 
@@ -1174,6 +1180,22 @@ export default function PartnerView() {
                                                 'CANCELADA': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b' }
                                             }[statusKey] || { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' };
 
+                                            // Lógica de visibilidad durante el arrastre
+                                            let finalOpacity = 1;
+                                            if (isDraggingGlobal && isDraggedItem) {
+                                                if (isTargetColumn) {
+                                                    finalOpacity = 0.8; // El elemento que se mueve (en su destino actual)
+                                                } else if (isOriginColumn) {
+                                                    finalOpacity = 0.3; // El fantasma que se queda en el origen
+                                                } else {
+                                                    finalOpacity = 0; // Ocultar en cualquier otra columna
+                                                }
+                                            } else if (isDraggingGlobal && !isDraggedItem) {
+                                                finalOpacity = 0.4; // Otros elementos se atenúan un poco
+                                            } else if (isBlockedState(res.estado)) {
+                                                finalOpacity = 0.95;
+                                            }
+
                                             return (
                                                 <div 
                                                     key={res.id} 
@@ -1192,13 +1214,13 @@ export default function PartnerView() {
                                                     onMouseLeave={() => setHoverRes(null)} 
                                                     style={{ 
                                                         position: 'absolute', 
-                                                        top: isDragged && dragState.type === 'move' ? dragState.currentTop : top, 
-                                                        left: isDragged && dragState.type === 'move' ? 0 : `${(colIndex / totalCols) * 100}%`, 
-                                                        width: isDragged && dragState.type === 'move' ? '100%' : `${(1 / totalCols) * 100}%`, 
+                                                        top: isDraggedItem && dragState.type === 'move' ? dragState.currentTop : top, 
+                                                        left: isDraggedItem && dragState.type === 'move' ? 0 : `${(colIndex / totalCols) * 100}%`, 
+                                                        width: isDraggedItem && dragState.type === 'move' ? '100%' : `${(1 / totalCols) * 100}%`, 
                                                         height: h, 
-                                                        zIndex: isDragged ? 1000 : (hoverRes === res.id ? 60 : 15), 
+                                                        zIndex: isDraggedItem ? 1000 : (hoverRes === res.id ? 60 : 15), 
                                                         cursor: isBlockedState(res.estado) ? 'pointer' : 'grab', 
-                                                        opacity: (isDragged && dragState.currentEmpId && String(dragState.currentEmpId) !== String(res.empleado_id)) ? 0 : (isGhost ? 0.3 : (isBlockedState(res.estado) ? 0.95 : 1)), 
+                                                        opacity: finalOpacity, 
                                                         overflow: 'visible',
                                                         transition: isDraggingGlobal ? 'none' : 'all 0.1s ease-out',
                                                         touchAction: 'none'
