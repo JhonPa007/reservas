@@ -458,9 +458,16 @@ export default function PartnerView() {
                 const mins = Math.max(DISPLAY_START_HOUR * 60, Math.min(DISPLAY_END_HOUR * 60, Math.round((newTop / rowHeight) * cellDuration / 5) * 5 + (DISPLAY_START_HOUR * 60)));
                 const snappedTop = ((mins - (DISPLAY_START_HOUR * 60)) / cellDuration) * rowHeight;
 
-                // Detectar empleado bajo el puntero
+                // Detectar empleado bajo el puntero (buscando en el elemento y sus ancestros)
                 const elements = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY);
-                const empDiv = elements.find(el => el.hasAttribute && el.hasAttribute('data-emp-id'));
+                let empDiv = null;
+                for (const el of elements) {
+                    const found = el.closest ? el.closest('[data-emp-id]') : null;
+                    if (found) {
+                        empDiv = found;
+                        break;
+                    }
+                }
                 const newEmpId = empDiv ? empDiv.getAttribute('data-emp-id') : currentState.empId;
 
                 // Optimización: Solo actualizar el estado si los valores "ajustados" cambiaron
@@ -1221,6 +1228,7 @@ export default function PartnerView() {
                                                         zIndex: isDraggedItem ? 1000 : (hoverRes === res.id ? 60 : 15), 
                                                         cursor: isBlockedState(res.estado) ? 'pointer' : 'grab', 
                                                         opacity: finalOpacity, 
+                                                        pointerEvents: (isDraggedItem && dragState.type === 'move') ? 'none' : 'auto',
                                                         overflow: 'visible',
                                                         transition: isDraggingGlobal ? 'none' : 'all 0.1s ease-out',
                                                         touchAction: 'none'
