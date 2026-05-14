@@ -1189,18 +1189,23 @@ export default function PartnerView() {
                                         })}
 
                                         {/* Reservations for this employee */}
-                                        {reservas.filter(r => {
-                                            const isOriginallyHere = String(r.empleado_id) === String(emp.id);
-                                            const isBeingMovedHere = isDraggingGlobal && dragState.type === 'move' && String(dragState.resId) === String(r.id) && String(dragState.currentEmpId) === String(emp.id);
-                                            return isOriginallyHere || isBeingMovedHere;
-                                        }).map(res => {
+                                        {(() => {
+                                            const base = reservas.filter(r => String(r.empleado_id) === String(emp.id));
+                                            const movingHere = isDraggingGlobal && dragState.type === 'move' && String(dragState.currentEmpId) === String(emp.id);
+                                            if (movingHere) {
+                                                const dragged = reservas.find(r => String(r.id) === String(dragState.resId));
+                                                if (dragged) {
+                                                    // Añadimos una copia especial que es la que realmente se mueve
+                                                    return [...base, { ...dragged, _isMoving: true }];
+                                                }
+                                            }
+                                            return base;
+                                        })().map(res => {
+                                            const isMoving = res._isMoving;
                                             const top = getTimeTop(res.fecha_hora_inicio);
                                             const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
                                             
                                             const isDraggedItem = draggedResId === res.id;
-                                            const isTargetColumn = isDraggingGlobal && String(dragState.currentEmpId) === String(emp.id);
-                                            const isOriginColumn = String(res.empleado_id) === String(emp.id);
-                                            
                                             const isResizing = isDraggedItem && dragState.type === 'resize';
                                             const h = getDurationHeight(isResizing ? dragState.currentDuration : duration);
                                             const { colIndex, totalCols } = allOverlapInfo[res.id] || { colIndex: 0, totalCols: 1 };
@@ -1227,22 +1232,20 @@ export default function PartnerView() {
                                             // Lógica de visibilidad durante el arrastre
                                             let finalOpacity = 1;
                                             if (isDraggingGlobal && isDraggedItem) {
-                                                if (isTargetColumn) {
-                                                    finalOpacity = 1; // Mantener color original al arrastrar
-                                                } else if (isOriginColumn) {
-                                                    finalOpacity = 0.35; // Restaurar fantasma con efecto opaco
+                                                if (isMoving) {
+                                                    finalOpacity = 1; // El que se mueve
                                                 } else {
-                                                    finalOpacity = 0; // Ocultar en cualquier otra columna
+                                                    finalOpacity = 0.35; // El original que se queda quieto
                                                 }
                                             } else if (isDraggingGlobal && !isDraggedItem) {
-                                                finalOpacity = 0.4; // Otros elementos se atenúan un poco
+                                                finalOpacity = 0.4;
                                             } else if (isBlockedState(res.estado)) {
                                                 finalOpacity = 0.95;
                                             }
 
                                             return (
                                                 <div 
-                                                    key={res.id} 
+                                                    key={isMoving ? `${res.id}-moving` : res.id} 
                                                     onPointerDown={e => handlePointerDown(e, res, 'move')} 
                                                     onClick={(e) => {
                                                         if (isDraggingGlobal || preventClickRef.current) return;
@@ -1258,16 +1261,16 @@ export default function PartnerView() {
                                                     onMouseLeave={() => setHoverRes(null)} 
                                                     style={{ 
                                                         position: 'absolute', 
-                                                        top: isDraggedItem && dragState.type === 'move' ? dragState.currentTop : top, 
-                                                        left: isDraggedItem && dragState.type === 'move' ? 0 : `${(colIndex / totalCols) * 100}%`, 
-                                                        width: isDraggedItem && dragState.type === 'move' ? '100%' : `${(1 / totalCols) * 100}%`, 
+                                                        top: (isMoving && dragState.type === 'move') ? dragState.currentTop : (isResizing ? dragState.currentTop : top), 
+                                                        left: isMoving ? 0 : `${(colIndex / totalCols) * 100}%`, 
+                                                        width: isMoving ? '100%' : `${(1 / totalCols) * 100}%`, 
                                                         height: h, 
-                                                        zIndex: isDraggedItem ? 1000 : (hoverRes === res.id ? 60 : 15), 
+                                                        zIndex: isMoving ? 1000 : (hoverRes === res.id ? 60 : 15), 
                                                         cursor: isBlockedState(res.estado) ? 'pointer' : 'grab', 
                                                         opacity: finalOpacity, 
-                                                        pointerEvents: (isDraggedItem && dragState.type === 'move') ? 'none' : 'auto',
+                                                        pointerEvents: isMoving ? 'none' : 'auto',
                                                         overflow: 'visible',
-                                                        transition: isDraggingGlobal ? 'none' : 'all 0.1s ease-out',
+                                                        transition: (isMoving || isResizing) ? 'none' : 'all 0.1s ease-out',
                                                         touchAction: 'none'
                                                     }}
                                                 >
