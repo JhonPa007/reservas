@@ -423,6 +423,7 @@ export default function PartnerView() {
             setDraggedResId(res.id);
             setIsDraggingGlobal(true);
             setDrawerOpen(null); // Cerrar modal al empezar a arrastrar
+            setQuickActionMenu(null); // Cerrar menú de acción rápida
             setDragState(newState);
             dragStateRef.current = newState; // Actualización inmediata
             if (isTouch && window.navigator.vibrate) window.navigator.vibrate(50);
@@ -1100,6 +1101,36 @@ export default function PartnerView() {
                                     </div>
                                 );
                             })}
+
+                            {/* Indicador de hora durante el arrastre */}
+                            {isDraggingGlobal && dragState.type === 'move' && (
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    top: dragState.currentTop, 
+                                    left: '4px', 
+                                    right: '4px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    zIndex: 100, 
+                                    marginTop: '-12px',
+                                    pointerEvents: 'none'
+                                }}>
+                                    <div style={{ 
+                                        backgroundColor: '#7c3aed', 
+                                        color: '#fff', 
+                                        fontSize: '0.75rem', 
+                                        fontWeight: '700', 
+                                        padding: '2px 6px', 
+                                        borderRadius: '10px', 
+                                        border: '2px solid #fff',
+                                        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.3)',
+                                        whiteSpace: 'nowrap'
+                                    }}>
+                                        {dragState.currentTime}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
@@ -1192,9 +1223,9 @@ export default function PartnerView() {
                                             let finalOpacity = 1;
                                             if (isDraggingGlobal && isDraggedItem) {
                                                 if (isTargetColumn) {
-                                                    finalOpacity = 0.9; // El elemento que se mueve (más sólido)
+                                                    finalOpacity = 1; // Mantener color original al arrastrar
                                                 } else if (isOriginColumn) {
-                                                    finalOpacity = 0; // Ocultar el original completamente mientras se mueve
+                                                    finalOpacity = 0.35; // Restaurar fantasma con efecto opaco
                                                 } else {
                                                     finalOpacity = 0; // Ocultar en cualquier otra columna
                                                 }
