@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Trash2, Settings, UserPlus, Users, Clock, Search, Check, CheckCircle, Save, MoreVertical, MoreHorizontal, ExternalLink, CreditCard, ShoppingBag, Mail, Phone, Info, Star, ChevronDown, User, UserX, Pencil, ThumbsUp, Cloud, Heart, EyeOff, Tag, LogOut } from 'lucide-react';
-import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes } from 'date-fns';
+import { format, addDays, startOfDay, addMinutes, isSameDay, parse, setHours, setMinutes, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from './AuthContext';
 
