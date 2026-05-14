@@ -403,6 +403,11 @@ export default function PartnerView() {
         const startTop = getTimeTop(res.fecha_hora_inicio);
         const duration = (safeDate(res.fecha_hora_fin) - safeDate(res.fecha_hora_inicio)) / 60000;
 
+        // Limpieza inmediata de UI al tocar/clickear
+        setDrawerOpen(null);
+        setQuickActionMenu(null);
+        setHoverRes(null);
+
         // Capturar el puntero para asegurar que recibimos eventos fuera del elemento
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
 
