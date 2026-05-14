@@ -422,6 +422,7 @@ export default function PartnerView() {
             };
             setDraggedResId(res.id);
             setIsDraggingGlobal(true);
+            setDrawerOpen(null); // Cerrar modal al empezar a arrastrar
             setDragState(newState);
             dragStateRef.current = newState; // Actualización inmediata
             if (isTouch && window.navigator.vibrate) window.navigator.vibrate(50);
@@ -1191,9 +1192,9 @@ export default function PartnerView() {
                                             let finalOpacity = 1;
                                             if (isDraggingGlobal && isDraggedItem) {
                                                 if (isTargetColumn) {
-                                                    finalOpacity = 0.8; // El elemento que se mueve (en su destino actual)
+                                                    finalOpacity = 0.9; // El elemento que se mueve (más sólido)
                                                 } else if (isOriginColumn) {
-                                                    finalOpacity = 0.3; // El fantasma que se queda en el origen
+                                                    finalOpacity = 0; // Ocultar el original completamente mientras se mueve
                                                 } else {
                                                     finalOpacity = 0; // Ocultar en cualquier otra columna
                                                 }
