@@ -482,6 +482,35 @@ app.get('/api/equipo', async (req, res) => {
   }
 });
 
+app.get('/api/equipo/horarios-recurrentes/:empleado_id', async (req, res) => {
+  const { empleado_id } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT * FROM horarios_recurrentes WHERE empleado_id = $1 ORDER BY dia_semana, hora_inicio',
+      [empleado_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error al obtener horarios recurrentes:', err);
+    res.status(500).json({ error: 'Error al obtener horarios recurrentes' });
+  }
+});
+
+app.post('/api/equipo/miembros', async (req, res) => {
+  const { nombres, apellidos, email, telefono, dni } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO empleados (nombres, apellidos, email, telefono, dni, activo, rol_id, sucursal_id, realiza_servicios) VALUES ($1, $2, $3, $4, $5, true, 2, 1, true) RETURNING *',
+      [nombres, apellidos, email, telefono, dni]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error al añadir miembro:', err);
+    res.status(500).json({ error: 'Error al añadir miembro' });
+  }
+});
+
+
 app.post('/api/equipo/horarios-recurrentes', async (req, res) => {
   const { empleado_id, sucursal_id, horarios } = req.body;
   const client = await pool.connect();
