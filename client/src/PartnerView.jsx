@@ -517,8 +517,9 @@ export default function PartnerView() {
 
             // Usar el REF para obtener el estado final exacto
             const finalState = dragStateRef.current;
+            const didMove = preventClickRef.current;
 
-            if (finalState && finalState.resId) {
+            if (finalState && finalState.resId && didMove) {
                 try {
                     const payload = {};
                     if (finalState.type === 'move') {
@@ -561,9 +562,7 @@ export default function PartnerView() {
                 }
             } else {
                 // Si no hubo arrastre real (fue solo un clic)
-                if (!preventClickRef.current) {
-                    // El clic normal lo manejará el onClick de la reserva
-                }
+                // El clic normal lo manejará el onClick de la reserva
             }
 
             // Limpiar estados
@@ -1349,7 +1348,7 @@ export default function PartnerView() {
                                                     key={isMoving ? `${res.id}-moving` : res.id} 
                                                     onPointerDown={e => handlePointerDown(e, res, 'move')} 
                                                     onClick={(e) => {
-                                                        if (isDraggingGlobal || preventClickRef.current) return;
+                                                        if (preventClickRef.current) return;
                                                         const start = safeDate(res.fecha_hora_inicio);
                                                         const end = res.fecha_hora_fin ? safeDate(res.fecha_hora_fin) : addMinutes(start, res.duracion_minutos || 40);
                                                         setDrawerOpen({
