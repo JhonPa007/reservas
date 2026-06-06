@@ -366,7 +366,7 @@ app.patch('/api/clientes/:id', async (req, res) => {
 app.get('/api/empleados/:sucursalId', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, nombres, apellidos, nombre_display FROM empleados WHERE realiza_servicios = true AND activo = true ORDER BY nombres'
+      'SELECT id, nombres, apellidos, nombre_display FROM empleados WHERE realiza_servicios = true AND activo = true ORDER BY orden ASC, nombres ASC'
     );
     res.json(result.rows);
   } catch (err) {
@@ -475,10 +475,32 @@ app.delete('/api/reservas/:id', authenticateToken, checkReservaPermiso(true), as
 
 app.get('/api/equipo', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM empleados WHERE activo = true ORDER BY nombres');
+    const result = await pool.query('SELECT * FROM empleados WHERE activo = true ORDER BY orden ASC, nombres ASC');
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener equipo' });
+  }
+});
+
+app.put('/api/equipo/orden', async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    return res.status(400).json({ error: 'Se requiere un arreglo de IDs' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (let i = 0; i < ids.length; i++) {
+      await client.query('UPDATE empleados SET orden = $1 WHERE id = $2', [i + 1, ids[i]]);
+    }
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error al actualizar el orden de los empleados:', err);
+    res.status(500).json({ error: 'Error al actualizar el orden de los empleados' });
+  } finally {
+    client.release();
   }
 });
 

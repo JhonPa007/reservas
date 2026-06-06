@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import { Users, Clock, Plus, Search, MoreVertical, X, Check, Copy, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { Users, Clock, Plus, Search, MoreVertical, X, Check, Copy, Trash2, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const API_BASE = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5001/api' : window.location.origin + '/api');
@@ -30,6 +30,37 @@ export default function TeamManager() {
                 setTeam(data);
                 setLoading(false);
             });
+    };
+
+    const handleMove = (index, direction) => {
+        const newTeam = [...team];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        
+        // Intercambiar
+        const temp = newTeam[index];
+        newTeam[index] = newTeam[targetIndex];
+        newTeam[targetIndex] = temp;
+        
+        setTeam(newTeam);
+        
+        // Guardar en el backend
+        const ids = newTeam.map(m => m.id);
+        fetch(`${API_BASE}/equipo/orden`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Error al guardar el orden:', data.error);
+                fetchTeam(); // revertir si hay error
+            }
+        })
+        .catch(err => {
+            console.error('Error de conexión:', err);
+            fetchTeam(); // revertir
+        });
     };
 
     const handleAddMember = (e) => {
@@ -142,11 +173,12 @@ export default function TeamManager() {
                                     <th style={{ padding: '1rem', fontSize: '0.75rem', color: '#6b7280', fontWeight: 700 }}>Nombre</th>
                                     <th style={{ padding: '1rem', fontSize: '0.75rem', color: '#6b7280', fontWeight: 700 }}>Contacto</th>
                                     <th style={{ padding: '1rem', fontSize: '0.75rem', color: '#6b7280', fontWeight: 700 }}>Rol</th>
+                                    <th style={{ padding: '1rem', fontSize: '0.75rem', color: '#6b7280', fontWeight: 700, width: '100px', textAlign: 'center' }}>Orden</th>
                                     <th style={{ padding: '1rem', fontSize: '0.75rem', color: '#6b7280', fontWeight: 700, textAlign: 'right' }}>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {team.map(m => (
+                                {team.map((m, idx) => (
                                     <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                         <td style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#6b7280' }}>
@@ -163,6 +195,54 @@ export default function TeamManager() {
                                         </td>
                                         <td style={{ padding: '1rem' }}>
                                             <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#f3f4f6', fontWeight: 700 }}>Bajo</span>
+                                        </td>
+                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+                                                <button
+                                                    disabled={idx === 0}
+                                                    onClick={() => handleMove(idx, 'up')}
+                                                    style={{
+                                                        padding: '4px',
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        background: 'white',
+                                                        cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                                                        opacity: idx === 0 ? 0.3 : 1,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        height: '28px',
+                                                        width: '28px',
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title="Subir"
+                                                >
+                                                    <ArrowUp size={14} />
+                                                </button>
+                                                <button
+                                                    disabled={idx === team.length - 1}
+                                                    onClick={() => handleMove(idx, 'down')}
+                                                    style={{
+                                                        padding: '4px',
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        background: 'white',
+                                                        cursor: idx === team.length - 1 ? 'not-allowed' : 'pointer',
+                                                        opacity: idx === team.length - 1 ? 0.3 : 1,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        height: '28px',
+                                                        width: '28px',
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title="Bajar"
+                                                >
+                                                    <ArrowDown size={14} />
+                                                </button>
+                                            </div>
                                         </td>
                                         <td style={{ padding: '1rem', textAlign: 'right' }}>
                                             <button
