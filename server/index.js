@@ -15,7 +15,7 @@ const port = process.env.PORT || 5000;
 
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
@@ -482,7 +482,7 @@ app.get('/api/equipo', async (req, res) => {
   }
 });
 
-app.put('/api/equipo/orden', async (req, res) => {
+app.patch('/api/equipo/orden', async (req, res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids)) {
     return res.status(400).json({ error: 'Se requiere un arreglo de IDs' });

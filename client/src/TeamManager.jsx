@@ -46,7 +46,7 @@ export default function TeamManager() {
         // Guardar en el backend
         const ids = newTeam.map(m => m.id);
         fetch(`${API_BASE}/equipo/orden`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids })
         })
